@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenLBOF | Human-Centric Safety Infrastructure</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #090d16; color: #f3f4f6; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-[#090d16] text-gray-100 min-t-screen selection:bg-cyan-500 selection:text-black">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('simulator');
+            const [mode, setMode] = useState('normal'); // normal, intense, crisis
+            const [jScore, setJScore] = useState(89.4);
+            const [stage, setStage] = useState('STAGE_0_NORMAL');
+
+            useEffect(() => {
+                if (mode === 'normal') {
+                    setJScore(91.2);
+                    setStage('STAGE_0_NORMAL (定常見守り)');
+                } else if (mode === 'intense') {
+                    setJScore(76.5);
+                    setStage('STAGE_1_SOFT_BUFFER (意図確認バッファ)');
+                } else if (mode === 'crisis') {
+                    setJScore(32.1);
+                    setStage('STAGE_2_HARD_OVERRIDE (緊急退避・保護)');
+                }
+            }, [mode]);
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    {/* Header */}
+                    <header className="border-b border-gray-800 bg-[#0d1322]/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center font-bold text-black text-lg">Ω</div>
+                            <span className="font-bold text-xl tracking-wider text-white">OpenLBOF</span>
+                            <span className="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">OBC Official</span>
+                        </div>
+                        <nav className="hidden md:flex space-x-8 text-sm font-medium text-gray-300">
+                            <button onClick={() => setActiveTab('simulator')} className={`hover:text-cyan-400 transition ${activeTab === 'simulator' ? 'text-cyan-400 font-bold' : ''}`}>シミュレーター</button>
+                            <button onClick={() => setActiveTab('architecture')} className={`hover:text-cyan-400 transition ${activeTab === 'architecture' ? 'text-cyan-400 font-bold' : ''}`}>アーキテクチャ</button>
+                            <button onClick={() => setActiveTab('constitution')} className={`hover:text-cyan-400 transition ${activeTab === 'constitution' ? 'text-cyan-400 font-bold' : ''}`}>憲法コード</button>
+                            <button onClick={() => setActiveTab('join')} className={`hover:text-cyan-400 transition ${activeTab === 'join' ? 'text-cyan-400 font-bold' : ''}`}>仲間になる</button>
+                        </nav>
+                        <a href="https://github.com" target="_blank" rel="noreferrer" className="text-xs bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-700 transition">
+                            GitHub Repository
+                        </a>
+                    </header>
+
+                    {/* Hero Section */}
+                    <section className="px-6 py-16 md:py-24 max-w-6xl mx-auto text-center">
+                        <div className="inline-block mb-4 px-4 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-800/60 text-indigo-300 text-xs font-semibold tracking-wide uppercase">
+                            Open Bio-Commons Council (OBC) Governing
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+                            人間の脆弱性を包摂し、<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-400 to-purple-400">尊厳と自律性を守る</span>安全インフラ
+                        </h1>
+                        <p className="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto mb-10 leading-relaxed">
+                            OpenLBOFは、管理や収奪のためのAIではなく、人間の揺らぎや突発的な危機を「愛（調和と包摂）」の数理モデルで支える、完全オープンソースのパブリック・コモンズです。
+                        </p>
+                    </section>
+
+                    {/* Interactive Simulator Section */}
+                    <section className="px-6 py-12 max-w-5xl mx-auto w-full">
+                        <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-gray-800">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white mb-1">Live Evaluation Engine ($J$) プレビュー</h2>
+                                    <p className="text-sm text-gray-400">エッジセンサーからの生体入力に対するリアルタイムの目的関数スコアと介入ステージの遷移</p>
+                                </div>
+                                <div className="mt-4 md:mt-0 flex space-x-2">
+                                    <button onClick={() => setMode('normal')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${mode === 'normal' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400'}`}>定常状態</button>
+                                    <button onClick={() => setMode('intense')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${mode === 'intense' ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-400'}`}>高負荷運動</button>
+                                    <button onClick={() => setMode('crisis')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${mode === 'crisis' ? 'bg-rose-600 text-white' : 'bg-gray-800 text-gray-400'}`}>突発的危機</button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                <div className="bg-[#0b101b] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
+                                    <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">目的関数スコア ($J$)</span>
+                                    <div className="text-4xl font-mono font-bold text-cyan-400 my-4">{jScore.toFixed(1)} <span className="text-sm text-gray-500">/ 100</span></div>
+                                    <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                                        <div className="bg-cyan-500 h-full transition-all duration-500" style={{ width: `${jScore}%` }}></div>
+                                    </div>
+                                </div>
+                                <div className="bg-[#0b101b] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
+                                    <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">現在のフェイルセーフステージ</span>
+                                    <div className="text-lg font-bold text-white my-4 font-mono">{stage}</div>
+                                    <span className="text-xs text-gray-500">Local Secure Enclave 処理</span>
+                                </div>
+                                <div className="bg-[#0b101b] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
+                                    <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">過剰介入ペナルティ項</span>
+                                    <div className="text-2xl font-mono font-bold text-purple-400 my-4">
+                                        {mode === 'crisis' ? '高 (保護優先)' : '抑制中 (Autonomy Safe)'}
+                                    </div>
+                                    <span className="text-xs text-gray-500">$\text{Penalty}_{\text{over-intervention}}$ 有効</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Footer */}
+                    <footer className="mt-auto border-t border-gray-800 py-8 px-6 text-center text-sm text-gray-500">
+                        <p>&copy; 2026 Open Bio-Commons Council (OBC) & OpenLBOF Contributors. Licensed under AGPL-3.0.</p>
+                    </footer>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
