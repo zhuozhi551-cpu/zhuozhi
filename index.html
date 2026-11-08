@@ -28,8 +28,8 @@
         function App() {
             const [activeTab, setActiveTab] = useState('simulator');
             const [mode, setMode] = useState('normal'); // normal, intense, crisis
-            const [jScore, setJScore] = useState(89.4);
-            const [stage, setStage] = useState('STAGE_0_NORMAL');
+            const [jScore, setJScore] = useState(91.2);
+            const [stage, setStage] = useState('STAGE_0_NORMAL (定常見守り)');
 
             useEffect(() => {
                 if (mode === 'normal') {
@@ -43,9 +43,6 @@
                     setStage('STAGE_2_HARD_OVERRIDE (緊急退避・保護)');
                 }
             }, [mode]);
-
-            // モードに応じたペナルティ・危機の状態判定
-            const isCrisis = mode === 'crisis';
 
             return (
                 <div className="min-h-screen flex flex-col">
@@ -114,21 +111,25 @@
                                     <span className="text-xs text-gray-500">Local Secure Enclave 処理</span>
                                 </div>
 
-                                {/* 3. ペナルティ・危機管理設定（モード連動） */}
+                                {/* 3. ペナルティ・危機管理設定 */}
                                 <div className="bg-[#0b101b] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
                                     <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">ペナルティ・危機管理設定</span>
                                     <div className="my-4 space-y-2">
                                         <div className="text-sm text-white">
                                             過剰介入ペナルティ: 
-                                            <span className={`font-bold ml-1 ${isCrisis ? 'text-gray-400' : 'text-green-400'}`}>
-                                                {isCrisis ? '無効' : '有効'}
-                                            </span>
+                                            {mode === 'crisis' ? (
+                                                <span className="font-bold ml-1 text-gray-400">無効</span>
+                                            ) : (
+                                                <span className="font-bold ml-1 text-green-400">有効</span>
+                                            )}
                                         </div>
                                         <div className="text-sm text-white">
                                             突発的危機: 
-                                            <span className={`font-bold ml-1 ${isCrisis ? 'text-rose-400' : 'text-gray-400'}`}>
-                                                {isCrisis ? '有効 (Crisis)' : '無効'}
-                                            </span>
+                                            {mode === 'crisis' ? (
+                                                <span className="font-bold ml-1 text-rose-400">有効 (Crisis)</span>
+                                            ) : (
+                                                <span className="font-bold ml-1 text-gray-400">無効</span>
+                                            )}
                                         </div>
                                     </div>
                                     <span className="text-xs text-gray-500">Local Secure Enclave 処理</span>
