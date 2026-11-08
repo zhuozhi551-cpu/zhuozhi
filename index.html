@@ -111,11 +111,18 @@
 
                                 {/* 3. 過剰介入ペナルティ項 */}
                                 <div className="bg-[#0b101b] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
-                                    <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">過剰介入ペナルティ項</span>
-                                    <div className="text-2xl font-mono font-bold text-emerald-400 my-4">
-                                        有効 (Penalty Enabled)
+                                    <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">ペナルティ・危機管理ステータス</span>
+                                    <div className="space-y-3 my-4">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-300">過剰介入ペナルティ</span>
+                                            <span className="font-mono text-emerald-400 font-bold">有効 (Active)</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-300">突発的危機</span>
+                                            <span className="font-mono text-gray-500 font-semibold">無効 (Disabled)</span>
+                                        </div>
                                     </div>
-                                    <span className="text-xs text-gray-500">突発的危機：無効 (Crisis Disabled)</span>
+                                    <span className="text-xs text-gray-500">Secure Enclave Policy</span>
                                 </div>
                             </div>
                         </div>
