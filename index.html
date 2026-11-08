@@ -44,6 +44,9 @@
                 }
             }, [mode]);
 
+            // モードに応じたペナルティ・危機の状態判定
+            const isCrisis = mode === 'crisis';
+
             return (
                 <div className="min-h-screen flex flex-col">
                     {/* Header */}
@@ -111,15 +114,21 @@
                                     <span className="text-xs text-gray-500">Local Secure Enclave 処理</span>
                                 </div>
 
-                                {/* 3. ペナルティ・危機管理設定 */}
+                                {/* 3. ペナルティ・危機管理設定（モード連動） */}
                                 <div className="bg-[#0b101b] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
                                     <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">ペナルティ・危機管理設定</span>
                                     <div className="my-4 space-y-2">
                                         <div className="text-sm text-white">
-                                            過剰介入ペナルティ: <span className="font-bold text-green-400">有効</span>
+                                            過剰介入ペナルティ: 
+                                            <span className={`font-bold ml-1 ${isCrisis ? 'text-gray-400' : 'text-green-400'}`}>
+                                                {isCrisis ? '無効' : '有効'}
+                                            </span>
                                         </div>
                                         <div className="text-sm text-white">
-                                            突発的危機: <span className="font-bold text-gray-400">無効</span>
+                                            突発的危機: 
+                                            <span className={`font-bold ml-1 ${isCrisis ? 'text-rose-400' : 'text-gray-400'}`}>
+                                                {isCrisis ? '有効 (Crisis)' : '無効'}
+                                            </span>
                                         </div>
                                     </div>
                                     <span className="text-xs text-gray-500">Local Secure Enclave 処理</span>
