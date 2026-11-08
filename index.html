@@ -96,7 +96,9 @@
                                 {/* 1. 目的関数スコア */}
                                 <div className="bg-[#0b101b] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
                                     <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">目的関数スコア</span>
-                                    <div className="text-4xl font-mono font-bold text-cyan-400 my-4">{jScore.toFixed(1)} <span className="text-sm text-gray-500">/ 100</span></div>
+                                    <div className="text-4xl font-mono font-bold text-cyan-400 my-4">
+                                        {jScore.toFixed(1)} <span className="text-sm text-gray-500">/ 100</span>
+                                    </div>
                                     <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
                                         <div className="bg-cyan-500 h-full transition-all duration-500" style={{ width: `${jScore}%` }}></div>
                                     </div>
@@ -127,6 +129,9 @@
                     </section>
 
                     {/* Footer */}
+                    <footer className="mt-auto border-t border-gray-800 py-8 px-6 text-center text-sm text-gray-500">
+                        <p>&copy; 2026 Open Bio-Commons Council (OBC) & OpenLBOF Contributors. Licensed under AGPL-3.0.</p>
+                    </footer>
                     <footer className="mt-auto border-t border-gray-800 py-8 px-6 text-center text-sm text-gray-500">
                         <p>&copy; 2026 Open Bio-Commons Council (OBC) & OpenLBOF Contributors. Licensed under AGPL-3.0.</p>
                     </footer>
