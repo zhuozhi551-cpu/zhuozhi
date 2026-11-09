@@ -31,37 +31,74 @@
         const { useState, useEffect } = React;
 
         function App() {
-            const [activeTab, setActiveTab] = useState('simulator'); // simulator, biosensor, architecture, constitution, join
+            const [activeTab, setActiveTab] = useState('simulator');
             const [mode, setMode] = useState('normal'); // normal, intense, crisis
-            const [jScore, setJScore] = useState(91.2);
-            const [stage, setStage] = useState('STAGE_0_NORMAL (定常見守り)');
-
-            // PPGシミュレーションデータ
+            
+            // センサー連動の状態管理
+            const [isMeasuring, setIsMeasuring] = useState(false);
             const [bpm, setBpm] = useState(72);
             const [hrv, setHrv] = useState(58);
-            const [isMeasuring, setIsMeasuring] = useState(false);
+            const [typingStability, setTypingStability] = useState(94.2);
 
+            // 目的関数 J(t) および各項の値
+            const [jScore, setJScore] = useState(91.2);
+            const [harmonyTerm, setHarmonyTerm] = useState(95.0);
+            const [penaltyTerm, setPenaltyTerm] = useState(3.8);
+            const [crisisTerm, setCrisisTerm] = useState(0.0);
+            const [stage, setStage] = useState('STAGE_0_NORMAL (定常見守り)');
+
+            // モード切替またはセンサー計測状態に応じた数理モデルの動的計算
             useEffect(() => {
-                if (mode === 'normal') {
-                    setJScore(91.2);
-                    setStage('STAGE_0_NORMAL (定常見守り)');
-                } else if (mode === 'intense') {
-                    setJScore(76.5);
-                    setStage('STAGE_1_SOFT_BUFFER (意図確認バッファ)');
-                } else if (mode === 'crisis') {
-                    setJScore(32.1);
-                    setStage('STAGE_2_HARD_OVERRIDE (緊急退避・保護)');
-                }
-            }, [mode]);
+                let baseHarmony = 90.0;
+                let penalty = 3.0;
+                let crisis = 0.0;
+                let currentStageText = 'STAGE_0_NORMAL (定常見守り)';
 
-            // カメラPPGの模擬計測
+                if (mode === 'normal') {
+                    baseHarmony = 92.0;
+                    penalty = 2.5;
+                    crisis = 0.0;
+                    currentStageText = 'STAGE_0_NORMAL (定常見守り)';
+                } else if (mode === 'intense') {
+                    // 高負荷時はバイオデータの揺らぎを反映
+                    baseHarmony = 78.0 - (75 - hrv) * 0.4;
+                    penalty = 5.0;
+                    crisis = 10.0;
+                    currentStageText = 'STAGE_1_SOFT_BUFFER (意図確認バッファ)';
+                } else if (mode === 'crisis') {
+                    baseHarmony = 40.0;
+                    penalty = 0.0; // 危機時は過剰介入ペナルティ無効化
+                    crisis = 65.0;
+                    currentStageText = 'STAGE_2_HARD_OVERRIDE (緊急退避・保護)';
+                }
+
+                // カメラPPG計測中の動的補正
+                if (isMeasuring) {
+                    if (bpm > 90 || hrv < 45) {
+                        baseHarmony -= 8;
+                        penalty += 4;
+                    }
+                }
+
+                const calculatedJ = Math.max(0, Math.min(100, (baseHarmony * 1.0) - (penalty * 0.8) - (crisis * 0.5)));
+
+                setHarmonyTerm(Math.round(baseHarmony * 10) / 10);
+                setPenaltyTerm(Math.round(penalty * 10) / 10);
+                setCrisisTerm(Math.round(crisis * 10) / 10);
+                setJScore(Math.round(calculatedJ * 10) / 10);
+                setStage(currentStageText);
+
+            }, [mode, isMeasuring, bpm, hrv]);
+
+            // カメラPPGの模擬計測ループ
             useEffect(() => {
                 let interval;
                 if (isMeasuring) {
                     interval = setInterval(() => {
-                        setBpm(prev => Math.floor(68 + Math.random() * 10));
-                        setHrv(prev => Math.floor(52 + Math.random() * 15));
-                    }, 1200);
+                        setBpm(prev => Math.floor(70 + Math.random() * 22));
+                        setHrv(prev => Math.floor(40 + Math.random() * 25));
+                        setTypingStability(prev => Math.max(70, Math.min(99, prev + (Math.random() * 4 - 2))));
+                    }, 1500);
                 }
                 return () => clearInterval(interval);
             }, [isMeasuring]);
@@ -69,7 +106,7 @@
             return (
                 <div className="min-h-screen flex flex-col">
                     {/* Header */}
-                    <header className="border-b border-gray-800 bg-[#0d1322]/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+                    <header className="border-b border-gray-800 bg-[#0d1322]/85 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
                         <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center font-bold text-black text-lg">Ω</div>
                             <span className="font-bold text-xl tracking-wider text-white">OpenLBOF</span>
@@ -88,29 +125,29 @@
                     </header>
 
                     {/* Hero Section */}
-                    <section className="px-6 py-12 md:py-16 max-w-6xl mx-auto text-center">
-                        <div className="inline-block mb-4 px-4 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-800/60 text-indigo-300 text-xs font-semibold tracking-wide uppercase">
+                    <section className="px-6 py-10 md:py-14 max-w-6xl mx-auto text-center">
+                        <div className="inline-block mb-3 px-4 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-800/60 text-indigo-300 text-xs font-semibold tracking-wide uppercase">
                             Open Bio-Commons Council (OBC) Governing
                         </div>
                         <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
                             人間の脆弱性を包摂し、<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-400 to-purple-400">尊厳と自律性を守る</span>安全インフラ
                         </h1>
-                        <p className="text-2xl md:text-3xl text-gray-200 max-w-4xl mx-auto mb-6 leading-relaxed font-normal">
-                            Open Bio-Commons Council は、人間のバイオリズムの変化や突発的な危機をAIと共に「愛（調和と包摂）」の数理モデルで支える、完全オープンソースのパブリック・コモンズです。
+                        <p className="text-2xl md:text-3xl text-gray-200 max-w-4xl mx-auto mb-4 leading-relaxed font-normal">
+                            Open Bio-Commons Council は, 人間のバイオリズムの変化や突発的な危機をAIと共に「愛（調和と包摂）」の数理モデルで支える, 完全オープンソースのパブリック・コモンズです。
                         </p>
                     </section>
 
-                    {/* メメインコンテンツ切替 */}
+                    {/* メインコンテンツ切替 */}
                     <main className="flex-grow max-w-6xl mx-auto w-full px-6 pb-16">
                         
                         {/* 1. シミュレーター タブ */}
                         {activeTab === 'simulator' && (
-                            <section className="w-full">
+                            <section className="w-full space-y-6">
                                 <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl">
                                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-gray-800">
                                         <div>
-                                            <h2 className="text-2xl font-bold text-white mb-1">Live Evaluation Engine プレビュー</h2>
-                                            <p className="text-sm text-gray-400">リアルタイム目的関数スコア J(t) と介入ステージの制御</p>
+                                            <h2 className="text-2xl font-bold text-white mb-1">Live Evaluation Engine & センサー連動</h2>
+                                            <p className="text-sm text-gray-400">バイオセンサー入力と目的関数 J(t) = α·H - β·P - γ·C のリアルタイム数理演算</p>
                                         </div>
                                         <div className="mt-4 md:mt-0 flex space-x-2">
                                             <button onClick={() => setMode('normal')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${mode === 'normal' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400'}`}>定常状態</button>
@@ -119,9 +156,10 @@
                                         </div>
                                     </div>
 
+                                    {/* ライブスコア & ステージ表示 */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                                         <div className="bg-[#0b101b] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
-                                            <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">目的関数スコア</span>
+                                            <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">目的関数スコア J(t)</span>
                                             <div className="text-4xl font-mono font-bold text-cyan-400 my-4">
                                                 {jScore.toFixed(1)} <span className="text-sm text-gray-500">/ 100</span>
                                             </div>
@@ -131,33 +169,47 @@
                                         </div>
 
                                         <div className="bg-[#0b101b] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
-                                            <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">現在のフェイルセーフステージ</span>
-                                            <div className="text-lg font-bold text-white my-4 font-mono">{stage}</div>
+                                            <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">フェイルセーフステージ</span>
+                                            <div className="text-base font-bold text-white my-4 font-mono">{stage}</div>
                                             <span className="text-xs text-gray-500">Local Secure Enclave 処理</span>
                                         </div>
 
                                         <div className="bg-[#0b101b] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
-                                            <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">ペナルティ・危機管理設定</span>
-                                            <div className="my-4 space-y-2">
-                                                <div className="text-sm text-white">
-                                                    過剰介入ペナルティ: 
-                                                    {mode === 'crisis' ? (
-                                                        <span className="font-bold ml-1 text-gray-400">無効</span>
-                                                    ) : (
-                                                        <span className="font-bold ml-1 text-green-400">有効</span>
-                                                    )}
+                                            <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">数理モデル各項の内訳</span>
+                                            <div className="my-3 space-y-1 text-xs font-mono">
+                                                <div className="flex justify-between text-gray-300">
+                                                    <span>α·調和項 H:</span>
+                                                    <span className="text-cyan-400">+{harmonyTerm}</span>
                                                 </div>
-                                                <div className="text-sm text-white">
-                                                    突発的危機: 
-                                                    {mode === 'crisis' ? (
-                                                        <span className="font-bold ml-1 text-rose-400">有効 (Crisis)</span>
-                                                    ) : (
-                                                        <span className="font-bold ml-1 text-gray-400">無効</span>
-                                                    )}
+                                                <div className="flex justify-between text-gray-300">
+                                                    <span>β·過剰介入ペナルティ P:</span>
+                                                    <span className="text-amber-400">-{penaltyTerm}</span>
+                                                </div>
+                                                <div className="flex justify-between text-gray-300">
+                                                    <span>γ·危機管理 C:</span>
+                                                    <span className="text-rose-400">-{crisisTerm}</span>
                                                 </div>
                                             </div>
-                                            <span className="text-xs text-gray-500">Local Secure Enclave 処理</span>
+                                            <span className="text-xs text-gray-500">動的ウェイトバランス適用中</span>
                                         </div>
+                                    </div>
+
+                                    {/* 現在のセンサー入力ステータスバナー */}
+                                    <div className="bg-[#070a12] border border-gray-800 rounded-xl p-5 flex flex-col md:flex-row items-center justify-between">
+                                        <div className="flex items-center space-x-4 mb-4 md:mb-0">
+                                            <div className={`w-3 h-3 rounded-full ${isMeasuring ? 'bg-cyan-400 animate-ping' : 'bg-gray-600'}`}></div>
+                                            <div>
+                                                <div className="text-sm font-bold text-white">接続中のバイオセンサーフィード</div>
+                                                <div className="text-xs text-gray-400 font-mono mt-0.5">
+                                                    PPG心拍: {isMeasuring ? `${bpm} BPM` : '待機中'} | HRV: {isMeasuring ? `${hrv} ms` : '---'} | タイピング安定度: {typingStability.toFixed(1)}%
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => setActiveTab('biosensor')}
+                                            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-cyan-400 rounded-lg text-xs font-bold border border-cyan-900 transition">
+                                            バイオセンサーエンジンで計測を管理 →
+                                        </button>
                                     </div>
                                 </div>
                             </section>
@@ -173,41 +225,38 @@
                                         </div>
                                         <h2 className="text-3xl font-bold text-white mb-2">完全オープン＆汎用バイオセンサーエンジン</h2>
                                         <p className="text-gray-400 text-base leading-relaxed">
-                                            高価な医療用専用機器に依存せず、地球上の誰もが持つスマートフォンや数百円〜数千円のマイコン（ESP32 / Pico）を利用して、生体脈波・行動リズム・自律神経信号をローカル環境で安全に計測します。
+                                            スマートフォンのカメラ（PPG）や行動ダイナミクスから得られる生体データが、リアルタイムに目的関数 J(t) の計算に直結しています。「カメラ計測をテスト」を有効にすると、ライブスコアへの変動を確認できます。
                                         </p>
                                     </div>
 
-                                    {/* 4つのマルチモーダル入力モジュール */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                        
                                         {/* A. スマホカメラ PPG 計測 */}
                                         <div className="bg-[#0b101b] border border-gray-800 rounded-xl p-6 flex flex-col justify-between">
                                             <div>
                                                 <div className="flex items-center justify-between mb-4">
                                                     <h3 className="text-lg font-bold text-cyan-400 flex items-center">
-                                                        <span className="w-3 h-3 rounded-full bg-cyan-500 mr-2 animate-ping"></span>
+                                                        <span className={`w-3 h-3 rounded-full mr-2 ${isMeasuring ? 'bg-cyan-500 animate-ping' : 'bg-gray-600'}`}></span>
                                                         スマホカメラ PPG（光電容積脈波）
                                                     </h3>
-                                                    <span className="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded border border-gray-700">フラッシュ+光学検出</span>
+                                                    <span className="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded border border-gray-700">J(t)直結連動</span>
                                                 </div>
                                                 <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-                                                    カメラレンズに指先を置き、背面LEDフラッシュを点灯。血流の光学透過変化から即座に脈波パターンを描画し、心拍数（BPM）および自律神経ストレス指数（HRV）をブラウザ内で直接分析します。
+                                                    カメラレンズに指先を置き、背面LEDフラッシュを点灯。血流の光学透過変化から心拍数（BPM）および自律神経ストレス指数（HRV）を算出し、調和項 H(t) にフィードバックします。
                                                 </p>
                                                 
-                                                {/* リアルタイム波形デモボックス */}
                                                 <div className="bg-[#070a12] border border-gray-800 rounded-lg p-4 mb-4">
                                                     <div className="flex justify-between items-center mb-2 font-mono text-xs">
                                                         <span className="text-gray-400">LIVE PULSE WAVE</span>
-                                                        <span className="text-cyan-400">{isMeasuring ? '計測中...' : '待機中'}</span>
+                                                        <span className={isMeasuring ? 'text-cyan-400 font-bold' : 'text-gray-500'}>{isMeasuring ? 'LIVE STREAMING' : 'STANDBY'}</span>
                                                     </div>
-                                                    <div className="h-16 flex items-center justify-center border-b border-gray-800/60 mb-3">
+                                                    <div className="h-14 flex items-center justify-center border-b border-gray-800/60 mb-3">
                                                         {isMeasuring ? (
                                                             <div className="w-full text-center text-cyan-400 font-mono tracking-widest text-sm animate-pulse-slow">
                                                                 /\_/\__/\_/\_ヘ/\_/\_
                                                             </div>
                                                         ) : (
                                                             <div className="w-full text-center text-gray-600 font-mono text-xs">
-                                                                「計測開始」を押してカメラPPGシミュレーションを開始
+                                                                下のボタンを押してシミュレーションを開始
                                                             </div>
                                                         )}
                                                     </div>
@@ -230,82 +279,38 @@
                                             </button>
                                         </div>
 
-                                        {/* B. ESP32 / Raspberry Pi Pico DIY モジュール */}
+                                        {/* B. 行動ダイナミクス */}
                                         <div className="bg-[#0b101b] border border-gray-800 rounded-xl p-6 flex flex-col justify-between">
                                             <div>
                                                 <div className="flex items-center justify-between mb-4">
-                                                    <h3 className="text-lg font-bold text-indigo-400">ESP32 / Pico DIY モジュール</h3>
-                                                    <span className="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded border border-gray-700">BLE / USB</span>
-                                                </div>
-                                                <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-                                                    数百円〜数千円で手に入るオープンマイコン（ESP32, Raspberry Pi Pico）と汎用PPG（光電脈波）センサーモジュールを接続。標準的なBluetooth Low Energyプロトコル経由で、Web APIとリアルタイム連携します。
-                                                </p>
-                                                <div className="space-y-2 text-xs font-mono bg-[#070a12] p-3 rounded-lg border border-gray-800 mb-4">
-                                                    <div className="text-gray-400">ハードウェア要件:</div>
-                                                    <div className="text-indigo-300">• ESP32-WROOM-32 / Pico W</div>
-                                                    <div className="text-indigo-300">• MAX30102 / 光電脈波モジュール</div>
-                                                    <div className="text-gray-500">ステータス: BLEアドバタイズ対応</div>
-                                                </div>
-                                            </div>
-                                            <div className="text-xs text-gray-500 bg-gray-900/60 border border-gray-800 p-2.5 rounded text-center">
-                                                完全オープン回路図 & C++ファームウェア準備完了
-                                            </div>
-                                        </div>
-
-                                        {/* C. キーボード＆マウス（タイピング・ダイナミクス） */}
-                                        <div className="bg-[#0b101b] border border-gray-800 rounded-xl p-6 flex flex-col justify-between">
-                                            <div>
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h3 className="text-lg font-bold text-purple-400">行動ダイナミクス (入力行動)</h3>
+                                                    <h3 className="text-lg font-bold text-purple-400">行動ダイナミクス (タイピング)</h3>
                                                     <span className="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded border border-gray-700">無意識・負担ゼロ</span>
                                                 </div>
                                                 <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-                                                    キー入力のリズム・バックスペース修正率・マウス軌跡のジッター（細かな振れ）を意識させずにバックグラウンド解析。認知の過負荷やストレスによる疲労の兆候を検出します。
+                                                    キー入力のリズムやバックスペース修正率をバックグラウンド解析。認知負荷の変動を検出し、過剰介入ペナルティ項 P の重みを動的に調整します。
                                                 </p>
-                                                <div className="bg-[#070a12] p-3 rounded-lg border border-gray-800 text-xs space-y-1.5 font-mono">
+                                                <div className="bg-[#070a12] p-3 rounded-lg border border-gray-800 text-xs space-y-2 font-mono">
                                                     <div className="flex justify-between text-gray-400">
                                                         <span>打鍵リズム安定度:</span>
-                                                        <span className="text-purple-300">94.2% (良好)</span>
+                                                        <span className="text-purple-300">{typingStability.toFixed(1)}%</span>
                                                     </div>
                                                     <div className="flex justify-between text-gray-400">
-                                                        <span>認知負荷推定:</span>
-                                                        <span className="text-green-400">LOW</span>
+                                                        <span>認知負荷インデックス:</span>
+                                                        <span className="text-green-400">{typingStability > 90 ? 'LOW (安定)' : 'MODERATE (注意)'}</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        {/* D. 音声マイクロ特徴量 */}
-                                        <div className="bg-[#0b101b] border border-gray-800 rounded-xl p-6 flex flex-col justify-between">
-                                            <div>
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h3 className="text-lg font-bold text-amber-400">音声マイクロ特徴量</h3>
-                                                    <span className="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded border border-gray-700">ローカルマイク解析</span>
-                                                </div>
-                                                <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-                                                    発話の意味（言葉）ではなく、声の揺らぎ（ジッター・シマー）、トーンの高さ、発話テンポをローカルで即座に音響解析。エネルギーの枯渇やメンタルヘルスの初期シグナルを捕獲します。
-                                                </p>
-                                                <div className="bg-[#070a12] p-3 rounded-lg border border-gray-800 text-xs space-y-1.5 font-mono">
-                                                    <div className="flex justify-between text-gray-400">
-                                                        <span>発話ピッチ揺らぎ:</span>
-                                                        <span className="text-amber-300">Normal Range</span>
-                                                    </div>
-                                                    <div className="flex justify-between text-gray-400">
-                                                        <span>感情エネルギー:</span>
-                                                        <span className="text-amber-400">78 / 100</span>
-                                                    </div>
-                                                </div>
+                                            <div className="text-xs text-gray-500 bg-gray-900/60 border border-gray-800 p-2.5 rounded text-center">
+                                                ローカル Secure Enclave で常時バックグラウンド処理
                                             </div>
                                         </div>
-
                                     </div>
 
-                                    {/* プライバシー保護の注記 */}
                                     <div className="bg-cyan-950/40 border border-cyan-800/60 rounded-xl p-4 text-xs text-cyan-200 flex items-start space-x-3">
                                         <span className="text-lg">🔒</span>
                                         <div>
-                                            <span className="font-bold block mb-1">完全ローカル処理・プライバシー保護の原則</span>
-                                            カメラ映像、マイク音声、キー打鍵データなどの生データは外部サーバーに一切送信されません。すべてユーザーの端末内（ブラウザ / Secure Enclave）だけで目的関数スコア J(t) へと変換され、生データはメモリ上で即時破棄されます。
+                                            <span className="font-bold block mb-1">完全ローカル・プライバシー保護の原則</span>
+                                            すべての生体・行動データは外部サーバーに送信されず、端末内（ブラウザ）で即座に J(t) スコアへと変換され、生データはメモリ上で即時破棄されます。
                                         </div>
                                     </div>
                                 </div>
@@ -354,5 +359,7 @@
 
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
+</body>
+</html>
 </body>
 </html>
