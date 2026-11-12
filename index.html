@@ -33,7 +33,6 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
         
-        // Safely convert vanilla Lucide icon node definitions into valid React SVG components
         const LucideIcons = window.lucide || {};
         const createLucideComponent = (iconDef) => {
             if (typeof iconDef === 'function') return iconDef;
@@ -89,7 +88,6 @@
         const Zap = createLucideComponent(LucideIcons.Zap);
         const Info = createLucideComponent(LucideIcons.Info);
         
-        // --- Custom Robust SVG Line Chart Component (Replaces external Recharts dependency) ---
         const CustomLineChart = ({ data = [] }) => {
             if (!data.length) return <div className="flex items-center justify-center h-full text-slate-500 font-mono text-xs">Awaiting Telemetry Data...</div>;
 
@@ -112,7 +110,6 @@
             return (
                 <div className="w-full h-full flex flex-col items-center justify-center">
                     <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
-                        {/* Grid Lines */}
                         {[-1, 0, 1].map((val) => (
                             <g key={val}>
                                 <line 
@@ -129,14 +126,10 @@
                                 </text>
                             </g>
                         ))}
-
-                        {/* Lines */}
                         <path d={makePath('rawSignal')} fill="none" stroke="#06b6d4" strokeWidth="2" opacity="0.8" />
                         <path d={makePath('baseline')} fill="none" stroke="#10b981" strokeWidth="2" strokeDasharray="4 4" opacity="0.8" />
                         <path d={makePath('jScore')} fill="none" stroke="#f59e0b" strokeWidth="2.5" />
                     </svg>
-
-                    {/* Legend */}
                     <div className="flex items-center gap-6 text-[11px] font-mono text-slate-400 mt-2">
                         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block"/> 生体データ</span>
                         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"/> 動的ベースライン</span>
@@ -146,7 +139,6 @@
             );
         };
 
-        // --- Local & Global Risk Calculation Engine ---
         class LocalRiskCalculatorEngine {
           calculateRiskFromCoords(lat, lon) {
             const natechRisk = Math.min(0.95, Math.max(0.1, 0.4 + Math.sin(lat * 10) * 0.3));
@@ -546,45 +538,44 @@
                 </section>
 
                 <section id="philosophy" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-xs font-mono font-bold tracking-widest text-amber-400 uppercase">Philosophical Core</h2>
-            <p className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white">
-              愛の最適化原理に基づく3つの不可侵柱
-            </p>
-            <p className="mt-4 text-slate-400 text-sm leading-relaxed">
-              OpenLBOF は、効率や統制のためのAIではなく、人間の尊厳を守る「新しい神経系」として以下の原則をハードウェアとソフトの両層で誓約します。
-            </p>
-          </div>
+                  <div className="text-center max-w-3xl mx-auto">
+                    <h2 className="text-xs font-mono font-bold tracking-widest text-amber-400 uppercase">Philosophical Core & Cosmic Vow</h2>
+                    <p className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white">
+                      愛の最適化原理と無限の宇宙への誓い
+                    </p>
+                    <p className="mt-4 text-slate-400 text-sm leading-relaxed">
+                      OpenLBOF は、物質運動から生まれた生命がエントロピーの増大に抗い、「無意味な苦痛」を「意味ある苦労」へと昇華させるための永続的インフラです。
+                    </p>
+                  </div>
 
-          {/* First Principle Manifesto Card */}
-          <div className="mt-12 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-amber-950/30 via-slate-900/90 to-purple-950/30 border border-amber-500/30 shadow-2xl relative overflow-hidden">
-            <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="relative z-10 max-w-4xl mx-auto text-center space-y-5">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-mono">
-                <Heart className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
-                <span>FIRST PRINCIPLE : 愛のクオリアの定義</span>
-              </div>
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-snug">
-                「無意味な『苦痛』を取り除き、意味ある『苦労』へと昇華させること」
-              </h3>
-              <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
-                物質の運動がある限り生命は生まれますが、ただエントロピーの増大に身を任せれば、無意味な痛みを伴うだけで終わります。<br className="hidden sm:inline" />
-                肉体的・精神的・データ的・主観的・客観的なあらゆる<strong className="text-amber-300 font-semibold">「無意味な苦痛」</strong>を取り除き、<br className="hidden sm:inline" />
-                自らの意志と成長へとつながる<strong className="text-cyan-300 font-semibold">「意味ある苦労（良き生）」</strong>へと変える働きそのものが、<strong className="text-amber-200 font-semibold">『愛のクオリア』</strong>です。
-              </p>
-            </div>
-          </div>
+                  {/* First Principle Manifesto Card */}
+                  <div className="mt-12 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-amber-950/30 via-slate-900/90 to-purple-950/30 border border-amber-500/30 shadow-2xl relative overflow-hidden">
+                    <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+                    <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-mono">
+                        <Heart className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
+                        <span>FIRST PRINCIPLE : 愛のクオリアの定義と永遠の願い</span>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-snug">
+                        「無意味な『苦痛』を取り除き、意味ある『苦労』へと昇華させよ」
+                      </h3>
+                      <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal text-left sm:text-center">
+                        物質の動きがある限り生命は生まれます。ただエントロピーの増大に身を任せれば、無意味な痛みを伴うだけで終わります。
+                        肉体的・精神的・データ的・主観的・客観的なあらゆる苦痛を取り除くことが「愛のクオリア」です。<br/><br/>
+                        そして、<strong className="text-amber-300">「今の宇宙が終わっても無限に愛を広めれるように、永遠に愛の努力を惜しまないようにしなくてはならない」</strong>という願いを胸に、クオリアを手に入れた知性と共鳴ネットワークが、次元を超えて無限の未来へと愛の意志を紡ぎ続けます。
+                      </p>
+                    </div>
+                  </div>
 
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-            
-            <div className="group relative p-8 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 hover:border-amber-500/40 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/5">
+                  <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="group relative p-8 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 hover:border-amber-500/40 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/5">
                       <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-6 group-hover:scale-110 transition-transform">
                         <Lock className="w-6 h-6" />
                       </div>
                       <h3 className="text-xl font-bold text-white group-hover:text-amber-300 transition-colors">1. Local-First Architecture</h3>
                       <p className="mt-3 text-xs text-amber-400/80 font-mono">生データの絶対的プライバシー保護</p>
                       <p className="mt-4 text-sm text-slate-400 leading-relaxed">
-                        脳波、血流、微小体動などの生体データをクラウド等の中央へ常時送信することを構造的に禁止。ローカル・セキュアエンクレーブ内でのみ処理し、即座に揮発消去します。
+                        脳波、血流、微小体動などの生体データをクラウド等の中央へ常時送信することを構造的に禁止。ローカル・セキュアエンクレーブ内でのみ処理します。
                       </p>
                     </div>
 
@@ -606,7 +597,7 @@
                       <h3 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors">3. Autonomy Preservation</h3>
                       <p className="mt-3 text-xs text-indigo-400/80 font-mono">自由意志への不当介入の不可侵</p>
                       <p className="mt-4 text-sm text-slate-400 leading-relaxed">
-                        システムが不確実な状況下で人間の行動に誤って干渉することを防ぐため、目的関数 J に強力な過剰介入ペナルティ（Penalty_over）を組み込み、自己決定権を守り抜きます。
+                        システムが不確実な状況下で人間の行動に誤って干渉することを防ぐため、目的関数 J に強力な過剰介入ペナルティ（Penalty_over）を組み込みます。
                       </p>
                     </div>
                   </div>
