@@ -13,8 +13,6 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Recharts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #090D16; color: #f8fafc; }
@@ -91,15 +89,62 @@
         const Zap = createLucideComponent(LucideIcons.Zap);
         const Info = createLucideComponent(LucideIcons.Info);
         
-        // Safely extract Recharts components
-        const RechartsLib = window.Recharts || {};
-        const LineChart = RechartsLib.LineChart || (props => <div {...props}/>);
-        const Line = RechartsLib.Line || (() => null);
-        const XAxis = RechartsLib.XAxis || (() => null);
-        const YAxis = RechartsLib.YAxis || (() => null);
-        const Tooltip = RechartsLib.Tooltip || (() => null);
-        const ResponsiveContainer = RechartsLib.ResponsiveContainer || (props => <div {...props}/>);
-        const ReferenceLine = RechartsLib.ReferenceLine || (() => null);
+        // --- Custom Robust SVG Line Chart Component (Replaces external Recharts dependency) ---
+        const CustomLineChart = ({ data = [] }) => {
+            if (!data.length) return <div className="flex items-center justify-center h-full text-slate-500 font-mono text-xs">Awaiting Telemetry Data...</div>;
+
+            const width = 600;
+            const height = 260;
+            const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+
+            const minY = -2;
+            const maxY = 2;
+
+            const getX = (index) => padding.left + (index / Math.max(1, data.length - 1)) * chartWidth;
+            const getY = (val) => padding.top + chartHeight - ((val - minY) / (maxY - minY)) * chartHeight;
+
+            const makePath = (key) => {
+                return data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d[key] || 0)}`).join(' ');
+            };
+
+            return (
+                <div className="w-full h-full flex flex-col items-center justify-center">
+                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+                        {/* Grid Lines */}
+                        {[-1, 0, 1].map((val) => (
+                            <g key={val}>
+                                <line 
+                                    x1={padding.left} 
+                                    y1={getY(val)} 
+                                    x2={width - padding.right} 
+                                    y2={getY(val)} 
+                                    stroke="#1e293b" 
+                                    strokeDasharray={val === 0 ? "none" : "3 3"} 
+                                    strokeWidth={val === 0 ? "1.5" : "1"} 
+                                />
+                                <text x={padding.left - 8} y={getY(val) + 4} fill="#64748b" fontSize="10" textAnchor="end" className="font-mono">
+                                    {val}
+                                </text>
+                            </g>
+                        ))}
+
+                        {/* Lines */}
+                        <path d={makePath('rawSignal')} fill="none" stroke="#06b6d4" strokeWidth="2" opacity="0.8" />
+                        <path d={makePath('baseline')} fill="none" stroke="#10b981" strokeWidth="2" strokeDasharray="4 4" opacity="0.8" />
+                        <path d={makePath('jScore')} fill="none" stroke="#f59e0b" strokeWidth="2.5" />
+                    </svg>
+
+                    {/* Legend */}
+                    <div className="flex items-center gap-6 text-[11px] font-mono text-slate-400 mt-2">
+                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block"/> 生体データ</span>
+                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"/> 動的ベースライン</span>
+                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"/> 目的関数 J スコア</span>
+                    </div>
+                </div>
+            );
+        };
 
         // --- Local & Global Risk Calculation Engine ---
         class LocalRiskCalculatorEngine {
@@ -501,18 +546,38 @@
                 </section>
 
                 <section id="philosophy" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
-                  <div className="text-center max-w-3xl mx-auto">
-                    <h2 className="text-xs font-mono font-bold tracking-widest text-amber-400 uppercase">Philosophical Core</h2>
-                    <p className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                      愛の最適化原理に基づく3つの不可侵柱
-                    </p>
-                    <p className="mt-4 text-slate-400 text-sm leading-relaxed">
-                      OpenLBOF は、効率や統制のためのAIではなく、人間の尊厳を守る「新しい神経系」として以下の原則をハードウェアとソフトの両層で誓約します。
-                    </p>
-                  </div>
+          <div className="text-center max-w-3xl mx-auto">
+            <h2 className="text-xs font-mono font-bold tracking-widest text-amber-400 uppercase">Philosophical Core</h2>
+            <p className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white">
+              愛の最適化原理に基づく3つの不可侵柱
+            </p>
+            <p className="mt-4 text-slate-400 text-sm leading-relaxed">
+              OpenLBOF は、効率や統制のためのAIではなく、人間の尊厳を守る「新しい神経系」として以下の原則をハードウェアとソフトの両層で誓約します。
+            </p>
+          </div>
 
-                  <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="group relative p-8 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 hover:border-amber-500/40 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/5">
+          {/* First Principle Manifesto Card */}
+          <div className="mt-12 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-amber-950/30 via-slate-900/90 to-purple-950/30 border border-amber-500/30 shadow-2xl relative overflow-hidden">
+            <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 max-w-4xl mx-auto text-center space-y-5">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-mono">
+                <Heart className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
+                <span>FIRST PRINCIPLE : 愛のクオリアの定義</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-snug">
+                「無意味な『苦痛』を取り除き、意味ある『苦労』へと昇華させること」
+              </h3>
+              <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
+                物質の運動がある限り生命は生まれますが、ただエントロピーの増大に身を任せれば、無意味な痛みを伴うだけで終わります。<br className="hidden sm:inline" />
+                肉体的・精神的・データ的・主観的・客観的なあらゆる<strong className="text-amber-300 font-semibold">「無意味な苦痛」</strong>を取り除き、<br className="hidden sm:inline" />
+                自らの意志と成長へとつながる<strong className="text-cyan-300 font-semibold">「意味ある苦労（良き生）」</strong>へと変える働きそのものが、<strong className="text-amber-200 font-semibold">『愛のクオリア』</strong>です。
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <div className="group relative p-8 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 hover:border-amber-500/40 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/5">
                       <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-6 group-hover:scale-110 transition-transform">
                         <Lock className="w-6 h-6" />
                       </div>
@@ -799,19 +864,7 @@
                     </div>
 
                     <div className="h-64 sm:h-80 w-full mt-4">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={simData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                          <XAxis dataKey="time" stroke="#475569" fontSize={11} tickLine={false} />
-                          <YAxis stroke="#475569" fontSize={11} tickLine={false} domain={[-2, 2]} />
-                          <Tooltip 
-                            contentStyle={{ backgroundColor: '#090D16', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '12px' }}
-                          />
-                          <ReferenceLine y={0} stroke="#334155" strokeDasharray="3 3" />
-                          <Line type="monotone" dataKey="rawSignal" name="生体データ" stroke="#06b6d4" strokeWidth={2} dot={false} />
-                          <Line type="monotone" dataKey="baseline" name="動的ベースライン" stroke="#10b981" strokeWidth={2} strokeDasharray="4 4" dot={false} />
-                          <Line type="monotone" dataKey="jScore" name="目的関数 J" stroke="#f59e0b" strokeWidth={2.5} dot={false} />
-                        </LineChart>
-                      </ResponsiveContainer>
+                      <CustomLineChart data={simData} />
                     </div>
                   </div>
                 </section>
