@@ -140,31 +140,119 @@
         };
 
         class LocalRiskCalculatorEngine {
-          calculateRiskFromCoords(lat, lon) {
-            const natechRisk = Math.min(0.95, Math.max(0.1, 0.4 + Math.sin(lat * 10) * 0.3));
-            const floodRisk = Math.min(0.9, Math.max(0.15, 0.5 + Math.cos(lon * 10) * 0.3));
-            const outbreakRisk = Math.min(0.85, Math.max(0.2, 0.3 + (lat % 1) * 0.5));
+          constructor() {
+            this.regionDatabase = {
+              tokyo: {
+                pref: '東京都',
+                areas: {
+                  koto_bay: { name: '江東区・臨海湾岸エリア（ゼロメートル地帯）', lat: 35.6495, lon: 139.7914, baseRain: 45, shelterSpace: 1.8, industrialDensity: 0.85, elevation: 1.2 },
+                  shinjuku: { name: '新宿区・都心高密エリア', lat: 35.6938, lon: 139.7034, baseRain: 40, shelterSpace: 1.5, industrialDensity: 0.25, elevation: 32.0 },
+                  ota_keihin: { name: '大田区・京浜工業地帯沿岸', lat: 35.5613, lon: 139.7160, baseRain: 50, shelterSpace: 1.9, industrialDensity: 0.92, elevation: 2.5 }
+                }
+              },
+              okayama: {
+                pref: '岡山県',
+                areas: {
+                  setouchi: { name: '瀬戸内市・牛窓〜邑久沿岸エリア', lat: 34.6517, lon: 134.0933, baseRain: 35, shelterSpace: 3.4, industrialDensity: 0.35, elevation: 8.5 },
+                  kurashiki_mizushima: { name: '倉敷市・水島臨海コンビナート周辺', lat: 34.5125, lon: 133.7483, baseRain: 40, shelterSpace: 2.3, industrialDensity: 0.95, elevation: 3.0 },
+                  okayama_kita: { name: '岡山市北区・旭川下流域', lat: 34.6618, lon: 133.9344, baseRain: 38, shelterSpace: 2.6, industrialDensity: 0.40, elevation: 5.0 }
+                }
+              },
+              okinawa: {
+                pref: '沖縄県',
+                areas: {
+                  naha_port: { name: '那覇市・那覇港湾〜新都心エリア', lat: 26.2124, lon: 127.6809, baseRain: 65, shelterSpace: 2.0, industrialDensity: 0.55, elevation: 4.0 },
+                  ishigaki: { name: '石垣市・離島沿岸エリア', lat: 24.3407, lon: 124.1556, baseRain: 75, shelterSpace: 2.2, industrialDensity: 0.30, elevation: 6.0 },
+                  uru_industrial: { name: 'うるま市・中城湾港工業帯', lat: 26.3361, lon: 127.8556, baseRain: 70, shelterSpace: 2.1, industrialDensity: 0.80, elevation: 3.5 }
+                }
+              },
+              osaka: {
+                pref: '大阪府',
+                areas: {
+                  sakai_senboku: { name: '堺市・泉北臨海工業地帯', lat: 34.5733, lon: 135.4372, baseRain: 45, shelterSpace: 1.9, industrialDensity: 0.90, elevation: 2.8 },
+                  umeda_yodo: { name: '大阪市北区・淀川河口低地帯', lat: 34.7024, lon: 135.4959, baseRain: 42, shelterSpace: 1.6, industrialDensity: 0.45, elevation: 2.0 }
+                }
+              },
+              aichi: {
+                pref: '愛知県',
+                areas: {
+                  yokkaichi_nagoya: { name: '名古屋市港区・名古屋港臨海工業帯', lat: 35.0911, lon: 136.8814, baseRain: 48, shelterSpace: 2.1, industrialDensity: 0.91, elevation: 1.5 },
+                  toyota_inland: { name: '豊田市・矢作川中流域', lat: 35.0824, lon: 137.1562, baseRain: 45, shelterSpace: 3.1, industrialDensity: 0.65, elevation: 42.0 }
+                }
+              },
+              hokkaido: {
+                pref: '北海道',
+                areas: {
+                  tomakomai: { name: '苫小牧市・臨海工業基地', lat: 42.6343, lon: 141.6054, baseRain: 30, shelterSpace: 3.8, industrialDensity: 0.82, elevation: 5.0 },
+                  sapporo_kita: { name: '札幌市北区・石狩川水系', lat: 43.0908, lon: 141.3408, baseRain: 35, shelterSpace: 2.9, industrialDensity: 0.30, elevation: 14.0 }
+                }
+              },
+              fukuoka: {
+                pref: '福岡県',
+                areas: {
+                  kitakyushu: { name: '北九州市・洞海湾〜響灘臨海帯', lat: 33.8834, lon: 130.8751, baseRain: 52, shelterSpace: 2.4, industrialDensity: 0.88, elevation: 3.5 },
+                  hakata_bay: { name: '福岡市博多区・博多湾沿岸', lat: 33.5902, lon: 130.4017, baseRain: 50, shelterSpace: 2.0, industrialDensity: 0.40, elevation: 4.0 }
+                }
+              }
+            };
+          }
+
+          calculateDetailedRisk({ lat, lon, areaName, baseRain = 45, shelterSpace = 2.2, industrialDensity = 0.6, elevation = 5.0, forecastDays = 3 }) {
+            // 予測日数（1〜7日）に応じた気象累積と避難長期化ファクター
+            const precipProbability = Math.min(95, Math.round(baseRain + (forecastDays * 4.5) + Math.sin(lat * 5) * 8));
+            const expectedRainfallMm = Math.round((precipProbability / 100) * (35 + forecastDays * 22));
             
-            const compositeEntropy = (natechRisk * 0.4 + floodRisk * 0.35 + outbreakRisk * 0.25);
+            // 避難長期化による1人あたり実質有効面積の低下（二次避難所の広さ要因）
+            const effectiveShelterSqm = Math.max(1.1, parseFloat((shelterSpace - (forecastDays - 1) * 0.14).toFixed(2)));
+            const ventilationRate = Math.max(1.5, parseFloat((4.2 - (forecastDays * 0.25) - (3.5 - effectiveShelterSqm) * 0.4).toFixed(1)));
+            const hygieneFatigueIndex = Math.min(100, Math.round(15 + forecastDays * 11 + (3.0 - effectiveShelterSqm) * 12));
 
-            let primaryThreat = '低気圧・浸水警戒エリア';
-            let recommendedAction = '雨雲レーダーの推移を確認し、避難準備物品を点検してください';
+            // 1. 浸水・土砂リスク（降水確率 × 累積降水量 × 標高）
+            const elevationFactor = Math.max(0.3, 1.3 - (elevation / 25));
+            const floodRisk = Math.min(96, Math.max(12, Math.round((precipProbability * 0.55 + (expectedRainfallMm / 2.2) * 0.45) * elevationFactor)));
 
-            if (natechRisk > 0.6) {
-              primaryThreat = '可燃性金属粉末・高圧ガスプラント浸水二次災害 (Natech)';
-              recommendedAction = '緊急時には直ちに風上かつ標高20m以上の高台へ退避してください';
-            } else if (outbreakRisk > 0.6) {
-              primaryThreat = '地域避難所・密閉空間における二次感染拡大リスク';
-              recommendedAction = '分散避難の準備とゾーニング可能な二次避難施設の確認を行ってください';
+            // 2. Natechプラント爆発リスク（工業集積度 × 浸水リスク）
+            const natechRisk = Math.min(95, Math.max(8, Math.round(industrialDensity * 65 + (floodRisk * 0.35))));
+
+            // 3. 避難所二次感染症（パンデミック）リスク（二次避難所の狭さ × 滞在日数 × 換気不足）
+            const crowdingFactor = Math.max(0.4, (3.6 - effectiveShelterSqm) / 2.2);
+            const outbreakRisk = Math.min(94, Math.max(10, Math.round((crowdingFactor * 48) + (forecastDays * 5.2) + ((5.0 - ventilationRate) * 6))));
+
+            // 合成エントロピー (0.00 - 1.00)
+            const compositeEntropy = parseFloat(((natechRisk * 0.35 + floodRisk * 0.30 + outbreakRisk * 0.35) / 100).toFixed(2));
+
+            let primaryThreat = `今後${forecastDays}日間の累積降雨と避難環境変化による複合リスク`;
+            let recommendedAction = '自治体のハザードマップと二次避難所（ホテル・福祉避難所等）の空き状況を確認してください。';
+
+            if (outbreakRisk >= natechRisk && outbreakRisk >= 60) {
+              primaryThreat = `滞在${forecastDays}日目以降の過密化（1人あたり ${effectiveShelterSqm}㎡）による呼吸器・消化器感染症の集団蔓延（パンデミック）リスク`;
+              recommendedAction = `一次避難所の収容限界前に、個別空間が確保された二次避難施設（分散避難先）への早期移動と換気ゾーニングを推奨します。`;
+            } else if (natechRisk >= 65) {
+              primaryThreat = `降水確率${precipProbability}%（予想${expectedRainfallMm}mm）の浸水に伴う、臨海工業帯の金属粉末水反応・高圧ガス漏洩（Natech）リスク`;
+              recommendedAction = `浸水開始前に、風上かつ標高20m以上の指定高台エリアへ即時退避してください。`;
+            } else if (floodRisk >= 65) {
+              primaryThreat = `今後${forecastDays}日間の断続的な降雨（累積${expectedRainfallMm}mm）による低地帯の冠水・インフラ途絶リスク`;
+              recommendedAction = `早めの垂直避難または高台への事前移動を行い、停電・断水に備えてください。`;
             }
 
             return {
+              areaName: areaName || `GPS測位地点 (${lat.toFixed(3)}, ${lon.toFixed(3)})`,
               lat: lat.toFixed(4),
               lon: lon.toFixed(4),
-              compositeEntropy: parseFloat(compositeEntropy.toFixed(2)),
-              natechRisk: Math.round(natechRisk * 100),
-              floodRisk: Math.round(floodRisk * 100),
-              outbreakRisk: Math.round(outbreakRisk * 100),
+              forecastDays,
+              compositeEntropy,
+              natechRisk,
+              floodRisk,
+              outbreakRisk,
+              factors: {
+                precipProbability,
+                expectedRainfallMm,
+                effectiveShelterSqm,
+                ventilationRate,
+                hygieneFatigueIndex,
+                industrialDensityPct: Math.round(industrialDensity * 100),
+                elevation
+              },
               primaryThreat,
               recommendedAction,
               timestamp: new Date().toLocaleTimeString('ja-JP')
@@ -188,15 +276,20 @@
           const [userLocation, setUserLocation] = useState(null);
           const [isLocating, setIsLocating] = useState(false);
           const [locationError, setLocationError] = useState(null);
-          const [selectedCityPreset, setSelectedCityPreset] = useState('tokyo');
-          const [localRiskData, setLocalRiskData] = useState(() => riskCalculator.calculateRiskFromCoords(35.6762, 139.6503));
+          const [selectedPref, setSelectedPref] = useState('okayama');
+          const [selectedAreaKey, setSelectedAreaKey] = useState('setouchi');
+          const [forecastDays, setForecastDays] = useState(3);
+          const [localRiskData, setLocalRiskData] = useState(() => {
+            const initArea = riskCalculator.regionDatabase.okayama.areas.setouchi;
+            return riskCalculator.calculateDetailedRisk({ ...initArea, forecastDays: 3 });
+          });
 
           const handleDetectLocation = () => {
             setIsLocating(true);
             setLocationError(null);
 
             if (!navigator.geolocation) {
-              setLocationError('お使いのブラウザは位置情報サービスに対応していません。プリセット地域を選択してください。');
+              setLocationError('お使いのブラウザは位置情報サービスに対応していません。下の都道府県・詳細地域から選択してください。');
               setIsLocating(false);
               return;
             }
@@ -204,29 +297,53 @@
             navigator.geolocation.getCurrentPosition(
               (position) => {
                 const { latitude, longitude } = position.coords;
-                const calculated = riskCalculator.calculateRiskFromCoords(latitude, longitude);
+                const calculated = riskCalculator.calculateDetailedRisk({
+                  lat: latitude,
+                  lon: longitude,
+                  areaName: `現在地GPS測位エリア`,
+                  forecastDays
+                });
                 setUserLocation({ lat: latitude, lon: longitude });
                 setLocalRiskData(calculated);
                 setIsLocating(false);
               },
               (error) => {
-                setLocationError('位置情報の取得に失敗しました。プリセット地域から選択してください。');
+                setLocationError('位置情報の取得が許可されていないかタイムアウトしました。下の都道府県・詳細地域から選択してください。');
                 setIsLocating(false);
               },
               { timeout: 8000, enableHighAccuracy: true }
             );
           };
 
-          const handleCitySelect = (cityKey) => {
-            setSelectedCityPreset(cityKey);
-            let coords = { lat: 35.6762, lon: 139.6503 };
-            if (cityKey === 'osaka') coords = { lat: 34.6937, lon: 135.5023 };
-            if (cityKey === 'nagoya') coords = { lat: 35.1814, lon: 136.9064 };
-            if (cityKey === 'fukuoka') coords = { lat: 33.5904, lon: 130.4017 };
-            if (cityKey === 'sendai') coords = { lat: 38.2682, lon: 140.8694 };
+          const handlePrefChange = (prefKey) => {
+            setUserLocation(null);
+            setSelectedPref(prefKey);
+            const firstAreaKey = Object.keys(riskCalculator.regionDatabase[prefKey].areas)[0];
+            setSelectedAreaKey(firstAreaKey);
+            const areaObj = riskCalculator.regionDatabase[prefKey].areas[firstAreaKey];
+            setLocalRiskData(riskCalculator.calculateDetailedRisk({ ...areaObj, forecastDays }));
+          };
 
-            const calculated = riskCalculator.calculateRiskFromCoords(coords.lat, coords.lon);
-            setLocalRiskData(calculated);
+          const handleAreaChange = (areaKey) => {
+            setUserLocation(null);
+            setSelectedAreaKey(areaKey);
+            const areaObj = riskCalculator.regionDatabase[selectedPref].areas[areaKey];
+            setLocalRiskData(riskCalculator.calculateDetailedRisk({ ...areaObj, forecastDays }));
+          };
+
+          const handleForecastDaysChange = (days) => {
+            setForecastDays(days);
+            if (userLocation) {
+              setLocalRiskData(riskCalculator.calculateDetailedRisk({
+                lat: userLocation.lat,
+                lon: userLocation.lon,
+                areaName: `現在地GPS測位エリア`,
+                forecastDays: days
+              }));
+            } else {
+              const areaObj = riskCalculator.regionDatabase[selectedPref].areas[selectedAreaKey];
+              setLocalRiskData(riskCalculator.calculateDetailedRisk({ ...areaObj, forecastDays: days }));
+            }
           };
 
           useEffect(() => {
@@ -411,13 +528,13 @@
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-800">
                       <div className="space-y-1">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
-                          <Globe className="w-3.5 h-3.5 text-amber-400 animate-pulse" /> Live Telemetry Engine
+                          <Globe className="w-3.5 h-3.5 text-amber-400 animate-pulse" /> Multi-Day Causal Risk & Pandemic Telemetry
                         </div>
                         <h2 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
-                          現在地リアルタイム災害・複合リスク算定モジュール
+                          現在地・詳細地域 複合災害＆パンデミック確率算定モジュール
                         </h2>
                         <p className="text-xs sm:text-sm text-slate-400">
-                          GPS位置情報または選択地域から、周辺の大雨・浸水・プラント爆発（Natech）・避難所感染症リスクをオープンデータに基づき即時算出
+                          今後1〜7日間の降水確率・累積雨量、工業集積度、および2次避難所の1人あたり占有面積・換気率から、Natech災害と感染症蔓延確率の因果要因を即時算定します
                         </p>
                       </div>
 
@@ -440,35 +557,93 @@
                       </div>
                     )}
 
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-                        <span>プリセット主要都市から即座にシミュレート:</span>
-                        <span>Calculated at: {localRiskData.timestamp}</span>
+                    {/* Step 1 & 2: 都道府県・詳細地域 ＆ 予測日数スライダー */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-5 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                      
+                      {/* 都道府県＆詳細市区町村セレクタ (7 Cols) */}
+                      <div className="lg:col-span-7 space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+                            <span className="flex items-center gap-1.5 text-amber-300 font-semibold">
+                              <MapPin className="w-3.5 h-3.5" /> 1. 都道府県を選択:
+                            </span>
+                            <span>対象: {userLocation ? 'GPS現在地' : riskCalculator.regionDatabase[selectedPref].pref}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {Object.entries(riskCalculator.regionDatabase).map(([key, data]) => (
+                              <button
+                                key={key}
+                                onClick={() => handlePrefChange(key)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                                  selectedPref === key && !userLocation
+                                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md'
+                                    : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600'
+                                }`}
+                              >
+                                {data.pref}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="text-xs text-slate-400 font-mono">
+                            2. 詳細地域・地形エリアを選択:
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {Object.entries(riskCalculator.regionDatabase[selectedPref].areas).map(([aKey, aData]) => (
+                              <button
+                                key={aKey}
+                                onClick={() => handleAreaChange(aKey)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all text-left ${
+                                  selectedAreaKey === aKey && !userLocation
+                                    ? 'bg-cyan-500/20 text-cyan-200 border-cyan-500/60 shadow-inner'
+                                    : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200'
+                                }`}
+                              >
+                                {aData.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          { id: 'tokyo', label: '東京臨海・湾岸エリア' },
-                          { id: 'osaka', label: '大阪臨海工業帯' },
-                          { id: 'nagoya', label: '中京臨海プラント帯' },
-                          { id: 'fukuoka', label: '福岡北部沿岸' },
-                          { id: 'sendai', label: '仙台・太平洋沿岸' },
-                        ].map(city => (
-                          <button
-                            key={city.id}
-                            onClick={() => handleCitySelect(city.id)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                              selectedCityPreset === city.id && !userLocation
-                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-md'
-                                : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
-                            }`}
-                          >
-                            {city.label}
-                          </button>
-                        ))}
+
+                      {/* 予測タイムフレーム（今後何日間か）コントロール (5 Cols) */}
+                      <div className="lg:col-span-5 flex flex-col justify-between p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-purple-300 flex items-center gap-1.5">
+                            <Activity className="w-4 h-4 text-purple-400" />
+                            3. 予測対象期間（タイムホライズン）
+                          </span>
+                          <span className="px-2.5 py-1 rounded-md bg-purple-950 border border-purple-500/40 text-purple-200 font-mono text-xs font-bold">
+                            今後 {forecastDays} 日間
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          <input
+                            type="range"
+                            min="1"
+                            max="7"
+                            value={forecastDays}
+                            onChange={(e) => handleForecastDaysChange(Number(e.target.value))}
+                            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                          />
+                          <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                            <span>1日後 (急性期・豪雨)</span>
+                            <span>4日後 (避難長期化)</span>
+                            <span>7日後 (感染蔓延期)</span>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                          ※日数が経過するほど累積降水量が増加するとともに、避難所滞在の長期化による1人あたりスペース減少・換気低下で感染症確率が上昇します。
+                        </p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {/* Computed Risk Dashboard Cards (4 Main Metrics) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
                         <div className="text-xs text-slate-400 font-mono flex items-center justify-between">
                           <span>合成リスク指数 (E_pen)</span>
@@ -483,50 +658,114 @@
                             style={{ width: `${localRiskData.compositeEntropy * 100}%` }}
                           />
                         </div>
+                        <p className="text-[11px] text-slate-400">今後{localRiskData.forecastDays}日間の総合環境負荷</p>
                       </div>
 
                       <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
                         <div className="text-xs text-slate-400 font-mono flex items-center justify-between">
-                          <span>Natechプラント爆発リスク</span>
+                          <span>Natechプラント爆発確率</span>
                           <Flame className="w-4 h-4 text-red-400" />
                         </div>
-                        <div className="text-2xl font-bold font-mono text-slate-100">
+                        <div className="text-2xl font-bold font-mono text-red-300">
                           {localRiskData.natechRisk}%
                         </div>
-                        <p className="text-[11px] text-slate-400">浸水×可燃性金属粉末・プロパン配管</p>
+                        <p className="text-[11px] text-slate-400">浸水({localRiskData.floodRisk}%)×工業集積({localRiskData.factors.industrialDensityPct}%)</p>
                       </div>
 
                       <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
                         <div className="text-xs text-slate-400 font-mono flex items-center justify-between">
-                          <span>大雨・浸水流出危険度</span>
+                          <span>大雨・浸水発生確率</span>
                           <Radio className="w-4 h-4 text-cyan-400" />
                         </div>
-                        <div className="text-2xl font-bold font-mono text-slate-100">
+                        <div className="text-2xl font-bold font-mono text-cyan-300">
                           {localRiskData.floodRisk}%
                         </div>
-                        <p className="text-[11px] text-slate-400">冠水およびガスボンベ流出確率</p>
+                        <p className="text-[11px] text-slate-400">降水確率{localRiskData.factors.precipProbability}% / 累積{localRiskData.factors.expectedRainfallMm}mm</p>
                       </div>
 
-                      <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-                        <div className="text-xs text-slate-400 font-mono flex items-center justify-between">
-                          <span>避難所二次感染症リスク</span>
-                          <Activity className="w-4 h-4 text-purple-400" />
+                      <div className="p-5 rounded-xl bg-slate-950/80 border border-purple-500/40 space-y-2 shadow-lg shadow-purple-950/20">
+                        <div className="text-xs text-purple-300 font-mono flex items-center justify-between">
+                          <span>避難所パンデミック確率</span>
+                          <Users className="w-4 h-4 text-purple-400" />
                         </div>
-                        <div className="text-2xl font-bold font-mono text-slate-100">
+                        <div className="text-2xl font-bold font-mono text-purple-300">
                           {localRiskData.outbreakRisk}%
                         </div>
-                        <p className="text-[11px] text-slate-400">過密・換気不全時の感染拡大率</p>
+                        <p className="text-[11px] text-slate-400">2次避難所面積 {localRiskData.factors.effectiveShelterSqm}㎡/人・換気{localRiskData.factors.ventilationRate}回/h</p>
                       </div>
                     </div>
 
+                    {/* Causal Breakdown Panel: 確率算出の根拠となる環境・インフラ要因の内訳 */}
+                    <div className="p-5 rounded-xl bg-slate-950/90 border border-slate-800 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                        <h3 className="text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2">
+                          <Sliders className="w-4 h-4 text-cyan-400" />
+                          リスク算出の因果要因パラメータ内訳（今後 {localRiskData.forecastDays} 日間予測）
+                        </h3>
+                        <span className="text-[11px] font-mono text-slate-400">
+                          対象: {localRiskData.areaName} (標高 {localRiskData.factors.elevation}m)
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        {/* 要因1: 気象・降水確率 */}
+                        <div className="p-3.5 rounded-lg bg-slate-900/80 border border-slate-800/80 space-y-2">
+                          <div className="flex justify-between font-mono">
+                            <span className="text-cyan-300 font-semibold">気象要因：降水確率 ＆ 雨量</span>
+                            <span className="text-white font-bold">{localRiskData.factors.precipProbability}% ({localRiskData.factors.expectedRainfallMm}mm)</span>
+                          </div>
+                          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-cyan-400 h-full" style={{ width: `${localRiskData.factors.precipProbability}%` }} />
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                            今後{localRiskData.forecastDays}日間の前線停滞・降水確率から内水氾濫および工場配管への浸水リスクを算出しています。
+                          </p>
+                        </div>
+
+                        {/* 要因2: 2次避難場所の広さ・換気 */}
+                        <div className="p-3.5 rounded-lg bg-slate-900/80 border border-slate-800/80 space-y-2">
+                          <div className="flex justify-between font-mono">
+                            <span className="text-purple-300 font-semibold">避難空間：1人あたり有効面積</span>
+                            <span className={`font-bold ${localRiskData.factors.effectiveShelterSqm < 2.0 ? 'text-rose-400' : 'text-emerald-300'}`}>
+                              {localRiskData.factors.effectiveShelterSqm} ㎡/人
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${localRiskData.factors.effectiveShelterSqm < 2.0 ? 'bg-rose-500' : 'bg-purple-400'}`} 
+                              style={{ width: `${Math.min(100, (localRiskData.factors.effectiveShelterSqm / 4.0) * 100)}%` }} 
+                            />
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                            スフィア基準（3.5㎡以上）に対する2次避難所の広さ不足と換気回数（{localRiskData.factors.ventilationRate}回/h）が飛沫・接触パンデミック確率に直結します。
+                          </p>
+                        </div>
+
+                        {/* 要因3: 衛生疲労・インフラ負荷 */}
+                        <div className="p-3.5 rounded-lg bg-slate-900/80 border border-slate-800/80 space-y-2">
+                          <div className="flex justify-between font-mono">
+                            <span className="text-amber-300 font-semibold">長期化要因：衛生・設備疲労度</span>
+                            <span className="text-white font-bold">{localRiskData.factors.hygieneFatigueIndex} / 100</span>
+                          </div>
+                          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-amber-400 h-full" style={{ width: `${localRiskData.factors.hygieneFatigueIndex}%` }} />
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                            滞在{localRiskData.forecastDays}日目の断水・トイレ衛生低下および免疫低下をモデル化し、二次感染拡大の加速度を計算しています。
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AI Actionable Narrative Based on Location */}
                     <div className="p-5 rounded-xl bg-gradient-to-r from-purple-950/40 via-slate-950/60 to-emerald-950/40 border border-purple-500/30 space-y-3">
                       <div className="flex items-center justify-between text-xs font-semibold text-purple-300">
                         <span className="flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-amber-400" />
-                          現在地のAI因果ストーリー診断（位置座標: {localRiskData.lat}, {localRiskData.lon}）
+                          {localRiskData.areaName} のAI因果ストーリー診断（今後 {localRiskData.forecastDays} 日間予測）
                         </span>
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">
-                          Auto-Calculated
+                          Updated: {localRiskData.timestamp}
                         </span>
                       </div>
                       <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans">
