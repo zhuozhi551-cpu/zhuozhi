@@ -87,6 +87,8 @@
         const Brain = createLucideComponent(LucideIcons.Brain);
         const Zap = createLucideComponent(LucideIcons.Zap);
         const Info = createLucideComponent(LucideIcons.Info);
+        const CloudRain = createLucideComponent(LucideIcons.CloudRain);
+        const ExternalLink = createLucideComponent(LucideIcons.ExternalLink);
         
         const CustomLineChart = ({ data = [] }) => {
             if (!data.length) return <div className="flex items-center justify-center h-full text-slate-500 font-mono text-xs">Awaiting Telemetry Data...</div>;
@@ -145,95 +147,135 @@
               tokyo: {
                 pref: '東京都',
                 areas: {
-                  koto_bay: { name: '江東区・臨海湾岸エリア（ゼロメートル地帯）', lat: 35.6495, lon: 139.7914, baseRain: 45, shelterSpace: 1.8, industrialDensity: 0.85, elevation: 1.2 },
-                  shinjuku: { name: '新宿区・都心高密エリア', lat: 35.6938, lon: 139.7034, baseRain: 40, shelterSpace: 1.5, industrialDensity: 0.25, elevation: 32.0 },
-                  ota_keihin: { name: '大田区・京浜工業地帯沿岸', lat: 35.5613, lon: 139.7160, baseRain: 50, shelterSpace: 1.9, industrialDensity: 0.92, elevation: 2.5 }
+                  koto_bay: { name: '江東区・臨海湾岸エリア（ゼロメートル地帯）', lat: 35.6495, lon: 139.7914, baseRain: 45, shelterSpace: 1.8, industrialDensity: 0.85, elevation: 1.2, drainageCap: 45 },
+                  shinjuku: { name: '新宿区・都心高密エリア', lat: 35.6938, lon: 139.7034, baseRain: 40, shelterSpace: 1.5, industrialDensity: 0.25, elevation: 32.0, drainageCap: 55 },
+                  ota_keihin: { name: '大田区・京浜工業地帯沿岸', lat: 35.5613, lon: 139.7160, baseRain: 50, shelterSpace: 1.9, industrialDensity: 0.92, elevation: 2.5, drainageCap: 48 }
                 }
               },
-              okayama: {
-                pref: '岡山県',
+              hyogo: {
+                pref: '兵庫県',
                 areas: {
-                  setouchi: { name: '瀬戸内市・牛窓〜邑久沿岸エリア', lat: 34.6517, lon: 134.0933, baseRain: 35, shelterSpace: 3.4, industrialDensity: 0.35, elevation: 8.5 },
-                  kurashiki_mizushima: { name: '倉敷市・水島臨海コンビナート周辺', lat: 34.5125, lon: 133.7483, baseRain: 40, shelterSpace: 2.3, industrialDensity: 0.95, elevation: 3.0 },
-                  okayama_kita: { name: '岡山市北区・旭川下流域', lat: 34.6618, lon: 133.9344, baseRain: 38, shelterSpace: 2.6, industrialDensity: 0.40, elevation: 5.0 }
+                  kobe_port: { name: '神戸市中央区・神戸港湾〜三宮低地帯', lat: 34.6851, lon: 135.1955, baseRain: 46, shelterSpace: 2.0, industrialDensity: 0.78, elevation: 3.2, drainageCap: 50 },
+                  himeji_rinkai: { name: '姫路市・播磨臨海工業地帯', lat: 34.7865, lon: 134.6642, baseRain: 42, shelterSpace: 2.5, industrialDensity: 0.93, elevation: 2.8, drainageCap: 46 },
+                  amagasaki_bay: { name: '尼崎市・南部臨海ゼロメートル地帯', lat: 34.7161, lon: 135.4063, baseRain: 48, shelterSpace: 1.7, industrialDensity: 0.89, elevation: 0.8, drainageCap: 42 }
                 }
               },
-              okinawa: {
-                pref: '沖縄県',
+              mie: {
+                pref: '三重県',
                 areas: {
-                  naha_port: { name: '那覇市・那覇港湾〜新都心エリア', lat: 26.2124, lon: 127.6809, baseRain: 65, shelterSpace: 2.0, industrialDensity: 0.55, elevation: 4.0 },
-                  ishigaki: { name: '石垣市・離島沿岸エリア', lat: 24.3407, lon: 124.1556, baseRain: 75, shelterSpace: 2.2, industrialDensity: 0.30, elevation: 6.0 },
-                  uru_industrial: { name: 'うるま市・中城湾港工業帯', lat: 26.3361, lon: 127.8556, baseRain: 70, shelterSpace: 2.1, industrialDensity: 0.80, elevation: 3.5 }
-                }
-              },
-              osaka: {
-                pref: '大阪府',
-                areas: {
-                  sakai_senboku: { name: '堺市・泉北臨海工業地帯', lat: 34.5733, lon: 135.4372, baseRain: 45, shelterSpace: 1.9, industrialDensity: 0.90, elevation: 2.8 },
-                  umeda_yodo: { name: '大阪市北区・淀川河口低地帯', lat: 34.7024, lon: 135.4959, baseRain: 42, shelterSpace: 1.6, industrialDensity: 0.45, elevation: 2.0 }
+                  yokkaichi: { name: '四日市市・四日市コンビナート臨海帯', lat: 34.9651, lon: 136.6244, baseRain: 54, shelterSpace: 2.2, industrialDensity: 0.96, elevation: 2.1, drainageCap: 45 },
+                  tsu_coast: { name: '津市・伊勢湾沿岸低地帯', lat: 34.7186, lon: 136.5056, baseRain: 52, shelterSpace: 2.6, industrialDensity: 0.45, elevation: 3.5, drainageCap: 44 },
+                  ise_miyagawa: { name: '伊勢市・宮川下流域', lat: 34.4875, lon: 136.7094, baseRain: 58, shelterSpace: 2.8, industrialDensity: 0.30, elevation: 4.5, drainageCap: 42 }
                 }
               },
               aichi: {
                 pref: '愛知県',
                 areas: {
-                  yokkaichi_nagoya: { name: '名古屋市港区・名古屋港臨海工業帯', lat: 35.0911, lon: 136.8814, baseRain: 48, shelterSpace: 2.1, industrialDensity: 0.91, elevation: 1.5 },
-                  toyota_inland: { name: '豊田市・矢作川中流域', lat: 35.0824, lon: 137.1562, baseRain: 45, shelterSpace: 3.1, industrialDensity: 0.65, elevation: 42.0 }
+                  nagoya_port: { name: '名古屋市港区・名古屋港臨海工業帯', lat: 35.0911, lon: 136.8814, baseRain: 48, shelterSpace: 2.1, industrialDensity: 0.91, elevation: 1.5, drainageCap: 48 },
+                  kinuura_bay: { name: '半田市・碧南市 衣浦湾臨海工業帯', lat: 34.8922, lon: 136.9412, baseRain: 47, shelterSpace: 2.4, industrialDensity: 0.87, elevation: 2.2, drainageCap: 46 },
+                  toyota_inland: { name: '豊田市・矢作川中流域', lat: 35.0824, lon: 137.1562, baseRain: 45, shelterSpace: 3.1, industrialDensity: 0.65, elevation: 42.0, drainageCap: 55 }
+                }
+              },
+              okayama: {
+                pref: '岡山県',
+                areas: {
+                  setouchi: { name: '瀬戸内市・牛窓〜邑久沿岸エリア', lat: 34.6517, lon: 134.0933, baseRain: 35, shelterSpace: 3.4, industrialDensity: 0.35, elevation: 8.5, drainageCap: 45 },
+                  kurashiki_mizushima: { name: '倉敷市・水島臨海コンビナート周辺', lat: 34.5125, lon: 133.7483, baseRain: 40, shelterSpace: 2.3, industrialDensity: 0.95, elevation: 3.0, drainageCap: 46 },
+                  okayama_kita: { name: '岡山市北区・旭川下流域', lat: 34.6618, lon: 133.9344, baseRain: 38, shelterSpace: 2.6, industrialDensity: 0.40, elevation: 5.0, drainageCap: 48 }
+                }
+              },
+              okinawa: {
+                pref: '沖縄県',
+                areas: {
+                  naha_port: { name: '那覇市・那覇港湾〜新都心エリア', lat: 26.2124, lon: 127.6809, baseRain: 65, shelterSpace: 2.0, industrialDensity: 0.55, elevation: 4.0, drainageCap: 55 },
+                  ishigaki: { name: '石垣市・離島沿岸エリア', lat: 24.3407, lon: 124.1556, baseRain: 75, shelterSpace: 2.2, industrialDensity: 0.30, elevation: 6.0, drainageCap: 50 },
+                  uru_industrial: { name: 'うるま市・中城湾港工業帯', lat: 26.3361, lon: 127.8556, baseRain: 70, shelterSpace: 2.1, industrialDensity: 0.80, elevation: 3.5, drainageCap: 52 }
+                }
+              },
+              osaka: {
+                pref: '大阪府',
+                areas: {
+                  sakai_senboku: { name: '堺市・泉北臨海工業地帯', lat: 34.5733, lon: 135.4372, baseRain: 45, shelterSpace: 1.9, industrialDensity: 0.90, elevation: 2.8, drainageCap: 48 },
+                  umeda_yodo: { name: '大阪市北区・淀川河口低地帯', lat: 34.7024, lon: 135.4959, baseRain: 42, shelterSpace: 1.6, industrialDensity: 0.45, elevation: 2.0, drainageCap: 50 }
                 }
               },
               hokkaido: {
                 pref: '北海道',
                 areas: {
-                  tomakomai: { name: '苫小牧市・臨海工業基地', lat: 42.6343, lon: 141.6054, baseRain: 30, shelterSpace: 3.8, industrialDensity: 0.82, elevation: 5.0 },
-                  sapporo_kita: { name: '札幌市北区・石狩川水系', lat: 43.0908, lon: 141.3408, baseRain: 35, shelterSpace: 2.9, industrialDensity: 0.30, elevation: 14.0 }
+                  tomakomai: { name: '苫小牧市・臨海工業基地', lat: 42.6343, lon: 141.6054, baseRain: 30, shelterSpace: 3.8, industrialDensity: 0.82, elevation: 5.0, drainageCap: 45 },
+                  sapporo_kita: { name: '札幌市北区・石狩川水系', lat: 43.0908, lon: 141.3408, baseRain: 35, shelterSpace: 2.9, industrialDensity: 0.30, elevation: 14.0, drainageCap: 48 }
                 }
               },
               fukuoka: {
                 pref: '福岡県',
                 areas: {
-                  kitakyushu: { name: '北九州市・洞海湾〜響灘臨海帯', lat: 33.8834, lon: 130.8751, baseRain: 52, shelterSpace: 2.4, industrialDensity: 0.88, elevation: 3.5 },
-                  hakata_bay: { name: '福岡市博多区・博多湾沿岸', lat: 33.5902, lon: 130.4017, baseRain: 50, shelterSpace: 2.0, industrialDensity: 0.40, elevation: 4.0 }
+                  kitakyushu: { name: '北九州市・洞海湾〜響灘臨海帯', lat: 33.8834, lon: 130.8751, baseRain: 52, shelterSpace: 2.4, industrialDensity: 0.88, elevation: 3.5, drainageCap: 50 },
+                  hakata_bay: { name: '福岡市博多区・博多湾沿岸', lat: 33.5902, lon: 130.4017, baseRain: 50, shelterSpace: 2.0, industrialDensity: 0.40, elevation: 4.0, drainageCap: 52 }
                 }
               }
             };
           }
 
-          calculateDetailedRisk({ lat, lon, areaName, baseRain = 45, shelterSpace = 2.2, industrialDensity = 0.6, elevation = 5.0, forecastDays = 3 }) {
-            // 予測日数（1〜7日）に応じた気象累積と避難長期化ファクター
-            const precipProbability = Math.min(95, Math.round(baseRain + (forecastDays * 4.5) + Math.sin(lat * 5) * 8));
-            const expectedRainfallMm = Math.round((precipProbability / 100) * (35 + forecastDays * 22));
+          calculateDetailedRisk({ 
+            lat, lon, areaName, 
+            baseRain = 45, shelterSpace = 2.2, industrialDensity = 0.6, elevation = 5.0, drainageCap = 48,
+            forecastDays = 3, liveWeather = null 
+          }) {
+            // リアルタイム気象データ（雨雲レーダー連携値）がある場合は反映
+            const liveHourlyRain = liveWeather ? liveWeather.currentRainMm : 0;
+            const liveForecastSum = liveWeather ? liveWeather.forecastRainSum : 0;
+            const liveMaxProb = liveWeather ? liveWeather.maxPrecipProb : null;
+
+            // 予測日数（1〜7日）に応じた気象累積と雨雲レーダー実測値の統合
+            const precipProbability = liveMaxProb !== null 
+              ? Math.min(98, Math.max(liveMaxProb, Math.round(baseRain * 0.4 + forecastDays * 4)))
+              : Math.min(95, Math.round(baseRain + (forecastDays * 4.5) + Math.sin(lat * 5) * 8));
+
+            const expectedRainfallMm = liveForecastSum > 0 
+              ? Math.round(liveForecastSum + (forecastDays - 1) * 18)
+              : Math.round((precipProbability / 100) * (35 + forecastDays * 22));
+
+            // 推定ピーク時間雨量 (mm/h)
+            const peakHourlyRainMm = Math.max(liveHourlyRain, Math.round((expectedRainfallMm / (forecastDays * 4.5)) * (precipProbability / 70)));
             
             // 避難長期化による1人あたり実質有効面積の低下（二次避難所の広さ要因）
             const effectiveShelterSqm = Math.max(1.1, parseFloat((shelterSpace - (forecastDays - 1) * 0.14).toFixed(2)));
             const ventilationRate = Math.max(1.5, parseFloat((4.2 - (forecastDays * 0.25) - (3.5 - effectiveShelterSqm) * 0.4).toFixed(1)));
             const hygieneFatigueIndex = Math.min(100, Math.round(15 + forecastDays * 11 + (3.0 - effectiveShelterSqm) * 12));
 
-            // 1. 浸水・土砂リスク（降水確率 × 累積降水量 × 標高）
-            const elevationFactor = Math.max(0.3, 1.3 - (elevation / 25));
-            const floodRisk = Math.min(96, Math.max(12, Math.round((precipProbability * 0.55 + (expectedRainfallMm / 2.2) * 0.45) * elevationFactor)));
+            // 1. 道路冠水・内水氾濫リスク（時間雨量 vs 排水能力 + 累積雨量 + 標高）
+            const elevationFactor = Math.max(0.35, 1.35 - (elevation / 22));
+            const drainageOverload = Math.min(1.5, peakHourlyRainMm / Math.max(25, drainageCap));
+            const inundationRisk = Math.min(97, Math.max(10, Math.round(
+              ((drainageOverload * 45) + (precipProbability * 0.35) + (expectedRainfallMm / 3.0)) * elevationFactor
+            )));
 
-            // 2. Natechプラント爆発リスク（工業集積度 × 浸水リスク）
-            const natechRisk = Math.min(95, Math.max(8, Math.round(industrialDensity * 65 + (floodRisk * 0.35))));
+            // 2. Natechプラント爆発リスク（工業集積度 × 冠水・浸水リスク）
+            const natechRisk = Math.min(95, Math.max(8, Math.round(industrialDensity * 65 + (inundationRisk * 0.35))));
 
             // 3. 避難所二次感染症（パンデミック）リスク（二次避難所の狭さ × 滞在日数 × 換気不足）
             const crowdingFactor = Math.max(0.4, (3.6 - effectiveShelterSqm) / 2.2);
             const outbreakRisk = Math.min(94, Math.max(10, Math.round((crowdingFactor * 48) + (forecastDays * 5.2) + ((5.0 - ventilationRate) * 6))));
 
             // 合成エントロピー (0.00 - 1.00)
-            const compositeEntropy = parseFloat(((natechRisk * 0.35 + floodRisk * 0.30 + outbreakRisk * 0.35) / 100).toFixed(2));
+            const compositeEntropy = parseFloat(((natechRisk * 0.35 + inundationRisk * 0.32 + outbreakRisk * 0.33) / 100).toFixed(2));
 
-            let primaryThreat = `今後${forecastDays}日間の累積降雨と避難環境変化による複合リスク`;
-            let recommendedAction = '自治体のハザードマップと二次避難所（ホテル・福祉避難所等）の空き状況を確認してください。';
+            let primaryThreat = `今後${forecastDays}日間の雨雲推移（累積${expectedRainfallMm}mm）と避難環境変化による複合リスク`;
+            let recommendedAction = 'Yahoo!雨雲レーダーで最新の降水帯を確認し、低地・アンダーパスを避けて二次避難所の空き状況を確認してください。';
 
-            if (outbreakRisk >= natechRisk && outbreakRisk >= 60) {
+            if (outbreakRisk >= natechRisk && outbreakRisk >= inundationRisk && outbreakRisk >= 60) {
               primaryThreat = `滞在${forecastDays}日目以降の過密化（1人あたり ${effectiveShelterSqm}㎡）による呼吸器・消化器感染症の集団蔓延（パンデミック）リスク`;
               recommendedAction = `一次避難所の収容限界前に、個別空間が確保された二次避難施設（分散避難先）への早期移動と換気ゾーニングを推奨します。`;
             } else if (natechRisk >= 65) {
-              primaryThreat = `降水確率${precipProbability}%（予想${expectedRainfallMm}mm）の浸水に伴う、臨海工業帯の金属粉末水反応・高圧ガス漏洩（Natech）リスク`;
-              recommendedAction = `浸水開始前に、風上かつ標高20m以上の指定高台エリアへ即時退避してください。`;
-            } else if (floodRisk >= 65) {
-              primaryThreat = `今後${forecastDays}日間の断続的な降雨（累積${expectedRainfallMm}mm）による低地帯の冠水・インフラ途絶リスク`;
-              recommendedAction = `早めの垂直避難または高台への事前移動を行い、停電・断水に備えてください。`;
+              primaryThreat = `ピーク雨量${peakHourlyRainMm}mm/h（冠水確率${inundationRisk}%）に伴う、臨海工業帯の金属粉末水反応・高圧ガス漏洩（Natech）リスク`;
+              recommendedAction = `冠水・浸水が始まる前に、風上かつ標高20m以上の指定高台エリアへ即時退避してください。`;
+            } else if (inundationRisk >= 60) {
+              primaryThreat = `排水処理能力（${drainageCap}mm/h）に迫る降雨（累積${expectedRainfallMm}mm）による低地・道路冠水および床下浸水リスク`;
+              recommendedAction = `アンダーパスや河川付近の移動を控え、早めの垂直避難または高台への事前移動を行ってください。`;
             }
+
+            // Yahoo!天気・雨雲レーダーの該当座標URL生成
+            const yahooRadarUrl = `https://weather.yahoo.co.jp/weather/zoomradar/?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&z=12`;
 
             return {
               areaName: areaName || `GPS測位地点 (${lat.toFixed(3)}, ${lon.toFixed(3)})`,
@@ -242,11 +284,16 @@
               forecastDays,
               compositeEntropy,
               natechRisk,
-              floodRisk,
+              inundationRisk,
               outbreakRisk,
+              yahooRadarUrl,
+              isLiveRadarConnected: Boolean(liveWeather),
               factors: {
                 precipProbability,
                 expectedRainfallMm,
+                peakHourlyRainMm,
+                liveHourlyRain,
+                drainageCap,
                 effectiveShelterSqm,
                 ventilationRate,
                 hygieneFatigueIndex,
@@ -275,6 +322,8 @@
 
           const [userLocation, setUserLocation] = useState(null);
           const [isLocating, setIsLocating] = useState(false);
+          const [isFetchingWeather, setIsFetchingWeather] = useState(false);
+          const [liveWeatherCache, setLiveWeatherCache] = useState(null);
           const [locationError, setLocationError] = useState(null);
           const [selectedPref, setSelectedPref] = useState('okayama');
           const [selectedAreaKey, setSelectedAreaKey] = useState('setouchi');
@@ -283,6 +332,71 @@
             const initArea = riskCalculator.regionDatabase.okayama.areas.setouchi;
             return riskCalculator.calculateDetailedRisk({ ...initArea, forecastDays: 3 });
           });
+
+          // リアルタイム気象レーダーAPI（Open-Meteo）から対象座標の降水量・降水確率を取得
+          const fetchRadarPrecipitation = async (lat, lon, areaObjOrName, days, isGps = false) => {
+            setIsFetchingWeather(true);
+            try {
+              const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=precipitation,rain&hourly=precipitation_probability,precipitation&forecast_days=${Math.min(7, Math.max(1, days))}&timezone=Asia%2FTokyo`;
+              const res = await fetch(url);
+              if (!res.ok) throw new Error('Weather API unavailable');
+              const data = await res.json();
+
+              const currentRainMm = data.current?.precipitation ?? 0;
+              const probs = data.hourly?.precipitation_probability || [];
+              const rains = data.hourly?.precipitation || [];
+
+              const maxPrecipProb = probs.length > 0 ? Math.max(...probs) : null;
+              const forecastRainSum = rains.reduce((acc, v) => acc + (v || 0), 0);
+
+              const liveWeather = {
+                currentRainMm,
+                maxPrecipProb,
+                forecastRainSum: Math.round(forecastRainSum * 10) / 10
+              };
+              setLiveWeatherCache(liveWeather);
+
+              if (isGps) {
+                setLocalRiskData(riskCalculator.calculateDetailedRisk({
+                  lat,
+                  lon,
+                  areaName: areaObjOrName,
+                  forecastDays: days,
+                  liveWeather
+                }));
+              } else {
+                setLocalRiskData(riskCalculator.calculateDetailedRisk({
+                  ...areaObjOrName,
+                  forecastDays: days,
+                  liveWeather
+                }));
+              }
+            } catch (err) {
+              // オフラインやAPI制限時は地理モデルベースでフォールバック算出
+              setLiveWeatherCache(null);
+              if (isGps) {
+                setLocalRiskData(riskCalculator.calculateDetailedRisk({
+                  lat,
+                  lon,
+                  areaName: areaObjOrName,
+                  forecastDays: days
+                }));
+              } else {
+                setLocalRiskData(riskCalculator.calculateDetailedRisk({
+                  ...areaObjOrName,
+                  forecastDays: days
+                }));
+              }
+            } finally {
+              setIsFetchingWeather(false);
+            }
+          };
+
+          // 初回マウント時にデフォルト地域の気象レーダーデータを同期
+          useEffect(() => {
+            const initArea = riskCalculator.regionDatabase[selectedPref].areas[selectedAreaKey];
+            fetchRadarPrecipitation(initArea.lat, initArea.lon, initArea, forecastDays, false);
+          }, []);
 
           const handleDetectLocation = () => {
             setIsLocating(true);
@@ -297,14 +411,8 @@
             navigator.geolocation.getCurrentPosition(
               (position) => {
                 const { latitude, longitude } = position.coords;
-                const calculated = riskCalculator.calculateDetailedRisk({
-                  lat: latitude,
-                  lon: longitude,
-                  areaName: `現在地GPS測位エリア`,
-                  forecastDays
-                });
                 setUserLocation({ lat: latitude, lon: longitude });
-                setLocalRiskData(calculated);
+                fetchRadarPrecipitation(latitude, longitude, '現在地GPS測位エリア', forecastDays, true);
                 setIsLocating(false);
               },
               (error) => {
@@ -321,28 +429,23 @@
             const firstAreaKey = Object.keys(riskCalculator.regionDatabase[prefKey].areas)[0];
             setSelectedAreaKey(firstAreaKey);
             const areaObj = riskCalculator.regionDatabase[prefKey].areas[firstAreaKey];
-            setLocalRiskData(riskCalculator.calculateDetailedRisk({ ...areaObj, forecastDays }));
+            fetchRadarPrecipitation(areaObj.lat, areaObj.lon, areaObj, forecastDays, false);
           };
 
           const handleAreaChange = (areaKey) => {
             setUserLocation(null);
             setSelectedAreaKey(areaKey);
             const areaObj = riskCalculator.regionDatabase[selectedPref].areas[areaKey];
-            setLocalRiskData(riskCalculator.calculateDetailedRisk({ ...areaObj, forecastDays }));
+            fetchRadarPrecipitation(areaObj.lat, areaObj.lon, areaObj, forecastDays, false);
           };
 
           const handleForecastDaysChange = (days) => {
             setForecastDays(days);
             if (userLocation) {
-              setLocalRiskData(riskCalculator.calculateDetailedRisk({
-                lat: userLocation.lat,
-                lon: userLocation.lon,
-                areaName: `現在地GPS測位エリア`,
-                forecastDays: days
-              }));
+              fetchRadarPrecipitation(userLocation.lat, userLocation.lon, '現在地GPS測位エリア', days, true);
             } else {
               const areaObj = riskCalculator.regionDatabase[selectedPref].areas[selectedAreaKey];
-              setLocalRiskData(riskCalculator.calculateDetailedRisk({ ...areaObj, forecastDays: days }));
+              fetchRadarPrecipitation(areaObj.lat, areaObj.lon, areaObj, days, false);
             }
           };
 
@@ -528,17 +631,29 @@
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-800">
                       <div className="space-y-1">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
-                          <Globe className="w-3.5 h-3.5 text-amber-400 animate-pulse" /> Multi-Day Causal Risk & Pandemic Telemetry
+                          <Globe className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                          <span>Multi-Day Radar & Causal Pandemic Telemetry</span>
+                          {isFetchingWeather && <span className="text-cyan-300 ml-1">(気象レーダー同期中...)</span>}
                         </div>
                         <h2 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
-                          現在地・詳細地域 複合災害＆パンデミック確率算定モジュール
+                          現在地・詳細地域 冠水＆複合リスク算定モジュール
                         </h2>
                         <p className="text-xs sm:text-sm text-slate-400">
-                          今後1〜7日間の降水確率・累積雨量、工業集積度、および2次避難所の1人あたり占有面積・換気率から、Natech災害と感染症蔓延確率の因果要因を即時算定します
+                          リアルタイム気象レーダーの降水量・排水能力・標高から「道路冠水・浸水確率」を算出し、Natech災害や2次避難所パンデミック確率と統合評価します
                         </p>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 shrink-0">
+                        <a
+                          href={localRiskData.yahooRadarUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-4 py-2.5 rounded-xl bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-200 font-bold text-xs flex items-center gap-2 transition-all shadow-lg"
+                        >
+                          <CloudRain className="w-4 h-4 text-cyan-400" />
+                          <span>Yahoo!雨雲レーダーで確認</span>
+                          <ExternalLink className="w-3.5 h-3.5 opacity-75" />
+                        </a>
                         <button
                           onClick={handleDetectLocation}
                           disabled={isLocating}
@@ -661,6 +776,19 @@
                         <p className="text-[11px] text-slate-400">今後{localRiskData.forecastDays}日間の総合環境負荷</p>
                       </div>
 
+                      <div className="p-5 rounded-xl bg-slate-950/80 border border-cyan-500/40 space-y-2 shadow-lg shadow-cyan-950/20">
+                        <div className="text-xs text-cyan-300 font-mono flex items-center justify-between">
+                          <span>道路冠水・内水氾濫確率</span>
+                          <CloudRain className="w-4 h-4 text-cyan-400" />
+                        </div>
+                        <div className="text-2xl font-bold font-mono text-cyan-300">
+                          {localRiskData.inundationRisk}%
+                        </div>
+                        <p className="text-[11px] text-slate-400">
+                          予測最大 {localRiskData.factors.peakHourlyRainMm}mm/h (排水基準 {localRiskData.factors.drainageCap}mm/h)
+                        </p>
+                      </div>
+
                       <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
                         <div className="text-xs text-slate-400 font-mono flex items-center justify-between">
                           <span>Natechプラント爆発確率</span>
@@ -669,18 +797,7 @@
                         <div className="text-2xl font-bold font-mono text-red-300">
                           {localRiskData.natechRisk}%
                         </div>
-                        <p className="text-[11px] text-slate-400">浸水({localRiskData.floodRisk}%)×工業集積({localRiskData.factors.industrialDensityPct}%)</p>
-                      </div>
-
-                      <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-                        <div className="text-xs text-slate-400 font-mono flex items-center justify-between">
-                          <span>大雨・浸水発生確率</span>
-                          <Radio className="w-4 h-4 text-cyan-400" />
-                        </div>
-                        <div className="text-2xl font-bold font-mono text-cyan-300">
-                          {localRiskData.floodRisk}%
-                        </div>
-                        <p className="text-[11px] text-slate-400">降水確率{localRiskData.factors.precipProbability}% / 累積{localRiskData.factors.expectedRainfallMm}mm</p>
+                        <p className="text-[11px] text-slate-400">冠水({localRiskData.inundationRisk}%)×工業集積({localRiskData.factors.industrialDensityPct}%)</p>
                       </div>
 
                       <div className="p-5 rounded-xl bg-slate-950/80 border border-purple-500/40 space-y-2 shadow-lg shadow-purple-950/20">
@@ -708,17 +825,17 @@
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                        {/* 要因1: 気象・降水確率 */}
+                        {/* 要因1: 雨雲レーダー・降水量＆冠水判定 */}
                         <div className="p-3.5 rounded-lg bg-slate-900/80 border border-slate-800/80 space-y-2">
                           <div className="flex justify-between font-mono">
-                            <span className="text-cyan-300 font-semibold">気象要因：降水確率 ＆ 雨量</span>
+                            <span className="text-cyan-300 font-semibold">雨雲レーダー：降水量 ＆ 冠水負荷</span>
                             <span className="text-white font-bold">{localRiskData.factors.precipProbability}% ({localRiskData.factors.expectedRainfallMm}mm)</span>
                           </div>
                           <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                             <div className="bg-cyan-400 h-full" style={{ width: `${localRiskData.factors.precipProbability}%` }} />
                           </div>
                           <p className="text-[11px] text-slate-400 leading-relaxed">
-                            今後{localRiskData.forecastDays}日間の前線停滞・降水確率から内水氾濫および工場配管への浸水リスクを算出しています。
+                            現在雨量 {localRiskData.factors.liveHourlyRain}mm/h・今後{localRiskData.forecastDays}日間の累積雨量から、排水能力({localRiskData.factors.drainageCap}mm/h)超過による道路冠水・床下浸水確率を算出しています。
                           </p>
                         </div>
 
