@@ -195,66 +195,116 @@
 
         class LocalRiskCalculatorEngine {
           constructor() {
-            // 全国主要・47都道府県対応データベース
+            // 全国主要コンビナート・造船重工業・原子力発電所立地エリア対応データベース
             this.regionDatabase = {
               okayama: { pref: '岡山県', areas: {
-                setouchi: { name: '瀬戸内市・牛窓〜邑久沿岸エリア', lat: 34.6517, lon: 134.0933, baseRain: 35, shelterSpace: 3.4, industrialDensity: 0.35, elevation: 8.5, drainageCap: 45 },
-                kurashiki_mizushima: { name: '倉敷市・水島臨海コンビナート周辺', lat: 34.5125, lon: 133.7483, baseRain: 40, shelterSpace: 2.3, industrialDensity: 0.95, elevation: 3.0, drainageCap: 46 },
-                okayama_kita: { name: '岡山市北区・旭川下流域', lat: 34.6618, lon: 133.9344, baseRain: 38, shelterSpace: 2.6, industrialDensity: 0.40, elevation: 5.0, drainageCap: 48 }
-              }},
-              tokyo: { pref: '東京都', areas: {
-                koto_bay: { name: '江東区・臨海湾岸ゼロメートル地帯', lat: 35.6495, lon: 139.7914, baseRain: 45, shelterSpace: 1.8, industrialDensity: 0.85, elevation: 1.2, drainageCap: 45 },
-                shinjuku: { name: '新宿区・都心高密エリア', lat: 35.6938, lon: 139.7034, baseRain: 40, shelterSpace: 1.5, industrialDensity: 0.25, elevation: 32.0, drainageCap: 55 },
-                ota_keihin: { name: '大田区・京浜工業地帯沿岸', lat: 35.5613, lon: 139.7160, baseRain: 50, shelterSpace: 1.9, industrialDensity: 0.92, elevation: 2.5, drainageCap: 48 }
-              }},
-              kanagawa: { pref: '神奈川県', areas: {
-                kawasaki_ukishima: { name: '川崎市川崎区・京浜臨海コンビナート', lat: 35.5189, lon: 139.7822, baseRain: 49, shelterSpace: 1.8, industrialDensity: 0.95, elevation: 1.8, drainageCap: 48 },
-                yokohama_bay: { name: '横浜市中区・横浜港湾低地', lat: 35.4437, lon: 139.6380, baseRain: 47, shelterSpace: 1.9, industrialDensity: 0.72, elevation: 3.0, drainageCap: 50 }
-              }},
-              chiba: { pref: '千葉県', areas: {
-                ichihara_keiyo: { name: '市原市・京葉臨海コンビナート', lat: 35.4981, lon: 140.1156, baseRain: 48, shelterSpace: 2.2, industrialDensity: 0.96, elevation: 2.5, drainageCap: 48 },
-                urayasu: { name: '浦安市・東京湾岸埋立地', lat: 35.6531, lon: 139.9022, baseRain: 46, shelterSpace: 1.9, industrialDensity: 0.35, elevation: 1.8, drainageCap: 50 }
-              }},
-              aichi: { pref: '愛知県', areas: {
-                nagoya_port: { name: '名古屋市港区・名古屋港臨海工業帯', lat: 35.0911, lon: 136.8814, baseRain: 48, shelterSpace: 2.1, industrialDensity: 0.91, elevation: 1.5, drainageCap: 48 },
-                toyota_inland: { name: '豊田市・矢作川中流域', lat: 35.0824, lon: 137.1562, baseRain: 45, shelterSpace: 3.1, industrialDensity: 0.65, elevation: 42.0, drainageCap: 55 }
-              }},
-              mie: { pref: '三重県', areas: {
-                yokkaichi: { name: '四日市市・四日市コンビナート臨海帯', lat: 34.9651, lon: 136.6244, baseRain: 54, shelterSpace: 2.2, industrialDensity: 0.96, elevation: 2.1, drainageCap: 45 },
-                ise_miyagawa: { name: '伊勢市・宮川下流域', lat: 34.4875, lon: 136.7094, baseRain: 58, shelterSpace: 2.8, industrialDensity: 0.30, elevation: 4.5, drainageCap: 42 }
-              }},
-              osaka: { pref: '大阪府', areas: {
-                sakai_senboku: { name: '堺市・泉北臨海工業地帯', lat: 34.5733, lon: 135.4372, baseRain: 45, shelterSpace: 1.9, industrialDensity: 0.90, elevation: 2.8, drainageCap: 48 },
-                umeda_yodo: { name: '大阪市北区・淀川河口低地帯', lat: 34.7024, lon: 135.4959, baseRain: 42, shelterSpace: 1.6, industrialDensity: 0.45, elevation: 2.0, drainageCap: 50 }
-              }},
-              hyogo: { pref: '兵庫県', areas: {
-                kobe_port: { name: '神戸市中央区・神戸港湾低地帯', lat: 34.6851, lon: 135.1955, baseRain: 46, shelterSpace: 2.0, industrialDensity: 0.78, elevation: 3.2, drainageCap: 50 },
-                himeji_rinkai: { name: '姫路市・播磨臨海工業地帯', lat: 34.7865, lon: 134.6642, baseRain: 42, shelterSpace: 2.5, industrialDensity: 0.93, elevation: 2.8, drainageCap: 46 }
-              }},
-              hiroshima: { pref: '広島県', areas: {
-                hiroshima_delta: { name: '広島市中区・太田川デルタ低地帯', lat: 34.3853, lon: 132.4553, baseRain: 45, shelterSpace: 2.0, industrialDensity: 0.48, elevation: 2.2, drainageCap: 48 },
-                otake_iwakuni: { name: '大竹市・瀬戸内臨海コンビナート', lat: 34.2361, lon: 132.2244, baseRain: 44, shelterSpace: 2.5, industrialDensity: 0.90, elevation: 2.8, drainageCap: 46 }
-              }},
-              fukuoka: { pref: '福岡県', areas: {
-                kitakyushu: { name: '北九州市・洞海湾〜響灘臨海帯', lat: 33.8834, lon: 130.8751, baseRain: 52, shelterSpace: 2.4, industrialDensity: 0.88, elevation: 3.5, drainageCap: 50 },
-                hakata_bay: { name: '福岡市博多区・博多湾沿岸', lat: 33.5902, lon: 130.4017, baseRain: 50, shelterSpace: 2.0, industrialDensity: 0.40, elevation: 4.0, drainageCap: 52 }
+                tamano_mitsui: { name: '玉野市・宇野港〜三井E&S臨海重工業エリア', lat: 34.4847, lon: 133.9461, baseRain: 38, shelterSpace: 2.8, industrialDensity: 0.88, nuclearFacility: false, elevation: 2.8, drainageCap: 45 },
+                setouchi: { name: '瀬戸内市・牛窓〜邑久沿岸エリア', lat: 34.6517, lon: 134.0933, baseRain: 35, shelterSpace: 3.4, industrialDensity: 0.35, nuclearFacility: false, elevation: 8.5, drainageCap: 45 },
+                kurashiki_mizushima: { name: '倉敷市・水島臨海コンビナート周辺', lat: 34.5125, lon: 133.7483, baseRain: 40, shelterSpace: 2.3, industrialDensity: 0.95, nuclearFacility: false, elevation: 3.0, drainageCap: 46 },
+                okayama_kita: { name: '岡山市北区・旭川下流域', lat: 34.6618, lon: 133.9344, baseRain: 38, shelterSpace: 2.6, industrialDensity: 0.40, nuclearFacility: false, elevation: 5.0, drainageCap: 48 }
               }},
               hokkaido: { pref: '北海道', areas: {
-                tomakomai: { name: '苫小牧市・臨海工業基地', lat: 42.6343, lon: 141.6054, baseRain: 32, shelterSpace: 3.6, industrialDensity: 0.82, elevation: 5.0, drainageCap: 45 },
-                sapporo_kita: { name: '札幌市北区・石狩川水系低地', lat: 43.0908, lon: 141.3408, baseRain: 35, shelterSpace: 2.8, industrialDensity: 0.30, elevation: 14.0, drainageCap: 48 }
+                tomari_npp: { name: '泊村・泊原子力発電所周辺エリア', lat: 43.0361, lon: 140.5125, baseRain: 34, shelterSpace: 3.5, industrialDensity: 0.75, nuclearFacility: true, elevation: 12.0, drainageCap: 45 },
+                tomakomai: { name: '苫小牧市・苫小牧臨海コンビナート', lat: 42.6343, lon: 141.6054, baseRain: 32, shelterSpace: 3.6, industrialDensity: 0.85, nuclearFacility: false, elevation: 5.0, drainageCap: 45 },
+                sapporo_kita: { name: '札幌市北区・石狩川水系低地', lat: 43.0908, lon: 141.3408, baseRain: 35, shelterSpace: 2.8, industrialDensity: 0.30, nuclearFacility: false, elevation: 14.0, drainageCap: 48 }
+              }},
+              aomori: { pref: '青森県', areas: {
+                rokkasho_cycle: { name: '六ヶ所村・核燃料サイクル施設周辺', lat: 40.9583, lon: 141.3258, baseRain: 36, shelterSpace: 3.6, industrialDensity: 0.82, nuclearFacility: true, elevation: 18.0, drainageCap: 45 },
+                higashidori_npp: { name: '東通村・東通原子力発電所周辺', lat: 41.1878, lon: 141.3903, baseRain: 36, shelterSpace: 3.6, industrialDensity: 0.72, nuclearFacility: true, elevation: 15.0, drainageCap: 45 }
               }},
               miyagi: { pref: '宮城県', areas: {
-                sendai_port: { name: '仙台市宮城野区・仙台塩釜港臨海帯', lat: 38.2736, lon: 141.0022, baseRain: 42, shelterSpace: 2.5, industrialDensity: 0.80, elevation: 2.4, drainageCap: 48 }
+                onagawa_npp: { name: '女川町・女川原子力発電所周辺エリア', lat: 38.4011, lon: 141.4997, baseRain: 40, shelterSpace: 3.1, industrialDensity: 0.78, nuclearFacility: true, elevation: 14.0, drainageCap: 46 },
+                sendai_port: { name: '仙台市宮城野区・仙台塩釜港コンビナート', lat: 38.2736, lon: 141.0022, baseRain: 42, shelterSpace: 2.5, industrialDensity: 0.84, nuclearFacility: false, elevation: 2.4, drainageCap: 48 }
+              }},
+              fukushima: { pref: '福島県', areas: {
+                futaba_okuma: { name: '大熊町・双葉町（福島第一・第二原発沿岸域）', lat: 37.4214, lon: 141.0325, baseRain: 42, shelterSpace: 3.2, industrialDensity: 0.80, nuclearFacility: true, elevation: 10.0, drainageCap: 46 },
+                iwaki_onahama: { name: 'いわき市・小名浜臨海工業地帯', lat: 36.9439, lon: 140.9036, baseRain: 44, shelterSpace: 2.7, industrialDensity: 0.86, nuclearFacility: false, elevation: 3.5, drainageCap: 48 }
+              }},
+              ibaraki: { pref: '茨城県', areas: {
+                kashima_comb: { name: '神栖市・鹿島臨海コンビナート地帯', lat: 35.9189, lon: 140.6869, baseRain: 45, shelterSpace: 2.8, industrialDensity: 0.96, nuclearFacility: false, elevation: 3.2, drainageCap: 48 },
+                tokai_npp: { name: '東海村・東海第二発電所・原子力研究施設周辺', lat: 36.4664, lon: 140.6067, baseRain: 44, shelterSpace: 2.7, industrialDensity: 0.85, nuclearFacility: true, elevation: 8.0, drainageCap: 48 }
+              }},
+              chiba: { pref: '千葉県', areas: {
+                ichihara_keiyo: { name: '市原市・京葉臨海コンビナート', lat: 35.4981, lon: 140.1156, baseRain: 48, shelterSpace: 2.2, industrialDensity: 0.96, nuclearFacility: false, elevation: 2.5, drainageCap: 48 },
+                urayasu: { name: '浦安市・東京湾岸埋立地', lat: 35.6531, lon: 139.9022, baseRain: 46, shelterSpace: 1.9, industrialDensity: 0.35, nuclearFacility: false, elevation: 1.8, drainageCap: 50 }
+              }},
+              tokyo: { pref: '東京都', areas: {
+                koto_bay: { name: '江東区・臨海湾岸ゼロメートル地帯', lat: 35.6495, lon: 139.7914, baseRain: 45, shelterSpace: 1.8, industrialDensity: 0.85, nuclearFacility: false, elevation: 1.2, drainageCap: 45 },
+                ota_keihin: { name: '大田区・京浜工業地帯沿岸', lat: 35.5613, lon: 139.7160, baseRain: 50, shelterSpace: 1.9, industrialDensity: 0.92, nuclearFacility: false, elevation: 2.5, drainageCap: 48 },
+                shinjuku: { name: '新宿区・都心高密エリア', lat: 35.6938, lon: 139.7034, baseRain: 40, shelterSpace: 1.5, industrialDensity: 0.25, nuclearFacility: false, elevation: 32.0, drainageCap: 55 }
+              }},
+              kanagawa: { pref: '神奈川県', areas: {
+                kawasaki_ukishima: { name: '川崎市川崎区・京浜臨海コンビナート', lat: 35.5189, lon: 139.7822, baseRain: 49, shelterSpace: 1.8, industrialDensity: 0.95, nuclearFacility: false, elevation: 1.8, drainageCap: 48 },
+                yokohama_negishi: { name: '横浜市磯子区・根岸臨海コンビナート', lat: 35.4058, lon: 139.6331, baseRain: 47, shelterSpace: 1.9, industrialDensity: 0.88, nuclearFacility: false, elevation: 2.5, drainageCap: 50 }
+              }},
+              niigata: { pref: '新潟県', areas: {
+                kashiwazaki_npp: { name: '柏崎市・刈羽村（柏崎刈羽原発周辺エリア）', lat: 37.4286, lon: 138.6017, baseRain: 46, shelterSpace: 3.1, industrialDensity: 0.82, nuclearFacility: true, elevation: 10.0, drainageCap: 46 },
+                niigata_higashi: { name: '聖籠町・新潟東港臨海工業地帯', lat: 37.9942, lon: 139.2361, baseRain: 45, shelterSpace: 3.0, industrialDensity: 0.84, nuclearFacility: false, elevation: 3.5, drainageCap: 46 }
+              }},
+              ishikawa: { pref: '石川県', areas: {
+                shika_npp: { name: '志賀町・志賀原子力発電所周辺エリア', lat: 37.0611, lon: 136.7264, baseRain: 48, shelterSpace: 3.2, industrialDensity: 0.78, nuclearFacility: true, elevation: 12.0, drainageCap: 44 }
+              }},
+              fukui: { pref: '福井県', areas: {
+                ohi_takahama_npp: { name: 'おおい町・高浜町（大飯・高浜原発周辺）', lat: 35.5406, lon: 135.6522, baseRain: 52, shelterSpace: 3.2, industrialDensity: 0.85, nuclearFacility: true, elevation: 9.5, drainageCap: 45 },
+                mihama_tsuruga_npp: { name: '美浜町・敦賀市（美浜・敦賀原発周辺）', lat: 35.7025, lon: 135.9631, baseRain: 52, shelterSpace: 3.0, industrialDensity: 0.85, nuclearFacility: true, elevation: 8.5, drainageCap: 45 }
+              }},
+              shizuoka: { pref: '静岡県', areas: {
+                omaezaki_npp: { name: '御前崎市・浜岡原子力発電所周辺エリア', lat: 34.6233, lon: 138.1425, baseRain: 56, shelterSpace: 2.9, industrialDensity: 0.84, nuclearFacility: true, elevation: 7.5, drainageCap: 48 },
+                fuji_suruga: { name: '富士市・駿河湾臨海工業地帯', lat: 35.1414, lon: 138.6811, baseRain: 58, shelterSpace: 2.6, industrialDensity: 0.86, nuclearFacility: false, elevation: 4.0, drainageCap: 48 }
+              }},
+              aichi: { pref: '愛知県', areas: {
+                nagoya_port: { name: '名古屋市港区・名古屋港臨海コンビナート', lat: 35.0911, lon: 136.8814, baseRain: 48, shelterSpace: 2.1, industrialDensity: 0.91, nuclearFacility: false, elevation: 1.5, drainageCap: 48 },
+                toyota_inland: { name: '豊田市・矢作川中流域', lat: 35.0824, lon: 137.1562, baseRain: 45, shelterSpace: 3.1, industrialDensity: 0.65, nuclearFacility: false, elevation: 42.0, drainageCap: 55 }
+              }},
+              mie: { pref: '三重県', areas: {
+                yokkaichi: { name: '四日市市・四日市コンビナート臨海帯', lat: 34.9651, lon: 136.6244, baseRain: 54, shelterSpace: 2.2, industrialDensity: 0.96, nuclearFacility: false, elevation: 2.1, drainageCap: 45 },
+                ise_miyagawa: { name: '伊勢市・宮川下流域', lat: 34.4875, lon: 136.7094, baseRain: 58, shelterSpace: 2.8, industrialDensity: 0.30, nuclearFacility: false, elevation: 4.5, drainageCap: 42 }
+              }},
+              osaka: { pref: '大阪府', areas: {
+                sakai_senboku: { name: '堺市・泉北臨海コンビナート地帯', lat: 34.5733, lon: 135.4372, baseRain: 45, shelterSpace: 1.9, industrialDensity: 0.93, nuclearFacility: false, elevation: 2.8, drainageCap: 48 },
+                umeda_yodo: { name: '大阪市北区・淀川河口低地帯', lat: 34.7024, lon: 135.4959, baseRain: 42, shelterSpace: 1.6, industrialDensity: 0.45, nuclearFacility: false, elevation: 2.0, drainageCap: 50 }
+              }},
+              hyogo: { pref: '兵庫県', areas: {
+                himeji_rinkai: { name: '姫路市・播磨臨海コンビナート地帯', lat: 34.7865, lon: 134.6642, baseRain: 42, shelterSpace: 2.5, industrialDensity: 0.93, nuclearFacility: false, elevation: 2.8, drainageCap: 46 },
+                kobe_port: { name: '神戸市中央区・神戸港湾低地帯', lat: 34.6851, lon: 135.1955, baseRain: 46, shelterSpace: 2.0, industrialDensity: 0.78, nuclearFacility: false, elevation: 3.2, drainageCap: 50 }
+              }},
+              shimane: { pref: '島根県', areas: {
+                matsue_shimane_npp: { name: '松江市鹿島町・島根原子力発電所周辺', lat: 35.5383, lon: 132.9992, baseRain: 44, shelterSpace: 2.9, industrialDensity: 0.80, nuclearFacility: true, elevation: 11.0, drainageCap: 45 }
+              }},
+              hiroshima: { pref: '広島県', areas: {
+                otake_iwakuni: { name: '大竹市・瀬戸内臨海コンビナート', lat: 34.2361, lon: 132.2244, baseRain: 44, shelterSpace: 2.5, industrialDensity: 0.90, nuclearFacility: false, elevation: 2.8, drainageCap: 46 },
+                hiroshima_delta: { name: '広島市中区・太田川デルタ低地帯', lat: 34.3853, lon: 132.4553, baseRain: 45, shelterSpace: 2.0, industrialDensity: 0.48, nuclearFacility: false, elevation: 2.2, drainageCap: 48 }
+              }},
+              yamaguchi: { pref: '山口県', areas: {
+                shunan_comb: { name: '周南市・徳山〜南陽臨海コンビナート', lat: 34.0483, lon: 131.8058, baseRain: 46, shelterSpace: 2.6, industrialDensity: 0.95, nuclearFacility: false, elevation: 3.0, drainageCap: 46 },
+                ube_onoda: { name: '宇部市・山陽小野田市 臨海工業地帯', lat: 33.9431, lon: 131.2467, baseRain: 45, shelterSpace: 2.7, industrialDensity: 0.88, nuclearFacility: false, elevation: 2.8, drainageCap: 46 }
+              }},
+              ehime: { pref: '愛媛県', areas: {
+                ikata_npp: { name: '伊方町・伊方原子力発電所（佐田岬半島）', lat: 33.4908, lon: 132.3114, baseRain: 48, shelterSpace: 3.0, industrialDensity: 0.82, nuclearFacility: true, elevation: 14.0, drainageCap: 45 },
+                niihama_comb: { name: '新居浜市・瀬戸内臨海化学工業地帯', lat: 33.9603, lon: 133.2833, baseRain: 45, shelterSpace: 2.7, industrialDensity: 0.88, nuclearFacility: false, elevation: 3.5, drainageCap: 46 }
+              }},
+              fukuoka: { pref: '福岡県', areas: {
+                kitakyushu: { name: '北九州市・洞海湾〜響灘臨海工業帯', lat: 33.8834, lon: 130.8751, baseRain: 52, shelterSpace: 2.4, industrialDensity: 0.88, nuclearFacility: false, elevation: 3.5, drainageCap: 50 },
+                hakata_bay: { name: '福岡市博多区・博多湾沿岸', lat: 33.5902, lon: 130.4017, baseRain: 50, shelterSpace: 2.0, industrialDensity: 0.40, nuclearFacility: false, elevation: 4.0, drainageCap: 52 }
+              }},
+              saga: { pref: '佐賀県', areas: {
+                genkai_npp: { name: '玄海町・唐津市（玄海原子力発電所周辺）', lat: 33.5156, lon: 129.8372, baseRain: 52, shelterSpace: 3.1, industrialDensity: 0.80, nuclearFacility: true, elevation: 12.0, drainageCap: 46 }
+              }},
+              oita: { pref: '大分県', areas: {
+                oita_comb: { name: '大分市・大分臨海コンビナート地帯', lat: 33.2583, lon: 131.6833, baseRain: 50, shelterSpace: 2.6, industrialDensity: 0.92, nuclearFacility: false, elevation: 2.8, drainageCap: 48 }
+              }},
+              kagoshima: { pref: '鹿児島県', areas: {
+                sendai_npp: { name: '薩摩川内市・川内原子力発電所周辺エリア', lat: 31.8336, lon: 130.1897, baseRain: 60, shelterSpace: 3.0, industrialDensity: 0.82, nuclearFacility: true, elevation: 11.0, drainageCap: 50 }
               }},
               okinawa: { pref: '沖縄県', areas: {
-                naha_port: { name: '那覇市・那覇港湾〜新都心エリア', lat: 26.2124, lon: 127.6809, baseRain: 65, shelterSpace: 2.0, industrialDensity: 0.55, elevation: 4.0, drainageCap: 55 }
+                naha_port: { name: '那覇市・那覇港湾〜新都心エリア', lat: 26.2124, lon: 127.6809, baseRain: 65, shelterSpace: 2.0, industrialDensity: 0.55, nuclearFacility: false, elevation: 4.0, drainageCap: 55 }
               }}
             };
           }
 
           calculateDetailedRisk({ 
             lat, lon, areaName, 
-            baseRain = 45, shelterSpace = 2.2, industrialDensity = 0.6, elevation = 5.0, drainageCap = 48,
+            baseRain = 45, shelterSpace = 2.2, industrialDensity = 0.6, nuclearFacility = false, elevation = 5.0, drainageCap = 48,
             forecastDays = 3, baseDateTimeStr = null,
             customShelterSqm = null, customVentLevel = 3,
             liveWeather = null 
@@ -348,12 +398,15 @@
             let primaryThreat = `【現在の予報】今後${forecastDays}日間の実測ベース冠水確率は${activeStep.inundationRisk}%（実際のパンデミック確率${activeStep.outbreakRisk}%）ですが、仮に豪雨が直撃した場合の潜在冠水リスクは${activeStep.worstInundationRisk}%に達します。`;
             let recommendedAction = '平時のうちはハザードマップで「高台ルート」と「1人3.5㎡以上の2次避難先」を確認し、雨雲レーダーの警戒ライン超えに備えてください。';
 
-            if (activeStep.outbreakRisk >= 55 || activeStep.worstOutbreakRisk >= 70) {
+            if (nuclearFacility) {
+              primaryThreat = `【原子力・重要インフラ複合警戒域】本エリアは原子力関連施設および臨海インフラの近接圏です。現在予報のNatech・複合リスクは${activeStep.natechRisk}%ですが、豪雨・地震・停電等の複合事象発生時の潜在リスクは${activeStep.worstNatechRisk}%に達します。`;
+              recommendedAction = `自治体の原子力防災計画（UPZ/PAZ区分）に基づく「屋内退避施設（コンクリート建物）」と「風向に応じた広域避難ルート・安定ヨウ素剤配布場所」を事前確認してください。`;
+            } else if (activeStep.outbreakRisk >= 55 || activeStep.worstOutbreakRisk >= 70) {
               primaryThreat = `【避難所過密リスク】実際に避難所が開設された場合、滞在${forecastDays}日目（1人あたり ${activeStep.effectiveShelterSqm}㎡・換気${activeStep.ventilationRate}回/h）でパンデミック発生確率が${activeStep.worstOutbreakRisk}%（現在の実発生確率は${activeStep.outbreakRisk}%）まで上昇します。`;
               recommendedAction = `一次避難所の過密化が進む前に、個別空間が確保された二次避難施設（分散避難先）への早期移動と換気ゾーニング強化（1人3.5㎡以上確保）を推奨します。`;
             } else if (activeStep.worstNatechRisk >= 68) {
-              primaryThreat = `【大雨発生時の潜在Natech脅威】現在の実発生確率は${activeStep.natechRisk}%ですが、仮に時間${activeStep.worstPeakHourlyMm}mmの豪雨が発生すると冠水確率${activeStep.worstInundationRisk}%に伴い臨海工業帯の爆発・ガス漏洩リスクが${activeStep.worstNatechRisk}%へ急騰します。`;
-              recommendedAction = `大雨警報発令時は冠水が始まる前に、風上かつ標高20m以上の指定高台エリアへ即時退避してください。`;
+              primaryThreat = `【大雨発生時の潜在Natech脅威】現在の実発生確率は${activeStep.natechRisk}%ですが、仮に時間${activeStep.worstPeakHourlyMm}mmの豪雨が発生すると冠水確率${activeStep.worstInundationRisk}%に伴い臨海工業・造船重工業帯の爆発・ガス漏洩リスクが${activeStep.worstNatechRisk}%へ急騰します。`;
+              recommendedAction = `大雨・高潮警報発令時は冠水が始まる前に、風上かつ標高20m以上の指定高台エリアへ即時退避してください。`;
             }
 
             let thermalCare = {
@@ -402,6 +455,7 @@
               areaName: areaName || `GPS測位地点 (${lat.toFixed(3)}, ${lon.toFixed(3)})`,
               lat: lat.toFixed(4),
               lon: lon.toFixed(4),
+              nuclearFacility,
               baseDateTimeFormatted: formatJPDateTime(validBaseDate),
               targetDateTimeFormatted: activeStep.fullDateTime,
               forecastDays,
@@ -461,7 +515,7 @@
           const [liveWeatherCache, setLiveWeatherCache] = useState(null);
           const [locationError, setLocationError] = useState(null);
           const [selectedPref, setSelectedPref] = useState('okayama');
-          const [selectedAreaKey, setSelectedAreaKey] = useState('setouchi');
+          const [selectedAreaKey, setSelectedAreaKey] = useState('tamano_mitsui');
           const [forecastDays, setForecastDays] = useState(3);
 
           const getDefaultLocalDateTime = () => {
@@ -512,7 +566,7 @@
           };
 
           const [localRiskData, setLocalRiskData] = useState(() => {
-            const initArea = riskCalculator.regionDatabase.okayama.areas.setouchi;
+            const initArea = riskCalculator.regionDatabase.okayama.areas.tamano_mitsui;
             return riskCalculator.calculateDetailedRisk({ ...initArea, forecastDays: 3 });
           });
 
@@ -1091,18 +1145,14 @@
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
                         <div className="text-xs text-slate-400 font-mono flex items-center justify-between">
-                          <span>合成リスク指数 (E_pen)</span>
-                          <Activity className="w-4 h-4 text-amber-400" />
+                          <span>{localRiskData.nuclearFacility ? 'Natech・原子力複合リスク' : 'Natechプラント・重工業'}</span>
+                          <Flame className="w-4 h-4 text-red-400" />
                         </div>
-                        <div className="text-3xl font-black font-mono text-amber-400">
-                          {riskScenarioMode === 'ACTUAL' ? localRiskData.compositeEntropy : localRiskData.worstCompositeEntropy}{' '}
-                          <span className="text-xs font-normal text-slate-500">/ 1.00</span>
+                        <div className="text-2xl font-bold font-mono text-red-300">
+                          {riskScenarioMode === 'ACTUAL' ? localRiskData.natechRisk : localRiskData.worstNatechRisk}%
                         </div>
-                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                          <div 
-                            className="bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500 h-full transition-all duration-500"
-                            style={{ width: `${(riskScenarioMode === 'ACTUAL' ? localRiskData.compositeEntropy : localRiskData.worstCompositeEntropy) * 100}%` }}
-                          />
+                        <div className="text-[11px] text-slate-400">
+                          {localRiskData.nuclearFacility ? '原子力関連施設近接 / 複合警戒域' : `臨海工業・重工業集積度: ${localRiskData.factors.industrialDensityPct}%`}
                         </div>
                       </div>
 
