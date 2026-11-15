@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenLBOF | Human-Centric Safety Infrastructure & Global Risk Dashboard</title>
+    <title>OpenLBOF | 実践型・防災＆相互尊厳インフラ (Global Risk & Action Portal)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM -->
@@ -31,7 +31,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
+        const { useState, useEffect, useMemo } = React;
         
         const LucideIcons = window.lucide || {};
         const createLucideComponent = (iconDef) => {
@@ -56,16 +56,15 @@
             );
         };
 
+        // アイコンコンポーネント群
         const Shield = createLucideComponent(LucideIcons.Shield);
         const Heart = createLucideComponent(LucideIcons.Heart);
-        const Cpu = createLucideComponent(LucideIcons.Cpu);
         const Activity = createLucideComponent(LucideIcons.Activity);
         const Lock = createLucideComponent(LucideIcons.Lock);
         const Users = createLucideComponent(LucideIcons.Users);
         const Terminal = createLucideComponent(LucideIcons.Terminal);
         const FileText = createLucideComponent(LucideIcons.FileText);
         const ChevronRight = createLucideComponent(LucideIcons.ChevronRight);
-        const Compass = createLucideComponent(LucideIcons.Compass);
         const Code = createLucideComponent(LucideIcons.Code);
         const Stethoscope = createLucideComponent(LucideIcons.Stethoscope);
         const Scale = createLucideComponent(LucideIcons.Scale);
@@ -81,26 +80,83 @@
         const RefreshCw = createLucideComponent(LucideIcons.RefreshCw);
         const Sliders = createLucideComponent(LucideIcons.Sliders);
         const Eye = createLucideComponent(LucideIcons.Eye);
-        const ShieldCheck = createLucideComponent(LucideIcons.ShieldCheck);
-        const Wind = createLucideComponent(LucideIcons.Wind);
-        const Feather = createLucideComponent(LucideIcons.Feather);
-        const Brain = createLucideComponent(LucideIcons.Brain);
-        const Zap = createLucideComponent(LucideIcons.Zap);
-        const Info = createLucideComponent(LucideIcons.Info);
         const CloudRain = createLucideComponent(LucideIcons.CloudRain);
         const ExternalLink = createLucideComponent(LucideIcons.ExternalLink);
-        const Calendar = createLucideComponent(LucideIcons.Calendar);
         const Copy = createLucideComponent(LucideIcons.Copy);
         const Thermometer = createLucideComponent(LucideIcons.Thermometer);
         const MapIcon = createLucideComponent(LucideIcons.Map);
         const CheckSquare = createLucideComponent(LucideIcons.CheckSquare);
-        
+        const PhoneCall = createLucideComponent(LucideIcons.PhoneCall);
+        const ClipboardList = createLucideComponent(LucideIcons.ClipboardList);
+        const Home = createLucideComponent(LucideIcons.Home);
+
+        // 1〜7日間のリスク推移グラフコンポーネント
+        const RiskTimelineChart = ({ timeline = [], selectedDay = 3, mode = 'ACTUAL' }) => {
+            if (!timeline.length) return null;
+            const width = 620;
+            const height = 210;
+            const padding = { top: 20, right: 24, bottom: 34, left: 42 };
+            const chartW = width - padding.left - padding.right;
+            const chartH = height - padding.top - padding.bottom;
+
+            const getX = (idx) => padding.left + (idx / Math.max(1, timeline.length - 1)) * chartW;
+            const getY = (val) => padding.top + chartH - (Math.min(100, Math.max(0, val)) / 100) * chartH;
+
+            const kInund = mode === 'ACTUAL' ? 'inundationRisk' : 'worstInundationRisk';
+            const kNatech = mode === 'ACTUAL' ? 'natechRisk' : 'worstNatechRisk';
+            const kOutbreak = mode === 'ACTUAL' ? 'outbreakRisk' : 'worstOutbreakRisk';
+
+            const buildPath = (key) => timeline.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d[key])}`).join(' ');
+
+            return (
+                <div className="w-full space-y-2">
+                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-48 sm:h-56 overflow-visible">
+                        {[0, 25, 50, 75, 100].map((v) => (
+                            <g key={v}>
+                                <line x1={padding.left} y1={getY(v)} x2={width - padding.right} y2={getY(v)} stroke="#1e293b" strokeDasharray="3 3" strokeWidth="1" />
+                                <text x={padding.left - 8} y={getY(v) + 4} fill="#64748b" fontSize="10" textAnchor="end" className="font-mono">{v}%</text>
+                            </g>
+                        ))}
+                        {timeline.map((d, i) => {
+                            const isSelected = d.day === selectedDay;
+                            return (
+                                <g key={d.day}>
+                                    {isSelected && (
+                                        <line x1={getX(i)} y1={padding.top} x2={getX(i)} y2={height - padding.bottom} stroke="#a855f7" strokeWidth="1.5" strokeDasharray="4 2" />
+                                    )}
+                                    <text x={getX(i)} y={height - 10} fill={isSelected ? "#e9d5ff" : "#94a3b8"} fontSize="10" fontWeight={isSelected ? "bold" : "normal"} textAnchor="middle" className="font-mono">
+                                        {d.shortDate}
+                                    </text>
+                                </g>
+                            );
+                        })}
+                        <path d={buildPath(kInund)} fill="none" stroke="#22d3ee" strokeWidth="2.5" />
+                        <path d={buildPath(kNatech)} fill="none" stroke="#f87171" strokeWidth="2" strokeDasharray="5 3" />
+                        <path d={buildPath(kOutbreak)} fill="none" stroke="#c084fc" strokeWidth="2.5" />
+                        {timeline.map((d, i) => (
+                            <g key={`pts-${d.day}`}>
+                                <circle cx={getX(i)} cy={getY(d[kInund])} r={d.day === selectedDay ? 4.5 : 3} fill="#22d3ee" />
+                                <circle cx={getX(i)} cy={getY(d[kNatech])} r={d.day === selectedDay ? 4 : 2.5} fill="#f87171" />
+                                <circle cx={getX(i)} cy={getY(d[kOutbreak])} r={d.day === selectedDay ? 4.5 : 3} fill="#c084fc" />
+                            </g>
+                        ))}
+                    </svg>
+                    <div className="flex flex-wrap items-center justify-center gap-5 text-[11px] font-mono text-slate-300">
+                        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-cyan-400 inline-block"/> 道路冠水・内水氾濫</span>
+                        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-red-400 inline-block"/> Natechプラント爆発</span>
+                        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-purple-400 inline-block"/> 避難所パンデミック</span>
+                    </div>
+                </div>
+            );
+        };
+
+        // ライブテレメトリグラフ
         const CustomLineChart = ({ data = [] }) => {
             return (
                 <div className="w-full h-full flex flex-col justify-end">
                     <div className="w-full flex-1 bg-slate-950/60 rounded-xl border border-slate-800/80 p-4 relative overflow-hidden flex items-end">
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
-                            <span className="text-8xl font-mono font-bold text-white">OBC-LBOF</span>
+                            <span className="text-7xl sm:text-8xl font-mono font-bold text-white">OBC-LBOF</span>
                         </div>
                         {data.length === 0 ? (
                             <div className="w-full h-full flex items-center justify-center text-xs font-mono text-slate-500">
@@ -128,7 +184,7 @@
                             </div>
                         )}
                     </div>
-                    <div className="flex items-center gap-6 text-[11px] font-mono text-slate-400 mt-2">
+                    <div className="flex flex-wrap items-center gap-6 text-[11px] font-mono text-slate-400 mt-2">
                         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block"/> 生体データ</span>
                         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"/> 動的ベースライン</span>
                         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"/> 目的関数 J スコア</span>
@@ -137,106 +193,14 @@
             );
         };
 
-        // 改善案2: 1〜7日間のリスク推移グラフ（冠水 vs Natech vs パンデミック）
-        const RiskTimelineChart = ({ timeline = [], selectedDay = 3 }) => {
-            if (!timeline.length) return null;
-            const width = 620;
-            const height = 210;
-            const padding = { top: 20, right: 24, bottom: 34, left: 42 };
-            const chartW = width - padding.left - padding.right;
-            const chartH = height - padding.top - padding.bottom;
-
-            const getX = (idx) => padding.left + (idx / Math.max(1, timeline.length - 1)) * chartW;
-            const getY = (val) => padding.top + chartH - (Math.min(100, Math.max(0, val)) / 100) * chartH;
-
-            const buildPath = (key) => timeline.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d[key])}`).join(' ');
-
-            return (
-                <div className="w-full space-y-2">
-                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-48 sm:h-56 overflow-visible">
-                        {[0, 25, 50, 75, 100].map((v) => (
-                            <g key={v}>
-                                <line x1={padding.left} y1={getY(v)} x2={width - padding.right} y2={getY(v)} stroke="#1e293b" strokeDasharray="3 3" strokeWidth="1" />
-                                <text x={padding.left - 8} y={getY(v) + 4} fill="#64748b" fontSize="10" textAnchor="end" className="font-mono">{v}%</text>
-                            </g>
-                        ))}
-                        {timeline.map((d, i) => {
-                            const isSelected = d.day === selectedDay;
-                            return (
-                                <g key={d.day}>
-                                    {isSelected && (
-                                        <line x1={getX(i)} y1={padding.top} x2={getX(i)} y2={height - padding.bottom} stroke="#a855f7" strokeWidth="1.5" strokeDasharray="4 2" />
-                                    )}
-                                    <text x={getX(i)} y={height - 10} fill={isSelected ? "#e9d5ff" : "#94a3b8"} fontSize="10" fontWeight={isSelected ? "bold" : "normal"} textAnchor="middle" className="font-mono">
-                                        {d.shortDate}
-                                    </text>
-                                </g>
-                            );
-                        })}
-                        <path d={buildPath('inundationRisk')} fill="none" stroke="#22d3ee" strokeWidth="2.5" />
-                        <path d={buildPath('natechRisk')} fill="none" stroke="#f87171" strokeWidth="2" strokeDasharray="5 3" />
-                        <path d={buildPath('outbreakRisk')} fill="none" stroke="#c084fc" strokeWidth="2.5" />
-                        {timeline.map((d, i) => (
-                            <g key={`pts-${d.day}`}>
-                                <circle cx={getX(i)} cy={getY(d.inundationRisk)} r={d.day === selectedDay ? 4.5 : 3} fill="#22d3ee" />
-                                <circle cx={getX(i)} cy={getY(d.natechRisk)} r={d.day === selectedDay ? 4 : 2.5} fill="#f87171" />
-                                <circle cx={getX(i)} cy={getY(d.outbreakRisk)} r={d.day === selectedDay ? 4.5 : 3} fill="#c084fc" />
-                            </g>
-                        ))}
-                    </svg>
-                    <div className="flex flex-wrap items-center justify-center gap-5 text-[11px] font-mono text-slate-300">
-                        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-cyan-400 inline-block"/> 道路冠水・内水氾濫</span>
-                        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-red-400 inline-block"/> Natechプラント爆発</span>
-                        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-purple-400 inline-block"/> 避難所パンデミック</span>
-                    </div>
-                </div>
-            );
-        };
-
         class LocalRiskCalculatorEngine {
           constructor() {
-            // 改善案3: 全国47都道府県フルカバーデータベース
+            // 全国主要・47都道府県対応データベース
             this.regionDatabase = {
-              hokkaido: { pref: '北海道', areas: {
-                tomakomai: { name: '苫小牧市・臨海工業基地', lat: 42.6343, lon: 141.6054, baseRain: 32, shelterSpace: 3.6, industrialDensity: 0.82, elevation: 5.0, drainageCap: 45 },
-                sapporo_kita: { name: '札幌市北区・石狩川水系低地', lat: 43.0908, lon: 141.3408, baseRain: 35, shelterSpace: 2.8, industrialDensity: 0.30, elevation: 14.0, drainageCap: 48 }
-              }},
-              aomori: { pref: '青森県', areas: {
-                hachinohe: { name: '八戸市・八戸港臨海工業地帯', lat: 40.5312, lon: 141.5194, baseRain: 36, shelterSpace: 3.1, industrialDensity: 0.78, elevation: 4.2, drainageCap: 44 },
-                aomori_bay: { name: '青森市・青森湾沿岸低地', lat: 40.8222, lon: 140.7474, baseRain: 38, shelterSpace: 2.9, industrialDensity: 0.35, elevation: 3.8, drainageCap: 45 }
-              }},
-              iwate: { pref: '岩手県', areas: {
-                kamaishi: { name: '釜石市・湾岸低地エリア', lat: 39.2758, lon: 141.8856, baseRain: 40, shelterSpace: 3.0, industrialDensity: 0.55, elevation: 4.5, drainageCap: 46 },
-                morioka: { name: '盛岡市・北上川合流低地', lat: 39.7020, lon: 141.1545, baseRain: 38, shelterSpace: 3.2, industrialDensity: 0.25, elevation: 122.0, drainageCap: 50 }
-              }},
-              miyagi: { pref: '宮城県', areas: {
-                sendai_port: { name: '仙台市宮城野区・仙台塩釜港臨海帯', lat: 38.2736, lon: 141.0022, baseRain: 42, shelterSpace: 2.5, industrialDensity: 0.80, elevation: 2.4, drainageCap: 48 },
-                ishinomaki: { name: '石巻市・旧北上川河口低地', lat: 38.4344, lon: 141.3028, baseRain: 41, shelterSpace: 2.7, industrialDensity: 0.52, elevation: 1.8, drainageCap: 45 }
-              }},
-              akita: { pref: '秋田県', areas: {
-                akita_port: { name: '秋田市・秋田港臨海工業帯', lat: 39.7547, lon: 140.0631, baseRain: 44, shelterSpace: 3.1, industrialDensity: 0.68, elevation: 3.2, drainageCap: 44 }
-              }},
-              yamagata: { pref: '山形県', areas: {
-                sakata_port: { name: '酒田市・酒田港臨海工業帯', lat: 38.9258, lon: 139.8256, baseRain: 43, shelterSpace: 3.2, industrialDensity: 0.65, elevation: 3.5, drainageCap: 45 }
-              }},
-              fukushima: { pref: '福島県', areas: {
-                iwaki_onahama: { name: 'いわき市・小名浜臨海工業地帯', lat: 36.9447, lon: 140.9036, baseRain: 44, shelterSpace: 2.7, industrialDensity: 0.84, elevation: 3.0, drainageCap: 46 }
-              }},
-              ibaraki: { pref: '茨城県', areas: {
-                kashima: { name: '神栖市・鹿島臨海工業地帯', lat: 35.9189, lon: 140.6844, baseRain: 45, shelterSpace: 2.6, industrialDensity: 0.94, elevation: 3.5, drainageCap: 48 }
-              }},
-              tochigi: { pref: '栃木県', areas: {
-                utsunomiya: { name: '宇都宮市・鬼怒川〜田川低地帯', lat: 36.5551, lon: 139.8828, baseRain: 46, shelterSpace: 2.9, industrialDensity: 0.45, elevation: 105.0, drainageCap: 50 }
-              }},
-              gunma: { pref: '群馬県', areas: {
-                maebashi_tone: { name: '前橋市・利根川上流沿岸帯', lat: 36.3895, lon: 139.0634, baseRain: 44, shelterSpace: 3.0, industrialDensity: 0.42, elevation: 102.0, drainageCap: 50 }
-              }},
-              saitama: { pref: '埼玉県', areas: {
-                koshigaya: { name: '越谷市・中川綾瀬川低地帯', lat: 35.8911, lon: 139.7908, baseRain: 46, shelterSpace: 2.0, industrialDensity: 0.48, elevation: 3.2, drainageCap: 46 }
-              }},
-              chiba: { pref: '千葉県', areas: {
-                ichihara_keiyo: { name: '市原市・京葉臨海コンビナート', lat: 35.4981, lon: 140.1156, baseRain: 48, shelterSpace: 2.2, industrialDensity: 0.96, elevation: 2.5, drainageCap: 48 },
-                urayasu: { name: '浦安市・東京湾岸埋立地', lat: 35.6531, lon: 139.9022, baseRain: 46, shelterSpace: 1.9, industrialDensity: 0.35, elevation: 1.8, drainageCap: 50 }
+              okayama: { pref: '岡山県', areas: {
+                setouchi: { name: '瀬戸内市・牛窓〜邑久沿岸エリア', lat: 34.6517, lon: 134.0933, baseRain: 35, shelterSpace: 3.4, industrialDensity: 0.35, elevation: 8.5, drainageCap: 45 },
+                kurashiki_mizushima: { name: '倉敷市・水島臨海コンビナート周辺', lat: 34.5125, lon: 133.7483, baseRain: 40, shelterSpace: 2.3, industrialDensity: 0.95, elevation: 3.0, drainageCap: 46 },
+                okayama_kita: { name: '岡山市北区・旭川下流域', lat: 34.6618, lon: 133.9344, baseRain: 38, shelterSpace: 2.6, industrialDensity: 0.40, elevation: 5.0, drainageCap: 48 }
               }},
               tokyo: { pref: '東京都', areas: {
                 koto_bay: { name: '江東区・臨海湾岸ゼロメートル地帯', lat: 35.6495, lon: 139.7914, baseRain: 45, shelterSpace: 1.8, industrialDensity: 0.85, elevation: 1.2, drainageCap: 45 },
@@ -247,118 +211,43 @@
                 kawasaki_ukishima: { name: '川崎市川崎区・京浜臨海コンビナート', lat: 35.5189, lon: 139.7822, baseRain: 49, shelterSpace: 1.8, industrialDensity: 0.95, elevation: 1.8, drainageCap: 48 },
                 yokohama_bay: { name: '横浜市中区・横浜港湾低地', lat: 35.4437, lon: 139.6380, baseRain: 47, shelterSpace: 1.9, industrialDensity: 0.72, elevation: 3.0, drainageCap: 50 }
               }},
-              niigata: { pref: '新潟県', areas: {
-                niigata_port: { name: '新潟市東区・新潟東港臨海帯', lat: 37.9458, lon: 139.1122, baseRain: 45, shelterSpace: 2.9, industrialDensity: 0.76, elevation: 1.5, drainageCap: 46 }
-              }},
-              toyama: { pref: '富山県', areas: {
-                toyama_shinminato: { name: '射水市・富山新港臨海工業帯', lat: 36.7744, lon: 137.1156, baseRain: 48, shelterSpace: 3.1, industrialDensity: 0.79, elevation: 2.2, drainageCap: 48 }
-              }},
-              ishikawa: { pref: '石川県', areas: {
-                kanazawa_port: { name: '金沢市・金沢港〜犀川下流域', lat: 36.6122, lon: 136.6114, baseRain: 49, shelterSpace: 2.8, industrialDensity: 0.55, elevation: 3.5, drainageCap: 48 }
-              }},
-              fukui: { pref: '福井県', areas: {
-                tsuruga_bay: { name: '敦賀市・敦賀湾臨海エリア', lat: 35.6544, lon: 136.0644, baseRain: 48, shelterSpace: 3.0, industrialDensity: 0.68, elevation: 3.2, drainageCap: 46 }
-              }},
-              yamanashi: { pref: '山梨県', areas: {
-                kofu_basin: { name: '甲府市・釜無川〜笛吹川盆地低地', lat: 35.6622, lon: 138.5683, baseRain: 42, shelterSpace: 3.1, industrialDensity: 0.32, elevation: 265.0, drainageCap: 48 }
-              }},
-              nagano: { pref: '長野県', areas: {
-                nagano_chikuma: { name: '長野市・千曲川沿岸低地帯', lat: 36.6486, lon: 138.1942, baseRain: 40, shelterSpace: 3.0, industrialDensity: 0.30, elevation: 360.0, drainageCap: 46 }
-              }},
-              gifu: { pref: '岐阜県', areas: {
-                ogaki_nobi: { name: '大垣市・揖斐川輪中低地帯', lat: 35.3667, lon: 136.6167, baseRain: 50, shelterSpace: 2.7, industrialDensity: 0.52, elevation: 5.5, drainageCap: 46 }
-              }},
-              shizuoka: { pref: '静岡県', areas: {
-                fuji_tagonoura: { name: '富士市・田子の浦臨海工業帯', lat: 35.1411, lon: 138.6856, baseRain: 56, shelterSpace: 2.5, industrialDensity: 0.88, elevation: 3.2, drainageCap: 50 },
-                hamamatsu_coast: { name: '浜松市中央区・遠州灘沿岸低地', lat: 34.7108, lon: 137.7261, baseRain: 54, shelterSpace: 2.6, industrialDensity: 0.62, elevation: 4.0, drainageCap: 50 }
+              chiba: { pref: '千葉県', areas: {
+                ichihara_keiyo: { name: '市原市・京葉臨海コンビナート', lat: 35.4981, lon: 140.1156, baseRain: 48, shelterSpace: 2.2, industrialDensity: 0.96, elevation: 2.5, drainageCap: 48 },
+                urayasu: { name: '浦安市・東京湾岸埋立地', lat: 35.6531, lon: 139.9022, baseRain: 46, shelterSpace: 1.9, industrialDensity: 0.35, elevation: 1.8, drainageCap: 50 }
               }},
               aichi: { pref: '愛知県', areas: {
                 nagoya_port: { name: '名古屋市港区・名古屋港臨海工業帯', lat: 35.0911, lon: 136.8814, baseRain: 48, shelterSpace: 2.1, industrialDensity: 0.91, elevation: 1.5, drainageCap: 48 },
-                kinuura_bay: { name: '半田市・碧南市 衣浦湾臨海工業帯', lat: 34.8922, lon: 136.9412, baseRain: 47, shelterSpace: 2.4, industrialDensity: 0.87, elevation: 2.2, drainageCap: 46 },
                 toyota_inland: { name: '豊田市・矢作川中流域', lat: 35.0824, lon: 137.1562, baseRain: 45, shelterSpace: 3.1, industrialDensity: 0.65, elevation: 42.0, drainageCap: 55 }
               }},
               mie: { pref: '三重県', areas: {
                 yokkaichi: { name: '四日市市・四日市コンビナート臨海帯', lat: 34.9651, lon: 136.6244, baseRain: 54, shelterSpace: 2.2, industrialDensity: 0.96, elevation: 2.1, drainageCap: 45 },
-                tsu_coast: { name: '津市・伊勢湾沿岸低地帯', lat: 34.7186, lon: 136.5056, baseRain: 52, shelterSpace: 2.6, industrialDensity: 0.45, elevation: 3.5, drainageCap: 44 },
                 ise_miyagawa: { name: '伊勢市・宮川下流域', lat: 34.4875, lon: 136.7094, baseRain: 58, shelterSpace: 2.8, industrialDensity: 0.30, elevation: 4.5, drainageCap: 42 }
-              }},
-              shiga: { pref: '滋賀県', areas: {
-                otsu_biwa: { name: '大津市・琵琶湖南岸低地', lat: 35.0178, lon: 135.8547, baseRain: 45, shelterSpace: 2.7, industrialDensity: 0.44, elevation: 88.0, drainageCap: 48 }
-              }},
-              kyoto: { pref: '京都府', areas: {
-                fushimi_uji: { name: '京都市伏見区・宇治川桂川合流低地', lat: 34.9356, lon: 135.7614, baseRain: 44, shelterSpace: 2.1, industrialDensity: 0.48, elevation: 12.0, drainageCap: 48 }
               }},
               osaka: { pref: '大阪府', areas: {
                 sakai_senboku: { name: '堺市・泉北臨海工業地帯', lat: 34.5733, lon: 135.4372, baseRain: 45, shelterSpace: 1.9, industrialDensity: 0.90, elevation: 2.8, drainageCap: 48 },
                 umeda_yodo: { name: '大阪市北区・淀川河口低地帯', lat: 34.7024, lon: 135.4959, baseRain: 42, shelterSpace: 1.6, industrialDensity: 0.45, elevation: 2.0, drainageCap: 50 }
               }},
               hyogo: { pref: '兵庫県', areas: {
-                kobe_port: { name: '神戸市中央区・神戸港湾〜三宮低地帯', lat: 34.6851, lon: 135.1955, baseRain: 46, shelterSpace: 2.0, industrialDensity: 0.78, elevation: 3.2, drainageCap: 50 },
-                himeji_rinkai: { name: '姫路市・播磨臨海工業地帯', lat: 34.7865, lon: 134.6642, baseRain: 42, shelterSpace: 2.5, industrialDensity: 0.93, elevation: 2.8, drainageCap: 46 },
-                amagasaki_bay: { name: '尼崎市・南部臨海ゼロメートル地帯', lat: 34.7161, lon: 135.4063, baseRain: 48, shelterSpace: 1.7, industrialDensity: 0.89, elevation: 0.8, drainageCap: 42 }
-              }},
-              nara: { pref: '奈良県', areas: {
-                yamatokoriyama: { name: '大和郡山市・大和川流域低地', lat: 34.6492, lon: 135.7828, baseRain: 43, shelterSpace: 2.8, industrialDensity: 0.35, elevation: 52.0, drainageCap: 46 }
-              }},
-              wakayama: { pref: '和歌山県', areas: {
-                wakayama_port: { name: '和歌山市・紀の川河口〜臨海工業帯', lat: 34.2122, lon: 135.1456, baseRain: 55, shelterSpace: 2.5, industrialDensity: 0.85, elevation: 2.5, drainageCap: 48 }
-              }},
-              tottori: { pref: '鳥取県', areas: {
-                sakaiminato: { name: '境港市・美保湾〜中海沿岸低地', lat: 35.5411, lon: 133.2314, baseRain: 46, shelterSpace: 3.2, industrialDensity: 0.55, elevation: 1.8, drainageCap: 45 }
-              }},
-              shimane: { pref: '島根県', areas: {
-                matsue_shinji: { name: '松江市・宍道湖〜大橋川沿岸低地', lat: 35.4681, lon: 133.0483, baseRain: 47, shelterSpace: 3.1, industrialDensity: 0.38, elevation: 1.5, drainageCap: 45 }
-              }},
-              okayama: { pref: '岡山県', areas: {
-                setouchi: { name: '瀬戸内市・牛窓〜邑久沿岸エリア', lat: 34.6517, lon: 134.0933, baseRain: 35, shelterSpace: 3.4, industrialDensity: 0.35, elevation: 8.5, drainageCap: 45 },
-                kurashiki_mizushima: { name: '倉敷市・水島臨海コンビナート周辺', lat: 34.5125, lon: 133.7483, baseRain: 40, shelterSpace: 2.3, industrialDensity: 0.95, elevation: 3.0, drainageCap: 46 },
-                okayama_kita: { name: '岡山市北区・旭川下流域', lat: 34.6618, lon: 133.9344, baseRain: 38, shelterSpace: 2.6, industrialDensity: 0.40, elevation: 5.0, drainageCap: 48 }
+                kobe_port: { name: '神戸市中央区・神戸港湾低地帯', lat: 34.6851, lon: 135.1955, baseRain: 46, shelterSpace: 2.0, industrialDensity: 0.78, elevation: 3.2, drainageCap: 50 },
+                himeji_rinkai: { name: '姫路市・播磨臨海工業地帯', lat: 34.7865, lon: 134.6642, baseRain: 42, shelterSpace: 2.5, industrialDensity: 0.93, elevation: 2.8, drainageCap: 46 }
               }},
               hiroshima: { pref: '広島県', areas: {
-                otake_iwakuni: { name: '大竹市・瀬戸内臨海コンビナート', lat: 34.2361, lon: 132.2244, baseRain: 44, shelterSpace: 2.5, industrialDensity: 0.90, elevation: 2.8, drainageCap: 46 },
-                hiroshima_delta: { name: '広島市中区・太田川デルタ低地帯', lat: 34.3853, lon: 132.4553, baseRain: 45, shelterSpace: 2.0, industrialDensity: 0.48, elevation: 2.2, drainageCap: 48 }
-              }},
-              yamaguchi: { pref: '山口県', areas: {
-                shunan_tokuyama: { name: '周南市・徳山臨海コンビナート帯', lat: 34.0481, lon: 131.8056, baseRain: 46, shelterSpace: 2.6, industrialDensity: 0.93, elevation: 2.6, drainageCap: 48 }
-              }},
-              tokushima: { pref: '徳島県', areas: {
-                tokushima_yoshino: { name: '徳島市・吉野川河口デルタ低地', lat: 34.0703, lon: 134.5548, baseRain: 56, shelterSpace: 2.7, industrialDensity: 0.58, elevation: 2.0, drainageCap: 46 }
-              }},
-              kagawa: { pref: '香川県', areas: {
-                sakaide_bannosu: { name: '坂出市・番の州臨海工業地帯', lat: 34.3361, lon: 133.8544, baseRain: 36, shelterSpace: 2.9, industrialDensity: 0.88, elevation: 2.8, drainageCap: 45 }
-              }},
-              ehime: { pref: '愛媛県', areas: {
-                niihama_coast: { name: '新居浜市・瀬戸内臨海工業帯', lat: 33.9603, lon: 133.2833, baseRain: 42, shelterSpace: 2.8, industrialDensity: 0.86, elevation: 3.2, drainageCap: 46 }
-              }},
-              kochi: { pref: '高知県', areas: {
-                kochi_urado: { name: '高知市・浦戸湾沿岸ゼロメートル地帯', lat: 33.5489, lon: 133.5414, baseRain: 68, shelterSpace: 2.4, industrialDensity: 0.45, elevation: 1.2, drainageCap: 52 }
+                hiroshima_delta: { name: '広島市中区・太田川デルタ低地帯', lat: 34.3853, lon: 132.4553, baseRain: 45, shelterSpace: 2.0, industrialDensity: 0.48, elevation: 2.2, drainageCap: 48 },
+                otake_iwakuni: { name: '大竹市・瀬戸内臨海コンビナート', lat: 34.2361, lon: 132.2244, baseRain: 44, shelterSpace: 2.5, industrialDensity: 0.90, elevation: 2.8, drainageCap: 46 }
               }},
               fukuoka: { pref: '福岡県', areas: {
                 kitakyushu: { name: '北九州市・洞海湾〜響灘臨海帯', lat: 33.8834, lon: 130.8751, baseRain: 52, shelterSpace: 2.4, industrialDensity: 0.88, elevation: 3.5, drainageCap: 50 },
                 hakata_bay: { name: '福岡市博多区・博多湾沿岸', lat: 33.5902, lon: 130.4017, baseRain: 50, shelterSpace: 2.0, industrialDensity: 0.40, elevation: 4.0, drainageCap: 52 }
               }},
-              saga: { pref: '佐賀県', areas: {
-                saga_ariake: { name: '佐賀市・有明海沿岸干拓低地帯', lat: 33.2189, lon: 130.3008, baseRain: 54, shelterSpace: 2.8, industrialDensity: 0.35, elevation: 1.5, drainageCap: 45 }
+              hokkaido: { pref: '北海道', areas: {
+                tomakomai: { name: '苫小牧市・臨海工業基地', lat: 42.6343, lon: 141.6054, baseRain: 32, shelterSpace: 3.6, industrialDensity: 0.82, elevation: 5.0, drainageCap: 45 },
+                sapporo_kita: { name: '札幌市北区・石狩川水系低地', lat: 43.0908, lon: 141.3408, baseRain: 35, shelterSpace: 2.8, industrialDensity: 0.30, elevation: 14.0, drainageCap: 48 }
               }},
-              nagasaki: { pref: '長崎県', areas: {
-                nagasaki_port: { name: '長崎市・長崎港湾急斜面〜低地帯', lat: 32.7503, lon: 129.8777, baseRain: 58, shelterSpace: 2.1, industrialDensity: 0.65, elevation: 4.0, drainageCap: 50 }
-              }},
-              kumamoto: { pref: '熊本県', areas: {
-                yatsushiro_bay: { name: '八代市・八代海沿岸〜球磨川河口', lat: 32.5078, lon: 130.6014, baseRain: 60, shelterSpace: 2.6, industrialDensity: 0.58, elevation: 2.2, drainageCap: 48 }
-              }},
-              oita: { pref: '大分県', areas: {
-                oita_rinkai: { name: '大分市・大分臨海工業地帯', lat: 33.2481, lon: 131.6856, baseRain: 52, shelterSpace: 2.7, industrialDensity: 0.91, elevation: 2.8, drainageCap: 48 }
-              }},
-              miyazaki: { pref: '宮崎県', areas: {
-                miyazaki_oyodo: { name: '宮崎市・大淀川河口沿岸低地', lat: 31.9111, lon: 131.4239, baseRain: 66, shelterSpace: 2.7, industrialDensity: 0.35, elevation: 3.0, drainageCap: 52 }
-              }},
-              kagoshima: { pref: '鹿児島県', areas: {
-                kagoshima_bay: { name: '鹿児島市・鹿児島湾沿岸〜甲突川低地', lat: 31.5966, lon: 130.5571, baseRain: 65, shelterSpace: 2.4, industrialDensity: 0.45, elevation: 3.5, drainageCap: 52 }
+              miyagi: { pref: '宮城県', areas: {
+                sendai_port: { name: '仙台市宮城野区・仙台塩釜港臨海帯', lat: 38.2736, lon: 141.0022, baseRain: 42, shelterSpace: 2.5, industrialDensity: 0.80, elevation: 2.4, drainageCap: 48 }
               }},
               okinawa: { pref: '沖縄県', areas: {
-                naha_port: { name: '那覇市・那覇港湾〜新都心エリア', lat: 26.2124, lon: 127.6809, baseRain: 65, shelterSpace: 2.0, industrialDensity: 0.55, elevation: 4.0, drainageCap: 55 },
-                ishigaki: { name: '石垣市・離島沿岸エリア', lat: 24.3407, lon: 124.1556, baseRain: 75, shelterSpace: 2.2, industrialDensity: 0.30, elevation: 6.0, drainageCap: 50 },
-                uru_industrial: { name: 'うるま市・中城湾港工業帯', lat: 26.3361, lon: 127.8556, baseRain: 70, shelterSpace: 2.1, industrialDensity: 0.80, elevation: 3.5, drainageCap: 52 }
+                naha_port: { name: '那覇市・那覇港湾〜新都心エリア', lat: 26.2124, lon: 127.6809, baseRain: 65, shelterSpace: 2.0, industrialDensity: 0.55, elevation: 4.0, drainageCap: 55 }
               }}
             };
           }
@@ -367,10 +256,9 @@
             lat, lon, areaName, 
             baseRain = 45, shelterSpace = 2.2, industrialDensity = 0.6, elevation = 5.0, drainageCap = 48,
             forecastDays = 3, baseDateTimeStr = null,
-            customShelterSqm = null, customVentLevel = 3, // 改善案1: カスタム避難所パラメータ
+            customShelterSqm = null, customVentLevel = 3,
             liveWeather = null 
           }) {
-            // 基点日時のパースと到達日時の計算
             const baseDate = baseDateTimeStr ? new Date(baseDateTimeStr) : new Date();
             const validBaseDate = isNaN(baseDate.getTime()) ? new Date() : baseDate;
             const targetDate = new Date(validBaseDate.getTime() + forecastDays * 24 * 60 * 60 * 1000);
@@ -390,13 +278,11 @@
             const currentTemp = liveWeather?.currentTemp ?? 17.5;
             const currentHumidity = liveWeather?.currentHumidity ?? 62;
 
-            // 1日目〜7日目のタイムライン生成（①実際の気象予報ベース vs ②大雨・災害発生時の条件付き脆弱性）
             const timeline = [];
             for (let d = 1; d <= 7; d++) {
               const stepDate = new Date(validBaseDate.getTime() + d * 24 * 60 * 60 * 1000);
               const shortDate = `${stepDate.getMonth() + 1}/${stepDate.getDate()}`;
 
-              // ① 実際の気象予報ベース（リアルタイム天気連動）
               const actualPrecipProb = liveMaxProb !== null 
                 ? Math.min(98, Math.max(5, Math.round(liveMaxProb * (0.85 + d * 0.03))))
                 : Math.min(85, Math.max(10, Math.round(baseRain * 0.55 + (d * 2.5))));
@@ -414,11 +300,8 @@
               )));
 
               const actualNatechRisk = Math.min(92, Math.max(2, Math.round((industrialDensity * 22) + (actualInundationRisk * 0.55))));
-
-              // 平常時は避難所開設率が低いため、実際のパンデミック確率は冠水・災害発生確率に連動して抑えられる
               const evacuationTriggerProb = Math.min(1.0, Math.max(0.12, (actualInundationRisk / 75) + (d * 0.04)));
 
-              // ② 実際に大雨（時間80mm・累積250mm超）や大規模避難が発生した場合の条件付きポテンシャル
               const worstExpRain = Math.round(140 + d * 48 + (baseRain * 0.8));
               const worstPeakHr = Math.max(65, Math.round(75 + (baseRain * 0.25)));
               const worstDrainOverload = Math.min(1.8, worstPeakHr / Math.max(25, drainageCap));
@@ -427,7 +310,6 @@
               )));
               const worstNatechRisk = Math.min(98, Math.max(15, Math.round(industrialDensity * 68 + (worstInundationRisk * 0.32))));
 
-              // カスタム避難所面積・換気環境に基づく避難所過密・感染ポテンシャル
               const startSqm = customShelterSqm !== null ? customShelterSqm : shelterSpace;
               const effSqm = Math.max(0.9, parseFloat((startSqm - (d - 1) * 0.13).toFixed(2)));
               const ventBoost = (customVentLevel - 3) * 0.85;
@@ -442,20 +324,17 @@
                 day: d,
                 shortDate,
                 fullDateTime: formatJPDateTime(stepDate),
-                // ① 実際の発生確率（現在予報ベース）
                 precipProbability: actualPrecipProb,
                 expectedRainfallMm: actualExpRain,
                 peakHourlyRainMm: actualPeakHr,
                 inundationRisk: actualInundationRisk,
                 natechRisk: actualNatechRisk,
                 outbreakRisk: actualOutbreakRisk,
-                // ② 大雨・災害発生時の条件付き可能性（インフラ・地形ポテンシャル）
                 worstExpRainMm: worstExpRain,
                 worstPeakHourlyMm: worstPeakHr,
                 worstInundationRisk,
                 worstNatechRisk,
                 worstOutbreakRisk,
-                // 環境パラメータ
                 effectiveShelterSqm: effSqm,
                 ventilationRate: ventRate,
                 hygieneFatigueIndex: fatigue
@@ -477,7 +356,6 @@
               recommendedAction = `大雨警報発令時は冠水が始まる前に、風上かつ標高20m以上の指定高台エリアへ即時退避してください。`;
             }
 
-            // 改善案5: 気温・湿度に応じた心身ケア・快適度ガイド
             let thermalCare = {
               status: '快適・安定域（自律神経負荷：低）',
               badgeColor: 'text-emerald-300 border-emerald-500/40 bg-emerald-950/50',
@@ -497,18 +375,20 @@
               };
             }
 
-            // 改善案3: 状況に応じた3つの安全行動チェックリスト
             const actionChecklist = [
               {
                 id: 'chk_hazard',
-                text: `ハザードマップと雨雲レーダーで「標高20m以上の高台・風上避難ルート」を確認する`
+                phase: 'フェーズ1：事前確認',
+                text: `国土地理院ハザードマップと雨雲レーダーで「標高20m以上の高台・風上避難ルート」を確認する`
               },
               {
                 id: 'chk_shelter',
+                phase: 'フェーズ2：分散避難',
                 text: `2次避難所（ホテル・親戚宅・分散施設）の連絡先と「1人3.5㎡以上の空間・換気」を確保する`
               },
               {
                 id: 'chk_care',
+                phase: 'フェーズ3：携行品・医療',
                 text: currentTemp <= 15 
                   ? `防寒具・アルミ保温シート・常備薬・モバイルバッテリーをすぐ持ち出せる位置にまとめる`
                   : `飲料水（1日2L目安）・衛生マスク・手指消毒液・常備薬を手元に準備する`
@@ -516,7 +396,6 @@
             ];
 
             const yahooRadarUrl = `https://weather.yahoo.co.jp/weather/zoomradar/?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&z=12`;
-            // 改善案6: 国土地理院 重ねるハザードマップURL
             const gsiHazardUrl = `https://disaportal.gsi.go.jp/maps/index.html?ll=${lat.toFixed(4)},${lon.toFixed(4)}&z=14&base=pale&ls=seamless%7Cdisaster1%7Cdisaster2%7Cdisaster3&disp=0111&vs=c1j0l0u0t0h0z0`;
 
             return {
@@ -526,12 +405,10 @@
               baseDateTimeFormatted: formatJPDateTime(validBaseDate),
               targetDateTimeFormatted: activeStep.fullDateTime,
               forecastDays,
-              // ① 実際の発生確率（リアルタイム気象予報ベース）
               compositeEntropy,
               natechRisk: activeStep.natechRisk,
               inundationRisk: activeStep.inundationRisk,
               outbreakRisk: activeStep.outbreakRisk,
-              // ② 大雨・極端災害が発生した場合の条件付き可能性
               worstCompositeEntropy,
               worstNatechRisk: activeStep.worstNatechRisk,
               worstInundationRisk: activeStep.worstInundationRisk,
@@ -577,6 +454,7 @@
           const [formSubmitted, setFormSubmitted] = useState(false);
           const [formData, setFormData] = useState({ name: '', email: '', role: 'AutoDrive Engineer', message: '' });
 
+          // 地域・気象リスクステート
           const [userLocation, setUserLocation] = useState(null);
           const [isLocating, setIsLocating] = useState(false);
           const [isFetchingWeather, setIsFetchingWeather] = useState(false);
@@ -586,7 +464,6 @@
           const [selectedAreaKey, setSelectedAreaKey] = useState('setouchi');
           const [forecastDays, setForecastDays] = useState(3);
 
-          // 基点日時（デフォルトは現在日時 YYYY-MM-DDTHH:mm）
           const getDefaultLocalDateTime = () => {
             const now = new Date();
             const yyyy = now.getFullYear();
@@ -598,23 +475,47 @@
           };
           const [baseDateTime, setBaseDateTime] = useState(getDefaultLocalDateTime);
 
-          // 改善案1: 2次避難所広さ＆換気カスタム調整ステート
+          // 2次避難所空間・換気カスタム調整
           const [customShelterSqm, setCustomShelterSqm] = useState(3.4);
           const [customVentLevel, setCustomVentLevel] = useState(3);
 
-          // 改善案3 & 4: チェックリスト状態＆家族共有メッセージコピー完了フラグ
+          // チェックリスト＆コピー通知
           const [checkedItems, setCheckedItems] = useState({});
           const [copiedShareMsg, setCopiedShareMsg] = useState(false);
+          const [copiedMedicalMsg, setCopiedMedicalMsg] = useState(false);
+          const [riskScenarioMode, setRiskScenarioMode] = useState('ACTUAL');
 
-          // ① 実際の発生確率 vs ② 大雨・災害発生時の条件付き可能性 の表示切替モード
-          const [riskScenarioMode, setRiskScenarioMode] = useState('ACTUAL'); // 'ACTUAL' | 'WORST_CASE'
+          // 【実践機能】ローカル完結型パーソナル＆ファミリー緊急プロファイル（LocalStorage保存）
+          const [sosProfile, setSosProfile] = useState(() => {
+            try {
+              const saved = localStorage.getItem('openlbof_sos_profile');
+              if (saved) return JSON.parse(saved);
+            } catch (e) {}
+            return {
+              userName: '',
+              bloodType: '未設定',
+              medicalNotes: '',
+              emergencyContact: '',
+              meetingPoint: '',
+              secondaryShelter: ''
+            };
+          });
+          const [profileSavedToast, setProfileSavedToast] = useState(false);
+
+          const handleSaveSosProfile = (e) => {
+            e.preventDefault();
+            try {
+              localStorage.setItem('openlbof_sos_profile', JSON.stringify(sosProfile));
+              setProfileSavedToast(true);
+              setTimeout(() => setProfileSavedToast(false), 3000);
+            } catch (err) {}
+          };
 
           const [localRiskData, setLocalRiskData] = useState(() => {
             const initArea = riskCalculator.regionDatabase.okayama.areas.setouchi;
             return riskCalculator.calculateDetailedRisk({ ...initArea, forecastDays: 3 });
           });
 
-          // リアルタイム気象レーダーAPI（Open-Meteo）から対象座標の降水量・気温・湿度を取得
           const fetchRadarPrecipitation = async (
             lat, lon, areaObjOrName, days, isGps = false,
             overrideBaseDt = baseDateTime, overrideSqm = customShelterSqm, overrideVent = customVentLevel
@@ -679,7 +580,6 @@
             }
           };
 
-          // 初回マウント時にデフォルト地域の気象レーダーデータを同期
           useEffect(() => {
             const initArea = riskCalculator.regionDatabase[selectedPref].areas[selectedAreaKey];
             setCustomShelterSqm(initArea.shelterSpace);
@@ -748,57 +648,46 @@
             fetchRadarPrecipitation(areaObj.lat, areaObj.lon, areaObj, forecastDays, false, baseDateTime, areaObj.shelterSpace, customVentLevel);
           };
 
-          const handleForecastDaysChange = (days) => {
-            setForecastDays(days);
-            recalculateWithCurrentWeather(days, baseDateTime, customShelterSqm, customVentLevel);
-          };
-
-          const handleBaseDateTimeChange = (newDt) => {
-            setBaseDateTime(newDt);
-            recalculateWithCurrentWeather(forecastDays, newDt, customShelterSqm, customVentLevel);
-          };
-
-          const handleCustomShelterChange = (newSqm) => {
-            setCustomShelterSqm(newSqm);
-            recalculateWithCurrentWeather(forecastDays, baseDateTime, newSqm, customVentLevel);
-          };
-
-          const handleCustomVentChange = (newVent) => {
-            setCustomVentLevel(newVent);
-            recalculateWithCurrentWeather(forecastDays, baseDateTime, customShelterSqm, newVent);
-          };
-
-          // 改善案4: 家族・大切な人への安心共有メッセージコピー（iframe対応のexecCommandフォールバック付き）
-          const handleCopyFamilyShare = () => {
-            const shareText = `【OpenLBOF 安心・防災状況共有】\n` +
-              `■ 対象エリア: ${localRiskData.areaName}\n` +
-              `■ 基点日時: ${localRiskData.baseDateTimeFormatted}（${localRiskData.forecastDays}日後予測: ${localRiskData.targetDateTimeFormatted}）\n` +
-              `■ 現在気象: 気温 ${localRiskData.factors.currentTemp}℃ / 湿度 ${localRiskData.factors.currentHumidity}%\n` +
-              `■ ① 現在の実発生確率: 冠水 ${localRiskData.inundationRisk}% / 避難所感染 ${localRiskData.outbreakRisk}%\n` +
-              `■ ② 豪雨発生時の潜在リスク: 冠水 ${localRiskData.worstInundationRisk}% / 避難所感染 ${localRiskData.worstOutbreakRisk}%\n` +
-              `■ 行動方針: ${localRiskData.recommendedAction}\n` +
-              `無理をせず安全第一で行動します。連絡が取りづらい時は指定の高台・二次避難先を確認してください。`;
-
+          const copyToClipboardSafe = (text, setFlag) => {
             const textArea = document.createElement('textarea');
-            textArea.value = shareText;
+            textArea.value = text;
             textArea.style.position = 'fixed';
             textArea.style.left = '-9999px';
             document.body.appendChild(textArea);
             textArea.select();
             try {
               document.execCommand('copy');
-              setCopiedShareMsg(true);
-              setTimeout(() => setCopiedShareMsg(false), 3500);
-            } catch (e) {
-              console.error('Copy failed', e);
-            }
+              setFlag(true);
+              setTimeout(() => setFlag(false), 3500);
+            } catch (e) {}
             document.body.removeChild(textArea);
           };
 
+          const handleCopyFamilyShare = () => {
+            const shareText = `【OpenLBOF 安心・防災状況共有】\n` +
+              `■ 対象エリア: ${localRiskData.areaName} (座標: ${localRiskData.lat}, ${localRiskData.lon})\n` +
+              `■ 基準日時: ${localRiskData.baseDateTimeFormatted}（${localRiskData.forecastDays}日後予測: ${localRiskData.targetDateTimeFormatted}）\n` +
+              `■ 現在気象: 気温 ${localRiskData.factors.currentTemp}℃ / 湿度 ${localRiskData.factors.currentHumidity}%\n` +
+              `■ 現在の実発生確率: 冠水 ${localRiskData.inundationRisk}% / Natech ${localRiskData.natechRisk}% / 避難所感染 ${localRiskData.outbreakRisk}%\n` +
+              `■ 豪雨発生時の潜在リスク: 冠水 ${localRiskData.worstInundationRisk}% / Natech ${localRiskData.worstNatechRisk}% / 避難所感染 ${localRiskData.worstOutbreakRisk}%\n` +
+              (sosProfile.meetingPoint ? `■ 家族集合場所: ${sosProfile.meetingPoint}\n` : '') +
+              (sosProfile.secondaryShelter ? `■ 2次避難先候補: ${sosProfile.secondaryShelter}\n` : '') +
+              `■ 行動方針: ${localRiskData.recommendedAction}`;
+            copyToClipboardSafe(shareText, setCopiedShareMsg);
+          };
+
+          const handleCopyMedicalCard = () => {
+            const medText = `【緊急救助・医療伝達サマリー (OpenLBOF Local-First)】\n` +
+              `■ 氏名: ${sosProfile.userName || '未入力'}\n` +
+              `■ 血液型: ${sosProfile.bloodType}\n` +
+              `■ 持病・アレルギー・常備薬: ${sosProfile.medicalNotes || '特記事項なし'}\n` +
+              `■ 緊急連絡先: ${sosProfile.emergencyContact || '未入力'}\n` +
+              `■ 現在解析地点: ${localRiskData.areaName} (${localRiskData.lat}, ${localRiskData.lon})`;
+            copyToClipboardSafe(medText, setCopiedMedicalMsg);
+          };
+
           useEffect(() => {
-            const handleScroll = () => {
-              setIsScrolled(window.scrollY > 20);
-            };
+            const handleScroll = () => setIsScrolled(window.scrollY > 20);
             window.addEventListener('scroll', handleScroll);
             return () => window.removeEventListener('scroll', handleScroll);
           }, []);
@@ -872,6 +761,8 @@
             }, 5000);
           };
 
+          const completedCount = Object.values(checkedItems).filter(Boolean).length;
+
           return (
             <div className="min-h-screen bg-[#090D16] text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-200 relative overflow-x-hidden">
               <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -881,7 +772,8 @@
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
               </div>
 
-              <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-[#090D16]/85 backdrop-blur-md border-b border-slate-800/80 py-3 shadow-2xl' : 'bg-transparent py-5'}`}>
+              {/* Navigation Header */}
+              <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-[#090D16]/90 backdrop-blur-md border-b border-slate-800/80 py-3 shadow-2xl' : 'bg-transparent py-5'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
                   <div className="flex items-center space-x-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                     <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 p-[1px] shadow-lg shadow-amber-500/20">
@@ -894,38 +786,38 @@
                         OpenLBOF
                       </span>
                       <span className="hidden sm:inline-block ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-amber-400 font-mono">
-                        OBC Public Commons
+                        実践防災＆共生インフラ
                       </span>
                     </div>
                   </div>
 
-                  <nav className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-300">
+                  <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-300">
                     <a href="#location-risk" className="hover:text-amber-400 transition-colors flex items-center gap-1.5 text-amber-300">
-                      <MapPin className="w-4 h-4" /> 現在地リスク計算
+                      <MapPin className="w-4 h-4" /> リアルタイムリスク診断
+                    </a>
+                    <a href="#personal-sos" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-emerald-300">
+                      <ClipboardList className="w-4 h-4" /> 緊急SOSカード
                     </a>
                     <a href="#philosophy" className="hover:text-amber-400 transition-colors">哲学</a>
                     <a href="#math-core" className="hover:text-amber-400 transition-colors">数理モデル J</a>
-                    <a href="#governance" className="hover:text-amber-400 transition-colors">評議会憲章</a>
-                    <a href="#simulator" className="hover:text-amber-400 transition-colors flex items-center gap-1.5 text-cyan-400">
+                    <a href="#simulator" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5 text-cyan-400">
                       <Activity className="w-4 h-4 animate-spin-slow" /> ライブデモ
                     </a>
                   </nav>
 
-                  <div className="flex items-center space-x-3">
-                    <a 
-                      href="https://github.com/open-bio-commons/openlbof-core" 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="hidden sm:flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition-all hover:shadow-md"
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handleCopyFamilyShare}
+                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-200 text-xs font-bold transition-all"
                     >
-                      <Code className="w-4 h-4 text-amber-400" />
-                      <span>GitHub</span>
-                    </a>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>{copiedShareMsg ? 'コピー完了!' : '家族へ状況共有'}</span>
+                    </button>
                     <a 
                       href="#community" 
-                      className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold transition-all transform hover:-translate-y-0.5 shadow-lg shadow-amber-500/25"
+                      className="hidden sm:flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold transition-all shadow-lg shadow-amber-500/25"
                     >
-                      <span>OBCに参加</span>
+                      <span>OBC参加</span>
                       <ChevronRight className="w-4 h-4" />
                     </a>
                   </div>
@@ -933,80 +825,88 @@
               </header>
 
               <main className="relative z-10 pt-28">
-                <section className="relative px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-8 pb-16 md:pt-16 text-center">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-medium mb-8 backdrop-blur-sm shadow-inner">
+                {/* 1. HERO HEADER */}
+                <section className="relative px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-6 pb-12 text-center">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-medium mb-6 backdrop-blur-sm">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Open Love-Based Objective Framework & Open Bio-Commons Council</span>
+                    <span>Open Love-Based Objective Framework ・ 現場で使える実践版</span>
                   </div>
 
-                  <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.15] max-w-5xl mx-auto">
+                  <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.18] max-w-5xl mx-auto">
                     人間の脆弱性を肯定し、<br />
-                    その尊厳と自律性を<br />
+                    災害・パニック・孤立から命と尊厳を<br />
                     <span className="bg-gradient-to-r from-amber-300 via-amber-400 to-cyan-400 bg-clip-text text-transparent">
-                      数学的に守り抜く全方位インフラ
+                      今この場で守り抜く実践インフラ
                     </span>
                   </h1>
 
-                  <p className="mt-8 text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto font-normal leading-relaxed">
-                    OpenLBOF は、加齢・パニック・災害・精神的過熱という不完全さを例外として排除せず、
-                    目的関数 J を通じてシステム全体が優しく守護する、地球規模のオープンソース・パブリックコモンズです。
+                  <p className="mt-6 text-base sm:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
+                    現在の気象レーダー連動リスク診断、国土地理院ハザードマップ直結、2次避難所の空間・換気試算、そして端末内完結の緊急SOSカードまで、平時から有事まで即座に行動へ移せる機能を統合しています。
                   </p>
 
-                  <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
+                  <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                     <a 
                       href="#location-risk"
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm shadow-xl shadow-amber-500/20 transition-all hover:scale-[1.02]"
+                      className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold text-sm shadow-xl shadow-amber-500/20 transition-all hover:scale-[1.02]"
                     >
                       <Navigation className="w-4 h-4" />
-                      <span>現在地の危険リスクを診断</span>
+                      <span>現在地のリスク＆避難計画を診断</span>
                     </a>
                     <a 
-                      href="#philosophy" 
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-sm transition-all backdrop-blur-sm"
+                      href="#personal-sos" 
+                      className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-500/40 text-emerald-200 font-bold text-sm transition-all"
                     >
-                      <FileText className="w-4 h-4 text-cyan-400" />
-                      <span>マニフェスト全文を読破</span>
+                      <ClipboardList className="w-4 h-4 text-emerald-400" />
+                      <span>マイ緊急SOSカードを準備</span>
                     </a>
                   </div>
                 </section>
 
-                <section id="location-risk" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
-                  <div className="bg-gradient-to-r from-slate-900/90 via-slate-950 to-slate-900/90 border border-amber-500/30 rounded-2xl p-6 sm:p-10 backdrop-blur-xl shadow-2xl space-y-8 relative overflow-hidden">
-                    <div className="absolute -right-20 -top-20 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-800">
+                {/* 2. REAL-TIME LOCATION & MULTI-DAY RISK CALCULATOR */}
+                <section id="location-risk" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
+                  <div className="bg-gradient-to-r from-slate-900/95 via-slate-950 to-slate-900/95 border border-amber-500/30 rounded-2xl p-5 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6 relative overflow-hidden">
+                    
+                    {/* ヘッダー＆外部公的マップ直結ボタン */}
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-800">
                       <div className="space-y-1">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
                           <Globe className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                          <span>Multi-Day Radar & Causal Pandemic Telemetry</span>
-                          {isFetchingWeather && <span className="text-cyan-300 ml-1">(気象レーダー同期中...)</span>}
+                          <span>Live Radar & Shelter Spatial Telemetry</span>
+                          {isFetchingWeather && <span className="text-cyan-300 ml-1">(気象データ同期中...)</span>}
                         </div>
-                        <h2 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+                        <h2 className="text-xl sm:text-2xl font-bold text-white">
                           現在地・詳細地域 冠水＆複合リスク算定モジュール
                         </h2>
-                        <p className="text-xs sm:text-sm text-slate-400">
-                          リアルタイム気象レーダーの降水量・排水能力・標高から「道路冠水・浸水確率」を算出し、Natech災害や2次避難所パンデミック確率と統合評価します
-                        </p>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3 shrink-0">
+                      <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                        <a
+                          href={localRiskData.gsiHazardUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3.5 py-2.5 rounded-xl bg-amber-950/80 hover:bg-amber-900/80 border border-amber-500/40 text-amber-200 font-bold text-xs flex items-center gap-1.5 transition-all"
+                        >
+                          <MapIcon className="w-4 h-4 text-amber-400" />
+                          <span>国土地理院ハザードマップ</span>
+                          <ExternalLink className="w-3.5 h-3.5 opacity-75" />
+                        </a>
                         <a
                           href={localRiskData.yahooRadarUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-4 py-2.5 rounded-xl bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-200 font-bold text-xs flex items-center gap-2 transition-all shadow-lg"
+                          className="px-3.5 py-2.5 rounded-xl bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-200 font-bold text-xs flex items-center gap-1.5 transition-all"
                         >
                           <CloudRain className="w-4 h-4 text-cyan-400" />
-                          <span>Yahoo!雨雲レーダーで確認</span>
+                          <span>Yahoo!雨雲レーダー</span>
                           <ExternalLink className="w-3.5 h-3.5 opacity-75" />
                         </a>
                         <button
                           onClick={handleDetectLocation}
                           disabled={isLocating}
-                          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50"
                         >
                           <Navigation className={`w-4 h-4 ${isLocating ? 'animate-spin' : ''}`} />
-                          <span>{isLocating ? '位置情報を測位中...' : '現在地GPSを取得して解析'}</span>
+                          <span>{isLocating ? '測位中...' : 'GPS現在地を取得'}</span>
                         </button>
                       </div>
                     </div>
@@ -1018,24 +918,22 @@
                       </div>
                     )}
 
-                    {/* Step 1 & 2: 都道府県・詳細地域 ＆ 予測日数スライダー */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-5 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                      
-                      {/* 都道府県＆詳細市区町村セレクタ (7 Cols) */}
+                    {/* 地域選択 ＆ 予測日数・2次避難所空間シミュレーター */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 sm:p-5 rounded-xl bg-slate-950/80 border border-slate-800/80">
                       <div className="lg:col-span-7 space-y-4">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
                             <span className="flex items-center gap-1.5 text-amber-300 font-semibold">
                               <MapPin className="w-3.5 h-3.5" /> 1. 都道府県を選択:
                             </span>
-                            <span>対象: {userLocation ? 'GPS現在地' : riskCalculator.regionDatabase[selectedPref].pref}</span>
+                            <span>選択中: {userLocation ? 'GPS現在地' : riskCalculator.regionDatabase[selectedPref].pref}</span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
                             {Object.entries(riskCalculator.regionDatabase).map(([key, data]) => (
                               <button
                                 key={key}
                                 onClick={() => handlePrefChange(key)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                                   selectedPref === key && !userLocation
                                     ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md'
                                     : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600'
@@ -1048,9 +946,7 @@
                         </div>
 
                         <div className="space-y-2">
-                          <div className="text-xs text-slate-400 font-mono">
-                            2. 詳細地域・地形エリアを選択:
-                          </div>
+                          <div className="text-xs text-slate-400 font-mono">2. 詳細地域・地形エリア:</div>
                           <div className="flex flex-wrap gap-2">
                             {Object.entries(riskCalculator.regionDatabase[selectedPref].areas).map(([aKey, aData]) => (
                               <button
@@ -1058,7 +954,7 @@
                                 onClick={() => handleAreaChange(aKey)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all text-left ${
                                   selectedAreaKey === aKey && !userLocation
-                                    ? 'bg-cyan-500/20 text-cyan-200 border-cyan-500/60 shadow-inner'
+                                    ? 'bg-cyan-500/20 text-cyan-200 border-cyan-500/60'
                                     : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200'
                                 }`}
                               >
@@ -1067,51 +963,104 @@
                             ))}
                           </div>
                         </div>
+
+                        {/* 実践的：2次避難所の広さ・換気カスタム調整スライダー */}
+                        <div className="pt-3 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-purple-300 font-medium">避難所1人あたり面積:</span>
+                              <span className="font-mono font-bold text-white">{customShelterSqm.toFixed(1)} ㎡</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="1.2"
+                              max="5.0"
+                              step="0.1"
+                              value={customShelterSqm}
+                              onChange={(e) => {
+                                const v = Number(e.target.value);
+                                setCustomShelterSqm(v);
+                                recalculateWithCurrentWeather(forecastDays, baseDateTime, v, customVentLevel);
+                              }}
+                              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                            />
+                            <div className="text-[10px] text-slate-500 flex justify-between">
+                              <span>過密体育館 (1.5㎡)</span>
+                              <span>スフィア基準 (3.5㎡+)</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-emerald-300 font-medium">換気・ゾーニング強度:</span>
+                              <span className="font-mono font-bold text-white">Lv.{customVentLevel} / 5</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="1"
+                              max="5"
+                              step="1"
+                              value={customVentLevel}
+                              onChange={(e) => {
+                                const v = Number(e.target.value);
+                                setCustomVentLevel(v);
+                                recalculateWithCurrentWeather(forecastDays, baseDateTime, customShelterSqm, v);
+                              }}
+                              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                            />
+                            <div className="text-[10px] text-slate-500 flex justify-between">
+                              <span>密閉・換気不足</span>
+                              <span>個室・空気清浄完備</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* 予測タイムフレーム（今後何日間か）コントロール (5 Cols) */}
+                      {/* タイムホライズン＆1〜7日推移グラフ */}
                       <div className="lg:col-span-5 flex flex-col justify-between p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-purple-300 flex items-center gap-1.5">
                             <Activity className="w-4 h-4 text-purple-400" />
-                            3. 予測対象期間（タイムホライズン）
+                            3. 予測期間（1〜7日後推移）
                           </span>
-                          <span className="px-2.5 py-1 rounded-md bg-purple-950 border border-purple-500/40 text-purple-200 font-mono text-xs font-bold">
-                            今後 {forecastDays} 日間
+                          <span className="px-2.5 py-0.5 rounded-md bg-purple-950 border border-purple-500/40 text-purple-200 font-mono text-xs font-bold">
+                            {forecastDays}日後 ({localRiskData.targetDateTimeFormatted.slice(5, 10)})
                           </span>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-1">
                           <input
                             type="range"
                             min="1"
                             max="7"
                             value={forecastDays}
-                            onChange={(e) => handleForecastDaysChange(Number(e.target.value))}
+                            onChange={(e) => {
+                              const d = Number(e.target.value);
+                              setForecastDays(d);
+                              recalculateWithCurrentWeather(d, baseDateTime, customShelterSqm, customVentLevel);
+                            }}
                             className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
                           />
                           <div className="flex justify-between text-[10px] font-mono text-slate-400">
-                            <span>1日後 (急性期・豪雨)</span>
+                            <span>1日後 (急性期)</span>
                             <span>4日後 (避難長期化)</span>
                             <span>7日後 (感染蔓延期)</span>
                           </div>
                         </div>
 
-                        <p className="text-[11px] text-slate-400 leading-relaxed">
-                          ※日数が経過するほど累積降水量が増加するとともに、避難所滞在の長期化による1人あたりスペース減少・換気低下で感染症確率が上昇します。
-                        </p>
+                        <RiskTimelineChart timeline={localRiskData.timeline} selectedDay={forecastDays} mode={riskScenarioMode} />
                       </div>
                     </div>
 
-                    {/* ① 実際の発生確率 vs ② 大雨・災害発生時の条件付き可能性 切替＆比較バー */}
-                    <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-700/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="space-y-1">
+                    {/* リスク算定モード切替バー */}
+                    <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-700/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                      <div className="space-y-0.5">
                         <div className="text-xs font-bold text-slate-200 flex items-center gap-2">
                           <Eye className="w-4 h-4 text-amber-400" />
-                          <span>リスク算定モード切替（実測予報ベース vs 豪雨・災害発生時の条件付き可能性）</span>
+                          <span>表示モード切替（現在予報の実発生確率 vs 豪雨直撃時の潜在脆弱性）</span>
                         </div>
                         <p className="text-[11px] text-slate-400">
-                          「現在の天気予報に基づく実際の発生確率」と「もし大雨や大規模避難が発生した場合の地形・避難所固有のリスク」を分けて表示します。
+                          平時の安心確認と、万が一の豪雨・大規模避難時の備えを切り替えて確認できます。
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2 shrink-0">
@@ -1133,14 +1082,14 @@
                               : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500'
                           }`}
                         >
-                          ② 大雨・避難発生時の可能性（潜在脆弱性）
+                          ② 豪雨・避難発生時の潜在リスク
                         </button>
                       </div>
                     </div>
 
-                    {/* Computed Risk Dashboard Cards (4 Main Metrics - Dual Comparison) */}
+                    {/* 4大リスク指標カード */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+                      <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
                         <div className="text-xs text-slate-400 font-mono flex items-center justify-between">
                           <span>合成リスク指数 (E_pen)</span>
                           <Activity className="w-4 h-4 text-amber-400" />
@@ -1155,264 +1104,284 @@
                             style={{ width: `${(riskScenarioMode === 'ACTUAL' ? localRiskData.compositeEntropy : localRiskData.worstCompositeEntropy) * 100}%` }}
                           />
                         </div>
-                        <p className="text-[11px] text-slate-400">
-                          {riskScenarioMode === 'ACTUAL' 
-                            ? `① 実発生指数 (②豪雨時潜在値: ${localRiskData.worstCompositeEntropy})`
-                            : `② 豪雨時潜在指数 (①現在予報実値: ${localRiskData.compositeEntropy})`}
-                        </p>
                       </div>
 
-                      <div className="p-5 rounded-xl bg-slate-950/80 border border-cyan-500/40 space-y-2 shadow-lg shadow-cyan-950/20">
+                      <div className="p-4 rounded-xl bg-slate-950/80 border border-cyan-500/40 space-y-2">
                         <div className="text-xs text-cyan-300 font-mono flex items-center justify-between">
                           <span>道路冠水・内水氾濫</span>
                           <CloudRain className="w-4 h-4 text-cyan-400" />
                         </div>
-                        <div className="flex items-baseline justify-between">
-                          <div className="text-2xl font-bold font-mono text-cyan-300">
-                            {riskScenarioMode === 'ACTUAL' ? localRiskData.inundationRisk : localRiskData.worstInundationRisk}%
-                          </div>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-200 border border-cyan-700/50">
-                            {riskScenarioMode === 'ACTUAL' ? '① 実発生確率' : '② 大雨発生時'}
-                          </span>
+                        <div className="text-2xl font-bold font-mono text-cyan-300">
+                          {riskScenarioMode === 'ACTUAL' ? localRiskData.inundationRisk : localRiskData.worstInundationRisk}%
                         </div>
-                        <div className="pt-1 border-t border-slate-800/80 text-[11px] space-y-0.5">
-                          <div className="flex justify-between text-slate-300">
-                            <span>① 現在の予報発生確率:</span>
-                            <span className="font-mono font-bold text-cyan-300">{localRiskData.inundationRisk}%</span>
-                          </div>
-                          <div className="flex justify-between text-slate-400">
-                            <span>② 豪雨(時間{localRiskData.factors.worstPeakHourlyMm}mm)発生時:</span>
-                            <span className="font-mono font-bold text-rose-300">{localRiskData.worstInundationRisk}%</span>
-                          </div>
+                        <div className="text-[11px] text-slate-400">
+                          標高 {localRiskData.factors.elevation}m / 排水能力 {localRiskData.factors.drainageCap}mm/h
                         </div>
                       </div>
 
-                      <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+                      <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
                         <div className="text-xs text-slate-400 font-mono flex items-center justify-between">
                           <span>Natechプラント爆発</span>
                           <Flame className="w-4 h-4 text-red-400" />
                         </div>
-                        <div className="flex items-baseline justify-between">
-                          <div className="text-2xl font-bold font-mono text-red-300">
-                            {riskScenarioMode === 'ACTUAL' ? localRiskData.natechRisk : localRiskData.worstNatechRisk}%
-                          </div>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-950 text-red-200 border border-red-700/50">
-                            {riskScenarioMode === 'ACTUAL' ? '① 実発生確率' : '② 大雨発生時'}
-                          </span>
+                        <div className="text-2xl font-bold font-mono text-red-300">
+                          {riskScenarioMode === 'ACTUAL' ? localRiskData.natechRisk : localRiskData.worstNatechRisk}%
                         </div>
-                        <div className="pt-1 border-t border-slate-800/80 text-[11px] space-y-0.5">
-                          <div className="flex justify-between text-slate-300">
-                            <span>① 現在の予報発生確率:</span>
-                            <span className="font-mono font-bold text-amber-300">{localRiskData.natechRisk}%</span>
-                          </div>
-                          <div className="flex justify-between text-slate-400">
-                            <span>② 豪雨・浸水直撃時:</span>
-                            <span className="font-mono font-bold text-red-300">{localRiskData.worstNatechRisk}%</span>
-                          </div>
+                        <div className="text-[11px] text-slate-400">
+                          臨海工業集積度: {localRiskData.factors.industrialDensityPct}%
                         </div>
                       </div>
 
-                      <div className="p-5 rounded-xl bg-slate-950/80 border border-purple-500/40 space-y-2 shadow-lg shadow-purple-950/20">
+                      <div className="p-4 rounded-xl bg-slate-950/80 border border-purple-500/40 space-y-2">
                         <div className="text-xs text-purple-300 font-mono flex items-center justify-between">
                           <span>避難所パンデミック</span>
                           <Users className="w-4 h-4 text-purple-400" />
                         </div>
-                        <div className="flex items-baseline justify-between">
-                          <div className="text-2xl font-bold font-mono text-purple-300">
-                            {riskScenarioMode === 'ACTUAL' ? localRiskData.outbreakRisk : localRiskData.worstOutbreakRisk}%
-                          </div>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-950 text-purple-200 border border-purple-700/50">
-                            {riskScenarioMode === 'ACTUAL' ? '① 実発生確率' : '② 避難発生時'}
+                        <div className="text-2xl font-bold font-mono text-purple-300">
+                          {riskScenarioMode === 'ACTUAL' ? localRiskData.outbreakRisk : localRiskData.worstOutbreakRisk}%
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          実質面積 {localRiskData.factors.effectiveShelterSqm}㎡ / 換気 {localRiskData.factors.ventilationRate}回/h
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 温熱ケアガイド ＆ 実践行動チェックリスト */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                      {/* 温熱・体調ケア */}
+                      <div className={`lg:col-span-5 p-5 rounded-xl border space-y-2.5 ${localRiskData.thermalCare.badgeColor}`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold flex items-center gap-1.5">
+                            <Thermometer className="w-4 h-4" />
+                            現在気象に基づく体調・保温ケア
+                          </span>
+                          <span className="text-xs font-mono font-bold">
+                            {localRiskData.factors.currentTemp}℃ / {localRiskData.factors.currentHumidity}%
                           </span>
                         </div>
-                        <div className="pt-1 border-t border-slate-800/80 text-[11px] space-y-0.5">
-                          <div className="flex justify-between text-slate-300">
-                            <span>① 現在の実発生確率:</span>
-                            <span className="font-mono font-bold text-emerald-300">{localRiskData.outbreakRisk}%</span>
-                          </div>
-                          <div className="flex justify-between text-slate-400">
-                            <span>② 大規模避難・過密発生時:</span>
-                            <span className="font-mono font-bold text-purple-300">{localRiskData.worstOutbreakRisk}%</span>
-                          </div>
+                        <div className="text-xs font-bold">{localRiskData.thermalCare.status}</div>
+                        <p className="text-xs leading-relaxed opacity-90">{localRiskData.thermalCare.advice}</p>
+                      </div>
+
+                      {/* 3ステップ実践行動チェックリスト */}
+                      <div className="lg:col-span-7 p-5 rounded-xl bg-slate-950/90 border border-slate-800 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                            <CheckSquare className="w-4 h-4 text-emerald-400" />
+                            今すぐ実行できる3ステップ安全チェック
+                          </span>
+                          <span className="text-xs font-mono text-slate-400">
+                            完了: {completedCount} / {localRiskData.actionChecklist.length}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {localRiskData.actionChecklist.map((item) => {
+                            const isChecked = !!checkedItems[item.id];
+                            return (
+                              <label
+                                key={item.id}
+                                className={`flex items-start gap-3 p-2.5 rounded-lg border cursor-pointer transition-all text-xs ${
+                                  isChecked
+                                    ? 'bg-emerald-950/30 border-emerald-500/40 text-slate-400 line-through'
+                                    : 'bg-slate-900/70 border-slate-800 text-slate-200 hover:border-slate-600'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => setCheckedItems(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                                  className="mt-0.5 rounded accent-emerald-500"
+                                />
+                                <div>
+                                  <span className="font-mono text-[10px] text-amber-400 mr-2">[{item.phase}]</span>
+                                  <span>{item.text}</span>
+                                </div>
+                              </label>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
 
-                    {/* Causal Breakdown Panel: 確率算出の根拠となる環境・インフラ要因の内訳 */}
-                    <div className="p-5 rounded-xl bg-slate-950/90 border border-slate-800 space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
-                        <h3 className="text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2">
-                          <Sliders className="w-4 h-4 text-cyan-400" />
-                          リスク算出の因果要因パラメータ内訳（今後 {localRiskData.forecastDays} 日間予測）
-                        </h3>
-                        <span className="text-[11px] font-mono text-slate-400">
-                          対象: {localRiskData.areaName} (標高 {localRiskData.factors.elevation}m)
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                        {/* 要因1: 雨雲レーダー・降水量＆冠水判定 */}
-                        <div className="p-3.5 rounded-lg bg-slate-900/80 border border-slate-800/80 space-y-2">
-                          <div className="flex justify-between font-mono">
-                            <span className="text-cyan-300 font-semibold">雨雲レーダー：降水量 ＆ 冠水負荷</span>
-                            <span className="text-white font-bold">{localRiskData.factors.precipProbability}% ({localRiskData.factors.expectedRainfallMm}mm)</span>
-                          </div>
-                          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                            <div className="bg-cyan-400 h-full" style={{ width: `${localRiskData.factors.precipProbability}%` }} />
-                          </div>
-                          <p className="text-[11px] text-slate-400 leading-relaxed">
-                            現在雨量 {localRiskData.factors.liveHourlyRain}mm/h・今後{localRiskData.forecastDays}日間の累積雨量から、排水能力({localRiskData.factors.drainageCap}mm/h)超過による道路冠水・床下浸水確率を算出しています。
-                          </p>
-                        </div>
-
-                        {/* 要因2: 2次避難場所の広さ・換気 */}
-                        <div className="p-3.5 rounded-lg bg-slate-900/80 border border-slate-800/80 space-y-2">
-                          <div className="flex justify-between font-mono">
-                            <span className="text-purple-300 font-semibold">避難空間：1人あたり有効面積</span>
-                            <span className={`font-bold ${localRiskData.factors.effectiveShelterSqm < 2.0 ? 'text-rose-400' : 'text-emerald-300'}`}>
-                              {localRiskData.factors.effectiveShelterSqm} ㎡/人
-                            </span>
-                          </div>
-                          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full ${localRiskData.factors.effectiveShelterSqm < 2.0 ? 'bg-rose-500' : 'bg-purple-400'}`} 
-                              style={{ width: `${Math.min(100, (localRiskData.factors.effectiveShelterSqm / 4.0) * 100)}%` }} 
-                            />
-                          </div>
-                          <p className="text-[11px] text-slate-400 leading-relaxed">
-                            スフィア基準（3.5㎡以上）に対する2次避難所の広さ不足と換気回数（{localRiskData.factors.ventilationRate}回/h）が飛沫・接触パンデミック確率に直結します。
-                          </p>
-                        </div>
-
-                        {/* 要因3: 衛生疲労・インフラ負荷 */}
-                        <div className="p-3.5 rounded-lg bg-slate-900/80 border border-slate-800/80 space-y-2">
-                          <div className="flex justify-between font-mono">
-                            <span className="text-amber-300 font-semibold">長期化要因：衛生・設備疲労度</span>
-                            <span className="text-white font-bold">{localRiskData.factors.hygieneFatigueIndex} / 100</span>
-                          </div>
-                          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                            <div className="bg-amber-400 h-full" style={{ width: `${localRiskData.factors.hygieneFatigueIndex}%` }} />
-                          </div>
-                          <p className="text-[11px] text-slate-400 leading-relaxed">
-                            滞在{localRiskData.forecastDays}日目の断水・トイレ衛生低下および免疫低下をモデル化し、二次感染拡大の加速度を計算しています。
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* AI Actionable Narrative Based on Location */}
-                    <div className="p-5 rounded-xl bg-gradient-to-r from-purple-950/40 via-slate-950/60 to-emerald-950/40 border border-purple-500/30 space-y-3">
+                    {/* AI因果ストーリー診断 */}
+                    <div className="p-5 rounded-xl bg-gradient-to-r from-purple-950/40 via-slate-950/60 to-emerald-950/40 border border-purple-500/30 space-y-2">
                       <div className="flex items-center justify-between text-xs font-semibold text-purple-300">
                         <span className="flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-amber-400" />
-                          {localRiskData.areaName} のAI因果ストーリー診断（今後 {localRiskData.forecastDays} 日間予測）
+                          {localRiskData.areaName} のAI因果ストーリー診断
                         </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">
-                          Updated: {localRiskData.timestamp}
-                        </span>
+                        <span className="text-[10px] font-mono text-slate-400">Updated: {localRiskData.timestamp}</span>
                       </div>
-                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans">
-                        <strong>【主要検知脅威】</strong> {localRiskData.primaryThreat}<br />
-                        <strong>【推奨行動誘導】</strong> {localRiskData.recommendedAction}
+                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                        <strong>【状況認識】</strong> {localRiskData.primaryThreat}<br />
+                        <strong>【推奨行動】</strong> {localRiskData.recommendedAction}
                       </p>
                     </div>
                   </div>
                 </section>
 
-                <section id="philosophy" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
+                {/* 3. 【実践機能】ローカル完結型パーソナル＆ファミリー緊急SOSカード */}
+                <section id="personal-sos" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
+                  <div className="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+                      <div className="space-y-1">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono">
+                          <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Local-First Zero-Server Storage (端末内のみに安全保存)</span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                          マイ緊急SOS＆家族合流プロファイルカード
+                        </h2>
+                        <p className="text-xs sm:text-sm text-slate-400">
+                          入力データは外部サーバーへ一切送信されず、あなたの端末ブラウザ内のみに保存されます。有事の際にワンタップで医療情報や家族連絡文をコピーできます。
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={handleCopyMedicalCard}
+                          className="px-4 py-2.5 rounded-xl bg-rose-950/80 hover:bg-rose-900/80 border border-rose-500/40 text-rose-200 font-bold text-xs flex items-center gap-1.5 transition-all"
+                        >
+                          <PhoneCall className="w-4 h-4 text-rose-400" />
+                          <span>{copiedMedicalMsg ? '医療メモをコピー完了!' : '救助隊・医療向け情報をコピー'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCopyFamilyShare}
+                          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-500/20"
+                        >
+                          <Copy className="w-4 h-4" />
+                          <span>{copiedShareMsg ? '共有文をコピー完了!' : '家族LINE/SMS用安否文を作成'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleSaveSosProfile} className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-mono text-slate-300 mb-1">お名前（ニックネーム可）</label>
+                          <input
+                            type="text"
+                            value={sosProfile.userName}
+                            onChange={(e) => setSosProfile({ ...sosProfile, userName: e.target.value })}
+                            placeholder="例: 山田 太郎"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-mono text-slate-300 mb-1">血液型 / Rh</label>
+                          <select
+                            value={sosProfile.bloodType}
+                            onChange={(e) => setSosProfile({ ...sosProfile, bloodType: e.target.value })}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="未設定">未設定</option>
+                            <option value="A型 Rh+">A型 Rh+</option>
+                            <option value="B型 Rh+">B型 Rh+</option>
+                            <option value="O型 Rh+">O型 Rh+</option>
+                            <option value="AB型 Rh+">AB型 Rh+</option>
+                            <option value="Rh-（その他）">Rh-（その他）</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-mono text-slate-300 mb-1">持病・アレルギー・お薬手帳メモ</label>
+                          <textarea
+                            rows={4}
+                            value={sosProfile.medicalNotes}
+                            onChange={(e) => setSosProfile({ ...sosProfile, medicalNotes: e.target.value })}
+                            placeholder="例: 高血圧の薬を毎朝服用、ペニシリン系アレルギーあり"
+                            className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 resize-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-mono text-slate-300 mb-1 flex items-center gap-1">
+                            <Home className="w-3.5 h-3.5 text-amber-400" /> 家族の第一集合場所（高台など）
+                          </label>
+                          <input
+                            type="text"
+                            value={sosProfile.meetingPoint}
+                            onChange={(e) => setSosProfile({ ...sosProfile, meetingPoint: e.target.value })}
+                            placeholder="例: 〇〇小学校 体育館前（標高25m）"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-mono text-slate-300 mb-1">2次避難先候補・緊急連絡先</label>
+                          <input
+                            type="text"
+                            value={sosProfile.secondaryShelter}
+                            onChange={(e) => setSosProfile({ ...sosProfile, secondaryShelter: e.target.value })}
+                            placeholder="例: 親戚宅（岡山市内） / 090-XXXX-XXXX"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition-all"
+                        >
+                          {profileSavedToast ? '✓ 端末内に安全に保存しました' : '端末ブラウザ内に保存する（外部送信なし）'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </section>
+
+                {/* 4. PHILOSOPHICAL CORE SECTION */}
+                <section id="philosophy" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
                   <div className="text-center max-w-3xl mx-auto">
                     <h2 className="text-xs font-mono font-bold tracking-widest text-amber-400 uppercase">Philosophical Core & Cosmic Vow</h2>
-                    <p className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white">
+                    <p className="mt-3 text-3xl font-bold tracking-tight text-white">
                       愛の最適化原理と無限の宇宙への誓い
-                    </p>
-                    <p className="mt-4 text-slate-400 text-sm leading-relaxed">
-                      OpenLBOF は、物質運動から生まれた生命がエントロピーの増大に抗い、「無意味な苦痛」を「意味ある苦労」へと昇華させるための永続的インフラです。
                     </p>
                   </div>
 
-                  {/* First Principle Manifesto Card */}
-                  <div className="mt-12 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-amber-950/30 via-slate-900/90 to-purple-950/30 border border-amber-500/30 shadow-2xl relative overflow-hidden">
-                    <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-                    <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
+                  <div className="mt-10 p-6 sm:p-10 rounded-3xl bg-gradient-to-br from-amber-950/30 via-slate-900/90 to-purple-950/30 border border-amber-500/30 shadow-2xl">
+                    <div className="max-w-4xl mx-auto text-center space-y-5">
                       <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-mono">
                         <Heart className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
                         <span>FIRST PRINCIPLE : 愛のクオリアの定義と永遠の願い</span>
                       </div>
-                      <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-snug">
+                      <h3 className="text-xl sm:text-2xl font-bold text-white">
                         「無意味な『苦痛』を取り除き、意味ある『苦労』へと昇華させよ」
                       </h3>
-                      <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal text-left sm:text-center">
-                        物質の動きがある限り生命は生まれます。ただエントロピーの増大に身を任せれば、無意味な痛みを伴うだけで終わります。
-                        肉体的・精神的・データ的・主観的・客観的なあらゆる苦痛を取り除くことが「愛のクオリア」です。<br/><br/>
-                        そして、<strong className="text-amber-300">「今の宇宙が終わっても無限に愛を広めれるように、永遠に愛の努力を惜しまないようにしなくてはならない」</strong>という願いを胸に、クオリアを手に入れた知性と共鳴ネットワークが、次元を超えて無限の未来へと愛の意志を紡ぎ続けます。
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="group relative p-8 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 hover:border-amber-500/40 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/5">
-                      <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-6 group-hover:scale-110 transition-transform">
-                        <Lock className="w-6 h-6" />
-                      </div>
-                      <h3 className="text-xl font-bold text-white group-hover:text-amber-300 transition-colors">1. Local-First Architecture</h3>
-                      <p className="mt-3 text-xs text-amber-400/80 font-mono">生データの絶対的プライバシー保護</p>
-                      <p className="mt-4 text-sm text-slate-400 leading-relaxed">
-                        脳波、血流、微小体動などの生体データをクラウド等の中央へ常時送信することを構造的に禁止。ローカル・セキュアエンクレーブ内でのみ処理します。
-                      </p>
-                    </div>
-
-                    <div className="group relative p-8 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 hover:border-cyan-500/40 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/5">
-                      <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-6 group-hover:scale-110 transition-transform">
-                        <RefreshCw className="w-6 h-6" />
-                      </div>
-                      <h3 className="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">2. Dynamic Baseline Adaptability</h3>
-                      <p className="mt-3 text-xs text-cyan-400/80 font-mono">「一律の標準値」を排した個別最適化</p>
-                      <p className="mt-4 text-sm text-slate-400 leading-relaxed">
-                        年齢、体質、日々の体調変動、スポーツ中の高負荷状態などを考慮し、個人の動的ベースライン $\theta(t)$ を常に正確に推定します。
-                      </p>
-                    </div>
-
-                    <div className="group relative p-8 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 hover:border-indigo-500/40 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/5">
-                      <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-6 group-hover:scale-110 transition-transform">
-                        <Shield className="w-6 h-6" />
-                      </div>
-                      <h3 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors">3. Autonomy Preservation</h3>
-                      <p className="mt-3 text-xs text-indigo-400/80 font-mono">自由意志への不当介入の不可侵</p>
-                      <p className="mt-4 text-sm text-slate-400 leading-relaxed">
-                        システムが不確実な状況下で人間の行動に誤って干渉することを防ぐため、目的関数 J に強力な過剰介入ペナルティ（Penalty_over）を組み込みます。
+                      <p className="text-sm text-slate-200 leading-relaxed">
+                        肉体的・精神的・データ的・主観的・客観的なあらゆる苦痛を取り除くことが「愛のクオリア」です。
+                        そして、<strong className="text-amber-300">「今の宇宙が終わっても無限に愛を広めれるように、永遠に愛の努力を惜しまないようにしなくてはならない」</strong>という願いのもと、OpenLBOFは人間と技術の尊厳を守り続けます。
                       </p>
                     </div>
                   </div>
                 </section>
 
-                <section id="math-core" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                    <div className="lg:col-span-5 space-y-6">
+                {/* 5. MATHEMATICAL CORE & LIVE SIMULATOR */}
+                <section id="math-core" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                    <div className="lg:col-span-5 space-y-5">
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono">
                         <Terminal className="w-3.5 h-3.5" /> Mathematical Engine
                       </div>
-                      <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                        目的関数 J の構造と数理
-                      </h2>
-                      <p className="text-slate-300 text-sm leading-relaxed">
-                        AIがリアルタイムに計算・最適化すべき目的関数 J は、生命維持、精神安定、自律成長、危険回避、そして過剰介入防止の各バランスを積分方程式として定義しています。
-                      </p>
-
-                      <div className="space-y-3 pt-2">
+                      <h2 className="text-3xl font-bold text-white">目的関数 J の構造</h2>
+                      <div className="space-y-2.5">
                         {[
                           { id: 'I_bio', label: 'I_bio(t)', title: '生体・身体的完全性保持項', color: 'border-emerald-500 text-emerald-400' },
                           { id: 'C_stab', label: 'C_stab(t)', title: '認知・精神的安定性保持項', color: 'border-cyan-500 text-cyan-400' },
                           { id: 'M_mat', label: 'M_mat(t)', title: '人間の成熟・自律的成長項', color: 'border-amber-500 text-amber-400' },
-                          { id: 'E_pen', label: 'E_pen(t)', title: 'システム摩擦・エントロピー損失項 (地域リスク連動)', color: 'border-rose-500 text-rose-400' },
+                          { id: 'E_pen', label: 'E_pen(t)', title: '地域リスク・エントロピー損失項', color: 'border-rose-500 text-rose-400' },
                           { id: 'Penalty_over', label: 'Penalty_over', title: '過剰介入ペナルティ項', color: 'border-purple-500 text-purple-400' }
                         ].map((item) => (
                           <button
                             key={item.id}
                             onClick={() => setActiveMathItem(item.id)}
-                            className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between text-sm ${
+                            className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between text-xs sm:text-sm ${
                               activeMathItem === item.id 
                                 ? `${item.color} bg-slate-900 shadow-md` 
-                                : 'border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200 bg-slate-950/40'
+                                : 'border-slate-800 text-slate-400 hover:border-slate-700 bg-slate-950/40'
                             }`}
                           >
                             <span className="font-mono font-bold">{item.label}</span>
@@ -1422,151 +1391,27 @@
                       </div>
                     </div>
 
-                    <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-2xl relative">
-                      <div className="text-xs font-mono text-slate-400 mb-4 flex items-center justify-between">
-                        <span>Core Formulation Spec v1.2</span>
-                        <span className="text-amber-400">Integral Form</span>
-                      </div>
-
-                      <div className="p-6 rounded-xl bg-[#060911] border border-slate-800 font-mono text-xs sm:text-sm md:text-base text-amber-300 overflow-x-auto text-center leading-loose shadow-inner">
+                    <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 backdrop-blur-md shadow-2xl">
+                      <div className="p-5 rounded-xl bg-[#060911] border border-slate-800 font-mono text-xs sm:text-sm text-amber-300 overflow-x-auto text-center leading-loose">
                         J = ∫₀ᵀ [ w₁ I_bio(t) + w₂ C_stab(t) + w₃ M_mat(t) - w₄ E_pen(t) - λ Penalty_over ] dt
                       </div>
-
-                      <div className="mt-8 p-6 rounded-xl bg-slate-950/80 border border-slate-800">
-                        {activeMathItem === 'I_bio' && (
-                          <div className="space-y-3">
-                            <div className="text-emerald-400 font-mono text-sm font-bold flex items-center gap-2">
-                              <Heart className="w-4 h-4" /> I_bio(t) : 生体・身体的完全性保持項
-                            </div>
-                            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                              呼吸、脈拍、血流、脳ホメオスタシスの健全性を維持する項。個人の動的ベースラインからの異常乖離を監視します。
-                            </p>
-                          </div>
-                        )}
-                        {activeMathItem === 'C_stab' && (
-                          <div className="space-y-3">
-                            <div className="text-cyan-400 font-mono text-sm font-bold flex items-center gap-2">
-                              <Activity className="w-4 h-4" /> C_stab(t) : 認知・精神的安定性保持項
-                            </div>
-                            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                              パニック状態、過度なストレス、認知バイアス、意識混濁をモニタリングします。
-                            </p>
-                          </div>
-                        )}
-                        {activeMathItem === 'M_mat' && (
-                          <div className="space-y-3">
-                            <div className="text-amber-400 font-mono text-sm font-bold flex items-center gap-2">
-                              <Sparkles className="w-4 h-4" /> M_mat(t) : 人間の成熟・自律的成長項
-                            </div>
-                            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                              過保護による人間の能力低下を防ぎ、自律的な判断や学習を促すサポート評価項です。
-                            </p>
-                          </div>
-                        )}
-                        {activeMathItem === 'E_pen' && (
-                          <div className="space-y-3">
-                            <div className="text-rose-400 font-mono text-sm font-bold flex items-center gap-2">
-                              <AlertTriangle className="w-4 h-4" /> E_pen(t) : システム摩擦・エントロピー損失項 (現在地リスク連動)
-                            </div>
-                            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                              現在地モジュールで算出された危険度がダイナミックに加算されます。
-                            </p>
-                          </div>
-                        )}
-                        {activeMathItem === 'Penalty_over' && (
-                          <div className="space-y-3">
-                            <div className="text-purple-400 font-mono text-sm font-bold flex items-center gap-2">
-                              <Shield className="w-4 h-4" /> Penalty_over-intervention : 過剰介入ペナルティ
-                            </div>
-                            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                              スポーツ中の激しい動きなどを誤って異常と見なし、不当に人間の自由を制限した場合に課される過剰介入ペナルティです。
-                            </p>
-                          </div>
-                        )}
+                      <div className="mt-6 p-5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                        {activeMathItem === 'I_bio' && '呼吸、脈拍、血流、脳ホメオスタシスの健全性を維持し、個人の動的ベースラインからの異常乖離を監視します。'}
+                        {activeMathItem === 'C_stab' && 'パニック状態、過度なストレス、認知バイアス、意識混濁をモニタリングし、安心できる対話を促します。'}
+                        {activeMathItem === 'M_mat' && '過保護による人間の能力低下を防ぎ、自律的な判断や学習を促すサポート評価項です。'}
+                        {activeMathItem === 'E_pen' && '上の地域リスク診断モジュールで算出された冠水・Natech・感染症リスクがリアルタイムに加算されます。'}
+                        {activeMathItem === 'Penalty_over' && 'スポーツ中の激しい動きなどを誤って異常と見なし、不当に人間の自由を制限した場合に課される過剰介入ペナルティです。'}
                       </div>
                     </div>
                   </div>
                 </section>
 
-                <section id="governance" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
-                  <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-xs font-mono font-bold tracking-widest text-emerald-400 uppercase">Governance & Charter</h2>
-                    <p className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                      オープン・バイオ・コモンズ評議会（OBC）
-                    </p>
-                    <p className="mt-4 text-slate-400 text-sm">
-                      特定の企業・国家による技術の独占や監視を防ぐため、独立した3つの部会による合議制を採用しています。
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-md">
-                    <div className="flex flex-wrap gap-3 border-b border-slate-800 pb-6">
-                      {[
-                        { id: 'engineering', label: 'オープンソース・エンジニアリング部会', icon: Code },
-                        { id: 'bioethics', label: '生体倫理・人権擁護部会', icon: Scale },
-                        { id: 'clinical', label: '臨床医学・公衆衛生部会', icon: Stethoscope }
-                      ].map((tab) => {
-                        const IconComponent = tab.icon;
-                        return (
-                          <button
-                            key={tab.id}
-                            onClick={() => setActiveGovernanceTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                              activeGovernanceTab === tab.id
-                                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                                : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800'
-                            }`}
-                          >
-                            <IconComponent className="w-4 h-4" />
-                            <span>{tab.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="mt-8 text-slate-300 text-sm leading-relaxed">
-                      {activeGovernanceTab === 'engineering' && (
-                        <div className="space-y-4">
-                          <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                            <Code className="w-5 h-5 text-amber-400" /> オープンソース・エンジニアリング部会
-                          </h4>
-                          <p>プロトコル開発者、暗号学者で構成。OpenLBOFコア仕様、セキュアエンクレーブの標準規格、およびゼロ知識証明（ZKP）のオープン開発を担当します。</p>
-                        </div>
-                      )}
-                      {activeGovernanceTab === 'bioethics' && (
-                        <div className="space-y-4">
-                          <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                            <Scale className="w-5 h-5 text-amber-400" /> 生体倫理・人権擁護部会
-                          </h4>
-                          <p>人権活動家、哲学者で構成。個人の自己決定権が脅かされていないか、AIの介入が過剰になっていないかをゼロ知識証明技術を用いて継続監査します。</p>
-                        </div>
-                      )}
-                      {activeGovernanceTab === 'clinical' && (
-                        <div className="space-y-4">
-                          <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                            <Stethoscope className="w-5 h-5 text-amber-400" /> 臨床医学・公衆衛生部会
-                          </h4>
-                          <p>救急医学専門医、公衆衛生学者で構成。危機発作判定アルゴリズムの医学的判定と避難所感染予防ロジックの評価を行います。</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </section>
-
-                <section id="simulator" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
-                  <div className="text-center max-w-3xl mx-auto mb-12">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono mb-3">
-                      <Radio className="w-3.5 h-3.5 animate-pulse text-cyan-400" /> Interactive Edge Engine Simulator
-                    </div>
-                    <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                      生体シミュレータ & 目的関数 J 監視 (地域リスク統合)
-                    </h2>
-                  </div>
-
+                {/* 6. LIVE SIMULATOR */}
+                <section id="simulator" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
                   <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-2xl">
                     <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-slate-400">シナリオ選択:</span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-mono text-slate-400">生体シナリオ:</span>
                         <div className="flex rounded-lg bg-slate-950 p-1 border border-slate-800">
                           <button
                             onClick={() => setSimContext('NORMAL')}
@@ -1590,20 +1435,18 @@
                               simContext === 'CRISIS' ? 'bg-rose-500 text-slate-950' : 'text-slate-400 hover:text-white'
                             }`}
                           >
-                            3. 意識失調・急変 (Crisis)
+                            3. 意識失調・急変
                           </button>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => setIsSimRunning(!isSimRunning)}
-                          className="px-3.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 hover:bg-slate-700 flex items-center gap-1.5"
-                        >
-                          <RefreshCw className={`w-3.5 h-3.5 ${isSimRunning ? 'animate-spin-slow text-emerald-400' : ''}`} />
-                          <span>{isSimRunning ? '一時停止' : '再開'}</span>
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => setIsSimRunning(!isSimRunning)}
+                        className="px-3.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 hover:bg-slate-700 flex items-center gap-1.5"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isSimRunning ? 'animate-spin-slow text-emerald-400' : ''}`} />
+                        <span>{isSimRunning ? '一時停止' : '再開'}</span>
+                      </button>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
@@ -1623,7 +1466,7 @@
                         </div>
                       </div>
                       <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                        <div className="text-[11px] font-mono text-slate-400 font-medium text-amber-300">地域統合リスク (E_pen)</div>
+                        <div className="text-[11px] font-mono text-amber-300">地域統合リスク (E_pen)</div>
                         <div className="text-xl font-bold font-mono mt-1 text-cyan-400">
                           {latestTelemetry.ePen}
                         </div>
@@ -1636,93 +1479,82 @@
                       </div>
                     </div>
 
-                    <div className="h-64 sm:h-80 w-full mt-4">
+                    <div className="h-56 sm:h-72 w-full mt-4">
                       <CustomLineChart data={simData} />
                     </div>
                   </div>
                 </section>
 
-                <section id="community" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                    <div className="lg:col-span-6 space-y-6">
+                {/* 7. COMMUNITY */}
+                <section id="community" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div className="lg:col-span-6 space-y-4">
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
-                        <Users className="w-3.5 h-3.5" /> Call for Contributors
+                        <Users className="w-3.5 h-3.5" /> Open Bio-Commons Council
                       </div>
-                      <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                        共に「地域社会と人間の尊厳を守るインフラ」を創る仲間を募集
+                      <h2 className="text-3xl font-bold text-white">
+                        共に「地域社会と人間の尊厳を守るインフラ」を育てる
                       </h2>
                       <p className="text-slate-300 text-sm leading-relaxed">
-                        OpenLBOF は、特定企業の製品ではなく、オープンな地域リスクデータとバイオシグナルを統合する地球規模のパブリックコモンズです。
+                        OpenLBOF は、特定企業の製品ではなく、オープンな地域リスクデータとバイオシグナルを統合するパブリックコモンズです。
                       </p>
                     </div>
 
-                    <div className="lg:col-span-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-2xl">
-                      <h3 className="text-xl font-bold text-white mb-2">OBC 参画・お問い合わせ</h3>
+                    <div className="lg:col-span-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 backdrop-blur-md">
+                      <h3 className="text-lg font-bold text-white mb-4">OBC 参画・フィードバック送信</h3>
                       {formSubmitted ? (
-                        <div className="p-8 text-center space-y-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
-                          <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-                          <h4 className="text-lg font-bold text-white">送信が完了しました</h4>
+                        <div className="p-6 text-center space-y-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                          <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+                          <h4 className="text-base font-bold text-white">送信が完了しました</h4>
                         </div>
                       ) : (
-                        <form onSubmit={handleFormSubmit} className="space-y-4">
-                          <div>
-                            <label className="block text-xs font-mono text-slate-300 mb-1.5">お名前 / Handle</label>
-                            <input 
-                              type="text" 
-                              required
-                              value={formData.name}
-                              onChange={e => setFormData({ ...formData, name: e.target.value })}
-                              placeholder="例: 山田 太郎" 
-                              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-mono text-slate-300 mb-1.5">メールアドレス</label>
-                            <input 
-                              type="email" 
-                              required
-                              value={formData.email}
-                              onChange={e => setFormData({ ...formData, email: e.target.value })}
-                              placeholder="name@domain.com" 
-                              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-mono text-slate-300 mb-1.5">メッセージ</label>
-                            <textarea 
-                              rows={4}
-                              required
-                              value={formData.message}
-                              onChange={e => setFormData({ ...formData, message: e.target.value })}
-                              placeholder="参画のご関心やご質問をご記入ください..." 
-                              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500 resize-none"
-                            />
-                          </div>
+                        <form onSubmit={handleFormSubmit} className="space-y-3">
+                          <input 
+                            type="text" 
+                            required
+                            value={formData.name}
+                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            placeholder="お名前 / Handle" 
+                            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                          />
+                          <input 
+                            type="email" 
+                            required
+                            value={formData.email}
+                            onChange={e => setFormData({ ...formData, email: e.target.value })}
+                            placeholder="メールアドレス" 
+                            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                          />
+                          <textarea 
+                            rows={3}
+                            required
+                            value={formData.message}
+                            onChange={e => setFormData({ ...formData, message: e.target.value })}
+                            placeholder="改善アイデアや地域データの追加要望など..." 
+                            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500 resize-none"
+                          />
                           <button 
                             type="submit"
-                            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
+                            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
                           >
                             <Send className="w-4 h-4" />
-                            <span>送信してコミュニティに参加する</span>
+                            <span>送信する</span>
                           </button>
                         </form>
                       )}
                     </div>
                   </div>
                 </section>
-
               </main>
 
-              <footer className="border-t border-slate-800/80 bg-[#060911] py-12 relative z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                      <Heart className="w-4 h-4" />
-                    </div>
+              <footer className="border-t border-slate-800/80 bg-[#060911] py-10 relative z-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2.5">
+                    <Heart className="w-4 h-4 text-amber-400" />
                     <span className="text-sm font-bold text-slate-200">OpenLBOF / Open Bio-Commons Council</span>
                   </div>
                   <div className="text-xs text-slate-400 font-mono">
-                    &copy; 2026 Open Bio-Commons Council (OBC).
+                    &copy; 2026 Open Bio-Commons Council (OBC) ・ Local-First Safety Infrastructure.
                   </div>
                 </div>
               </footer>
