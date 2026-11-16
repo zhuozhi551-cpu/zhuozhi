@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenLBOF | 実践型・防災＆相互尊厳インフラ (Global Risk & Action Portal)</title>
+    <title>OpenLBOF | 実践型・防災＆バイオセンサーインフラ</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM -->
@@ -31,7 +31,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
         
         const LucideIcons = window.lucide || {};
         const createLucideComponent = (iconDef) => {
@@ -63,11 +63,7 @@
         const Lock = createLucideComponent(LucideIcons.Lock);
         const Users = createLucideComponent(LucideIcons.Users);
         const Terminal = createLucideComponent(LucideIcons.Terminal);
-        const FileText = createLucideComponent(LucideIcons.FileText);
         const ChevronRight = createLucideComponent(LucideIcons.ChevronRight);
-        const Code = createLucideComponent(LucideIcons.Code);
-        const Stethoscope = createLucideComponent(LucideIcons.Stethoscope);
-        const Scale = createLucideComponent(LucideIcons.Scale);
         const CheckCircle2 = createLucideComponent(LucideIcons.CheckCircle2);
         const AlertTriangle = createLucideComponent(LucideIcons.AlertTriangle);
         const Sparkles = createLucideComponent(LucideIcons.Sparkles);
@@ -78,7 +74,6 @@
         const MapPin = createLucideComponent(LucideIcons.MapPin);
         const Radio = createLucideComponent(LucideIcons.Radio);
         const RefreshCw = createLucideComponent(LucideIcons.RefreshCw);
-        const Sliders = createLucideComponent(LucideIcons.Sliders);
         const Eye = createLucideComponent(LucideIcons.Eye);
         const CloudRain = createLucideComponent(LucideIcons.CloudRain);
         const ExternalLink = createLucideComponent(LucideIcons.ExternalLink);
@@ -89,6 +84,42 @@
         const PhoneCall = createLucideComponent(LucideIcons.PhoneCall);
         const ClipboardList = createLucideComponent(LucideIcons.ClipboardList);
         const Home = createLucideComponent(LucideIcons.Home);
+        const Camera = createLucideComponent(LucideIcons.Camera);
+        const Mic = createLucideComponent(LucideIcons.Mic);
+        const Bluetooth = createLucideComponent(LucideIcons.Bluetooth);
+        const Cpu = createLucideComponent(LucideIcons.Cpu);
+
+        // リアルタイムPPG脈波チャートコンポーネント
+        const PpgWaveformChart = ({ samples = [] }) => {
+            const width = 480;
+            const height = 110;
+            if (samples.length < 2) {
+                return (
+                    <div className="w-full h-28 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-center text-xs font-mono text-slate-500">
+                        カメラに指先を密着させるかデモ波形を開始すると脈波が表示されます
+                    </div>
+                );
+            }
+            const min = Math.min(...samples);
+            const max = Math.max(...samples);
+            const range = Math.max(0.01, max - min);
+            const points = samples.map((val, idx) => {
+                const x = (idx / Math.max(1, samples.length - 1)) * width;
+                const y = height - 12 - ((val - min) / range) * (height - 24);
+                return `${idx === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+            }).join(' ');
+
+            return (
+                <div className="w-full h-28 rounded-xl bg-slate-950/90 border border-rose-500/30 p-2 relative overflow-hidden">
+                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+                        <path d={points} fill="none" stroke="#fb7185" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span className="absolute top-2 right-3 text-[10px] font-mono text-rose-300 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-500/30">
+                        PPG Optical Pulse
+                    </span>
+                </div>
+            );
+        };
 
         // 1〜7日間のリスク推移グラフコンポーネント
         const RiskTimelineChart = ({ timeline = [], selectedDay = 3, mode = 'ACTUAL' }) => {
@@ -185,7 +216,7 @@
                         )}
                     </div>
                     <div className="flex flex-wrap items-center gap-6 text-[11px] font-mono text-slate-400 mt-2">
-                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block"/> 生体データ</span>
+                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block"/> 生体・バイオセンサー入力 (I_bio)</span>
                         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"/> 動的ベースライン</span>
                         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"/> 目的関数 J スコア</span>
                     </div>
@@ -195,7 +226,6 @@
 
         class LocalRiskCalculatorEngine {
           constructor() {
-            // 全国主要コンビナート・造船重工業・原子力発電所立地エリア対応データベース
             this.regionDatabase = {
               okayama: { pref: '岡山県', areas: {
                 tamano_mitsui: { name: '玉野市・宇野港〜三井E&S臨海重工業エリア', lat: 34.4847, lon: 133.9461, baseRain: 38, shelterSpace: 2.8, industrialDensity: 0.88, nuclearFacility: false, elevation: 2.8, drainageCap: 45 },
@@ -205,8 +235,7 @@
               }},
               hokkaido: { pref: '北海道', areas: {
                 tomari_npp: { name: '泊村・泊原子力発電所周辺エリア', lat: 43.0361, lon: 140.5125, baseRain: 34, shelterSpace: 3.5, industrialDensity: 0.75, nuclearFacility: true, elevation: 12.0, drainageCap: 45 },
-                tomakomai: { name: '苫小牧市・苫小牧臨海コンビナート', lat: 42.6343, lon: 141.6054, baseRain: 32, shelterSpace: 3.6, industrialDensity: 0.85, nuclearFacility: false, elevation: 5.0, drainageCap: 45 },
-                sapporo_kita: { name: '札幌市北区・石狩川水系低地', lat: 43.0908, lon: 141.3408, baseRain: 35, shelterSpace: 2.8, industrialDensity: 0.30, nuclearFacility: false, elevation: 14.0, drainageCap: 48 }
+                tomakomai: { name: '苫小牧市・苫小牧臨海コンビナート', lat: 42.6343, lon: 141.6054, baseRain: 32, shelterSpace: 3.6, industrialDensity: 0.85, nuclearFacility: false, elevation: 5.0, drainageCap: 45 }
               }},
               aomori: { pref: '青森県', areas: {
                 rokkasho_cycle: { name: '六ヶ所村・核燃料サイクル施設周辺', lat: 40.9583, lon: 141.3258, baseRain: 36, shelterSpace: 3.6, industrialDensity: 0.82, nuclearFacility: true, elevation: 18.0, drainageCap: 45 },
@@ -222,24 +251,20 @@
               }},
               ibaraki: { pref: '茨城県', areas: {
                 kashima_comb: { name: '神栖市・鹿島臨海コンビナート地帯', lat: 35.9189, lon: 140.6869, baseRain: 45, shelterSpace: 2.8, industrialDensity: 0.96, nuclearFacility: false, elevation: 3.2, drainageCap: 48 },
-                tokai_npp: { name: '東海村・東海第二発電所・原子力研究施設周辺', lat: 36.4664, lon: 140.6067, baseRain: 44, shelterSpace: 2.7, industrialDensity: 0.85, nuclearFacility: true, elevation: 8.0, drainageCap: 48 }
+                tokai_npp: { name: '東海村・東海第二発電所周辺', lat: 36.4664, lon: 140.6067, baseRain: 44, shelterSpace: 2.7, industrialDensity: 0.85, nuclearFacility: true, elevation: 8.0, drainageCap: 48 }
               }},
               chiba: { pref: '千葉県', areas: {
-                ichihara_keiyo: { name: '市原市・京葉臨海コンビナート', lat: 35.4981, lon: 140.1156, baseRain: 48, shelterSpace: 2.2, industrialDensity: 0.96, nuclearFacility: false, elevation: 2.5, drainageCap: 48 },
-                urayasu: { name: '浦安市・東京湾岸埋立地', lat: 35.6531, lon: 139.9022, baseRain: 46, shelterSpace: 1.9, industrialDensity: 0.35, nuclearFacility: false, elevation: 1.8, drainageCap: 50 }
+                ichihara_keiyo: { name: '市原市・京葉臨海コンビナート', lat: 35.4981, lon: 140.1156, baseRain: 48, shelterSpace: 2.2, industrialDensity: 0.96, nuclearFacility: false, elevation: 2.5, drainageCap: 48 }
               }},
               tokyo: { pref: '東京都', areas: {
                 koto_bay: { name: '江東区・臨海湾岸ゼロメートル地帯', lat: 35.6495, lon: 139.7914, baseRain: 45, shelterSpace: 1.8, industrialDensity: 0.85, nuclearFacility: false, elevation: 1.2, drainageCap: 45 },
-                ota_keihin: { name: '大田区・京浜工業地帯沿岸', lat: 35.5613, lon: 139.7160, baseRain: 50, shelterSpace: 1.9, industrialDensity: 0.92, nuclearFacility: false, elevation: 2.5, drainageCap: 48 },
-                shinjuku: { name: '新宿区・都心高密エリア', lat: 35.6938, lon: 139.7034, baseRain: 40, shelterSpace: 1.5, industrialDensity: 0.25, nuclearFacility: false, elevation: 32.0, drainageCap: 55 }
+                ota_keihin: { name: '大田区・京浜工業地帯沿岸', lat: 35.5613, lon: 139.7160, baseRain: 50, shelterSpace: 1.9, industrialDensity: 0.92, nuclearFacility: false, elevation: 2.5, drainageCap: 48 }
               }},
               kanagawa: { pref: '神奈川県', areas: {
-                kawasaki_ukishima: { name: '川崎市川崎区・京浜臨海コンビナート', lat: 35.5189, lon: 139.7822, baseRain: 49, shelterSpace: 1.8, industrialDensity: 0.95, nuclearFacility: false, elevation: 1.8, drainageCap: 48 },
-                yokohama_negishi: { name: '横浜市磯子区・根岸臨海コンビナート', lat: 35.4058, lon: 139.6331, baseRain: 47, shelterSpace: 1.9, industrialDensity: 0.88, nuclearFacility: false, elevation: 2.5, drainageCap: 50 }
+                kawasaki_ukishima: { name: '川崎市川崎区・京浜臨海コンビナート', lat: 35.5189, lon: 139.7822, baseRain: 49, shelterSpace: 1.8, industrialDensity: 0.95, nuclearFacility: false, elevation: 1.8, drainageCap: 48 }
               }},
               niigata: { pref: '新潟県', areas: {
-                kashiwazaki_npp: { name: '柏崎市・刈羽村（柏崎刈羽原発周辺エリア）', lat: 37.4286, lon: 138.6017, baseRain: 46, shelterSpace: 3.1, industrialDensity: 0.82, nuclearFacility: true, elevation: 10.0, drainageCap: 46 },
-                niigata_higashi: { name: '聖籠町・新潟東港臨海工業地帯', lat: 37.9942, lon: 139.2361, baseRain: 45, shelterSpace: 3.0, industrialDensity: 0.84, nuclearFacility: false, elevation: 3.5, drainageCap: 46 }
+                kashiwazaki_npp: { name: '柏崎市・刈羽村（柏崎刈羽原発周辺エリア）', lat: 37.4286, lon: 138.6017, baseRain: 46, shelterSpace: 3.1, industrialDensity: 0.82, nuclearFacility: true, elevation: 10.0, drainageCap: 46 }
               }},
               ishikawa: { pref: '石川県', areas: {
                 shika_npp: { name: '志賀町・志賀原子力発電所周辺エリア', lat: 37.0611, lon: 136.7264, baseRain: 48, shelterSpace: 3.2, industrialDensity: 0.78, nuclearFacility: true, elevation: 12.0, drainageCap: 44 }
@@ -249,43 +274,31 @@
                 mihama_tsuruga_npp: { name: '美浜町・敦賀市（美浜・敦賀原発周辺）', lat: 35.7025, lon: 135.9631, baseRain: 52, shelterSpace: 3.0, industrialDensity: 0.85, nuclearFacility: true, elevation: 8.5, drainageCap: 45 }
               }},
               shizuoka: { pref: '静岡県', areas: {
-                omaezaki_npp: { name: '御前崎市・浜岡原子力発電所周辺エリア', lat: 34.6233, lon: 138.1425, baseRain: 56, shelterSpace: 2.9, industrialDensity: 0.84, nuclearFacility: true, elevation: 7.5, drainageCap: 48 },
-                fuji_suruga: { name: '富士市・駿河湾臨海工業地帯', lat: 35.1414, lon: 138.6811, baseRain: 58, shelterSpace: 2.6, industrialDensity: 0.86, nuclearFacility: false, elevation: 4.0, drainageCap: 48 }
+                omaezaki_npp: { name: '御前崎市・浜岡原子力発電所周辺エリア', lat: 34.6233, lon: 138.1425, baseRain: 56, shelterSpace: 2.9, industrialDensity: 0.84, nuclearFacility: true, elevation: 7.5, drainageCap: 48 }
               }},
               aichi: { pref: '愛知県', areas: {
-                nagoya_port: { name: '名古屋市港区・名古屋港臨海コンビナート', lat: 35.0911, lon: 136.8814, baseRain: 48, shelterSpace: 2.1, industrialDensity: 0.91, nuclearFacility: false, elevation: 1.5, drainageCap: 48 },
-                toyota_inland: { name: '豊田市・矢作川中流域', lat: 35.0824, lon: 137.1562, baseRain: 45, shelterSpace: 3.1, industrialDensity: 0.65, nuclearFacility: false, elevation: 42.0, drainageCap: 55 }
+                nagoya_port: { name: '名古屋市港区・名古屋港臨海コンビナート', lat: 35.0911, lon: 136.8814, baseRain: 48, shelterSpace: 2.1, industrialDensity: 0.91, nuclearFacility: false, elevation: 1.5, drainageCap: 48 }
               }},
               mie: { pref: '三重県', areas: {
-                yokkaichi: { name: '四日市市・四日市コンビナート臨海帯', lat: 34.9651, lon: 136.6244, baseRain: 54, shelterSpace: 2.2, industrialDensity: 0.96, nuclearFacility: false, elevation: 2.1, drainageCap: 45 },
-                ise_miyagawa: { name: '伊勢市・宮川下流域', lat: 34.4875, lon: 136.7094, baseRain: 58, shelterSpace: 2.8, industrialDensity: 0.30, nuclearFacility: false, elevation: 4.5, drainageCap: 42 }
+                yokkaichi: { name: '四日市市・四日市コンビナート臨海帯', lat: 34.9651, lon: 136.6244, baseRain: 54, shelterSpace: 2.2, industrialDensity: 0.96, nuclearFacility: false, elevation: 2.1, drainageCap: 45 }
               }},
               osaka: { pref: '大阪府', areas: {
-                sakai_senboku: { name: '堺市・泉北臨海コンビナート地帯', lat: 34.5733, lon: 135.4372, baseRain: 45, shelterSpace: 1.9, industrialDensity: 0.93, nuclearFacility: false, elevation: 2.8, drainageCap: 48 },
-                umeda_yodo: { name: '大阪市北区・淀川河口低地帯', lat: 34.7024, lon: 135.4959, baseRain: 42, shelterSpace: 1.6, industrialDensity: 0.45, nuclearFacility: false, elevation: 2.0, drainageCap: 50 }
+                sakai_senboku: { name: '堺市・泉北臨海コンビナート地帯', lat: 34.5733, lon: 135.4372, baseRain: 45, shelterSpace: 1.9, industrialDensity: 0.93, nuclearFacility: false, elevation: 2.8, drainageCap: 48 }
               }},
               hyogo: { pref: '兵庫県', areas: {
-                himeji_rinkai: { name: '姫路市・播磨臨海コンビナート地帯', lat: 34.7865, lon: 134.6642, baseRain: 42, shelterSpace: 2.5, industrialDensity: 0.93, nuclearFacility: false, elevation: 2.8, drainageCap: 46 },
-                kobe_port: { name: '神戸市中央区・神戸港湾低地帯', lat: 34.6851, lon: 135.1955, baseRain: 46, shelterSpace: 2.0, industrialDensity: 0.78, nuclearFacility: false, elevation: 3.2, drainageCap: 50 }
+                himeji_rinkai: { name: '姫路市・播磨臨海コンビナート地帯', lat: 34.7865, lon: 134.6642, baseRain: 42, shelterSpace: 2.5, industrialDensity: 0.93, nuclearFacility: false, elevation: 2.8, drainageCap: 46 }
               }},
               shimane: { pref: '島根県', areas: {
                 matsue_shimane_npp: { name: '松江市鹿島町・島根原子力発電所周辺', lat: 35.5383, lon: 132.9992, baseRain: 44, shelterSpace: 2.9, industrialDensity: 0.80, nuclearFacility: true, elevation: 11.0, drainageCap: 45 }
               }},
-              hiroshima: { pref: '広島県', areas: {
-                otake_iwakuni: { name: '大竹市・瀬戸内臨海コンビナート', lat: 34.2361, lon: 132.2244, baseRain: 44, shelterSpace: 2.5, industrialDensity: 0.90, nuclearFacility: false, elevation: 2.8, drainageCap: 46 },
-                hiroshima_delta: { name: '広島市中区・太田川デルタ低地帯', lat: 34.3853, lon: 132.4553, baseRain: 45, shelterSpace: 2.0, industrialDensity: 0.48, nuclearFacility: false, elevation: 2.2, drainageCap: 48 }
-              }},
               yamaguchi: { pref: '山口県', areas: {
-                shunan_comb: { name: '周南市・徳山〜南陽臨海コンビナート', lat: 34.0483, lon: 131.8058, baseRain: 46, shelterSpace: 2.6, industrialDensity: 0.95, nuclearFacility: false, elevation: 3.0, drainageCap: 46 },
-                ube_onoda: { name: '宇部市・山陽小野田市 臨海工業地帯', lat: 33.9431, lon: 131.2467, baseRain: 45, shelterSpace: 2.7, industrialDensity: 0.88, nuclearFacility: false, elevation: 2.8, drainageCap: 46 }
+                shunan_comb: { name: '周南市・徳山〜南陽臨海コンビナート', lat: 34.0483, lon: 131.8058, baseRain: 46, shelterSpace: 2.6, industrialDensity: 0.95, nuclearFacility: false, elevation: 3.0, drainageCap: 46 }
               }},
               ehime: { pref: '愛媛県', areas: {
-                ikata_npp: { name: '伊方町・伊方原子力発電所（佐田岬半島）', lat: 33.4908, lon: 132.3114, baseRain: 48, shelterSpace: 3.0, industrialDensity: 0.82, nuclearFacility: true, elevation: 14.0, drainageCap: 45 },
-                niihama_comb: { name: '新居浜市・瀬戸内臨海化学工業地帯', lat: 33.9603, lon: 133.2833, baseRain: 45, shelterSpace: 2.7, industrialDensity: 0.88, nuclearFacility: false, elevation: 3.5, drainageCap: 46 }
+                ikata_npp: { name: '伊方町・伊方原子力発電所（佐田岬半島）', lat: 33.4908, lon: 132.3114, baseRain: 48, shelterSpace: 3.0, industrialDensity: 0.82, nuclearFacility: true, elevation: 14.0, drainageCap: 45 }
               }},
               fukuoka: { pref: '福岡県', areas: {
-                kitakyushu: { name: '北九州市・洞海湾〜響灘臨海工業帯', lat: 33.8834, lon: 130.8751, baseRain: 52, shelterSpace: 2.4, industrialDensity: 0.88, nuclearFacility: false, elevation: 3.5, drainageCap: 50 },
-                hakata_bay: { name: '福岡市博多区・博多湾沿岸', lat: 33.5902, lon: 130.4017, baseRain: 50, shelterSpace: 2.0, industrialDensity: 0.40, nuclearFacility: false, elevation: 4.0, drainageCap: 52 }
+                kitakyushu: { name: '北九州市・洞海湾〜響灘臨海工業帯', lat: 33.8834, lon: 130.8751, baseRain: 52, shelterSpace: 2.4, industrialDensity: 0.88, nuclearFacility: false, elevation: 3.5, drainageCap: 50 }
               }},
               saga: { pref: '佐賀県', areas: {
                 genkai_npp: { name: '玄海町・唐津市（玄海原子力発電所周辺）', lat: 33.5156, lon: 129.8372, baseRain: 52, shelterSpace: 3.1, industrialDensity: 0.80, nuclearFacility: true, elevation: 12.0, drainageCap: 46 }
@@ -295,9 +308,6 @@
               }},
               kagoshima: { pref: '鹿児島県', areas: {
                 sendai_npp: { name: '薩摩川内市・川内原子力発電所周辺エリア', lat: 31.8336, lon: 130.1897, baseRain: 60, shelterSpace: 3.0, industrialDensity: 0.82, nuclearFacility: true, elevation: 11.0, drainageCap: 50 }
-              }},
-              okinawa: { pref: '沖縄県', areas: {
-                naha_port: { name: '那覇市・那覇港湾〜新都心エリア', lat: 26.2124, lon: 127.6809, baseRain: 65, shelterSpace: 2.0, industrialDensity: 0.55, nuclearFacility: false, elevation: 4.0, drainageCap: 55 }
               }}
             };
           }
@@ -311,7 +321,6 @@
           }) {
             const baseDate = baseDateTimeStr ? new Date(baseDateTimeStr) : new Date();
             const validBaseDate = isNaN(baseDate.getTime()) ? new Date() : baseDate;
-            const targetDate = new Date(validBaseDate.getTime() + forecastDays * 24 * 60 * 60 * 1000);
 
             const formatJPDateTime = (d) => {
               const yyyy = d.getFullYear();
@@ -364,7 +373,6 @@
               const effSqm = Math.max(0.9, parseFloat((startSqm - (d - 1) * 0.13).toFixed(2)));
               const ventBoost = (customVentLevel - 3) * 0.85;
               const ventRate = Math.max(1.0, parseFloat((4.0 + ventBoost - (d * 0.22) - (3.5 - effSqm) * 0.35).toFixed(1)));
-              const fatigue = Math.min(100, Math.round(15 + d * 11 + (3.2 - effSqm) * 12 - (customVentLevel - 3) * 5));
 
               const crowdFactor = Math.max(0.3, (3.8 - effSqm) / 2.2);
               const worstOutbreakRisk = Math.min(96, Math.max(15, Math.round((crowdFactor * 48) + (d * 5.2) + ((5.5 - ventRate) * 6.5))));
@@ -374,26 +382,19 @@
                 day: d,
                 shortDate,
                 fullDateTime: formatJPDateTime(stepDate),
-                precipProbability: actualPrecipProb,
-                expectedRainfallMm: actualExpRain,
-                peakHourlyRainMm: actualPeakHr,
                 inundationRisk: actualInundationRisk,
                 natechRisk: actualNatechRisk,
                 outbreakRisk: actualOutbreakRisk,
-                worstExpRainMm: worstExpRain,
-                worstPeakHourlyMm: worstPeakHr,
                 worstInundationRisk,
                 worstNatechRisk,
                 worstOutbreakRisk,
                 effectiveShelterSqm: effSqm,
-                ventilationRate: ventRate,
-                hygieneFatigueIndex: fatigue
+                ventilationRate: ventRate
               });
             }
 
             const activeStep = timeline[Math.min(6, Math.max(0, forecastDays - 1))];
             const compositeEntropy = parseFloat(((activeStep.natechRisk * 0.35 + activeStep.inundationRisk * 0.32 + activeStep.outbreakRisk * 0.33) / 100).toFixed(2));
-            const worstCompositeEntropy = parseFloat(((activeStep.worstNatechRisk * 0.35 + activeStep.worstInundationRisk * 0.32 + activeStep.worstOutbreakRisk * 0.33) / 100).toFixed(2));
 
             let primaryThreat = `【現在の予報】今後${forecastDays}日間の実測ベース冠水確率は${activeStep.inundationRisk}%（実際のパンデミック確率${activeStep.outbreakRisk}%）ですが、仮に豪雨が直撃した場合の潜在冠水リスクは${activeStep.worstInundationRisk}%に達します。`;
             let recommendedAction = '平時のうちはハザードマップで「高台ルート」と「1人3.5㎡以上の2次避難先」を確認し、雨雲レーダーの警戒ライン超えに備えてください。';
@@ -401,51 +402,28 @@
             if (nuclearFacility) {
               primaryThreat = `【原子力・重要インフラ複合警戒域】本エリアは原子力関連施設および臨海インフラの近接圏です。現在予報のNatech・複合リスクは${activeStep.natechRisk}%ですが、豪雨・地震・停電等の複合事象発生時の潜在リスクは${activeStep.worstNatechRisk}%に達します。`;
               recommendedAction = `自治体の原子力防災計画（UPZ/PAZ区分）に基づく「屋内退避施設（コンクリート建物）」と「風向に応じた広域避難ルート・安定ヨウ素剤配布場所」を事前確認してください。`;
-            } else if (activeStep.outbreakRisk >= 55 || activeStep.worstOutbreakRisk >= 70) {
-              primaryThreat = `【避難所過密リスク】実際に避難所が開設された場合、滞在${forecastDays}日目（1人あたり ${activeStep.effectiveShelterSqm}㎡・換気${activeStep.ventilationRate}回/h）でパンデミック発生確率が${activeStep.worstOutbreakRisk}%（現在の実発生確率は${activeStep.outbreakRisk}%）まで上昇します。`;
-              recommendedAction = `一次避難所の過密化が進む前に、個別空間が確保された二次避難施設（分散避難先）への早期移動と換気ゾーニング強化（1人3.5㎡以上確保）を推奨します。`;
             } else if (activeStep.worstNatechRisk >= 68) {
-              primaryThreat = `【大雨発生時の潜在Natech脅威】現在の実発生確率は${activeStep.natechRisk}%ですが、仮に時間${activeStep.worstPeakHourlyMm}mmの豪雨が発生すると冠水確率${activeStep.worstInundationRisk}%に伴い臨海工業・造船重工業帯の爆発・ガス漏洩リスクが${activeStep.worstNatechRisk}%へ急騰します。`;
+              primaryThreat = `【大雨発生時の潜在Natech脅威】現在の実発生確率は${activeStep.natechRisk}%ですが、仮に豪雨が発生すると冠水確率${activeStep.worstInundationRisk}%に伴い臨海工業・造船重工業帯の爆発・ガス漏洩リスクが${activeStep.worstNatechRisk}%へ急騰します。`;
               recommendedAction = `大雨・高潮警報発令時は冠水が始まる前に、風上かつ標高20m以上の指定高台エリアへ即時退避してください。`;
             }
 
             let thermalCare = {
               status: '快適・安定域（自律神経負荷：低）',
               badgeColor: 'text-emerald-300 border-emerald-500/40 bg-emerald-950/50',
-              advice: `現在気温 ${currentTemp}℃・湿度 ${currentHumidity}% は比較的穏やかです。避難や移動の際は脱ぎ着しやすい重ね着を心がけ、こまめな水分補給と深呼吸で緊張を和らげてください。`
+              advice: `現在気温 ${currentTemp}℃・湿度 ${currentHumidity}% は比較的穏やかです。脱ぎ着しやすい重ね着とこまめな水分補給で自律神経を安定させましょう。`
             };
             if (currentTemp <= 12) {
               thermalCare = {
                 status: '寒冷・低体温警戒域（保温・血流ケア必須）',
                 badgeColor: 'text-cyan-300 border-cyan-500/40 bg-cyan-950/50',
-                advice: `気温が ${currentTemp}℃ と低く、避難所や車中泊では床からの底冷えによる低体温症や血圧上昇リスクが高まります。段ボール・断熱シートを床に敷き、首・手首・足首を温かい衣類や毛布で保護してください。`
-              };
-            } else if (currentTemp >= 28) {
-              thermalCare = {
-                status: '高温多湿・熱中症警戒域（冷却・電解質補給）',
-                badgeColor: 'text-amber-300 border-amber-500/40 bg-amber-950/50',
-                advice: `気温 ${currentTemp}℃・湿度 ${currentHumidity}% のため、停電や換気制限下では熱中症リスクが急増します。経口補水液の摂取、濡れタオルでの首元冷却、風通しの確保を最優先してください。`
+                advice: `気温が ${currentTemp}℃ と低く、避難所や車中泊では底冷えによる低体温症や血圧上昇リスクが高まります。断熱シートを床に敷き、首・手首・足首を保護してください。`
               };
             }
 
             const actionChecklist = [
-              {
-                id: 'chk_hazard',
-                phase: 'フェーズ1：事前確認',
-                text: `国土地理院ハザードマップと雨雲レーダーで「標高20m以上の高台・風上避難ルート」を確認する`
-              },
-              {
-                id: 'chk_shelter',
-                phase: 'フェーズ2：分散避難',
-                text: `2次避難所（ホテル・親戚宅・分散施設）の連絡先と「1人3.5㎡以上の空間・換気」を確保する`
-              },
-              {
-                id: 'chk_care',
-                phase: 'フェーズ3：携行品・医療',
-                text: currentTemp <= 15 
-                  ? `防寒具・アルミ保温シート・常備薬・モバイルバッテリーをすぐ持ち出せる位置にまとめる`
-                  : `飲料水（1日2L目安）・衛生マスク・手指消毒液・常備薬を手元に準備する`
-              }
+              { id: 'chk_hazard', phase: 'フェーズ1：事前確認', text: `国土地理院ハザードマップと雨雲レーダーで「標高20m以上の高台・風上避難ルート」を確認する` },
+              { id: 'chk_shelter', phase: 'フェーズ2：分散避難', text: `2次避難所（ホテル・親戚宅・分散施設）の連絡先と「1人3.5㎡以上の空間・換気」を確保する` },
+              { id: 'chk_care', phase: 'フェーズ3：携行品・医療', text: `防寒具・アルミ保温シート・常備薬・モバイルバッテリーをすぐ持ち出せる位置にまとめる` }
             ];
 
             const yahooRadarUrl = `https://weather.yahoo.co.jp/weather/zoomradar/?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&z=12`;
@@ -463,7 +441,6 @@
               natechRisk: activeStep.natechRisk,
               inundationRisk: activeStep.inundationRisk,
               outbreakRisk: activeStep.outbreakRisk,
-              worstCompositeEntropy,
               worstNatechRisk: activeStep.worstNatechRisk,
               worstInundationRisk: activeStep.worstInundationRisk,
               worstOutbreakRisk: activeStep.worstOutbreakRisk,
@@ -473,18 +450,11 @@
               thermalCare,
               actionChecklist,
               factors: {
-                precipProbability: activeStep.precipProbability,
-                expectedRainfallMm: activeStep.expectedRainfallMm,
-                peakHourlyRainMm: activeStep.peakHourlyRainMm,
-                worstExpRainMm: activeStep.worstExpRainMm,
-                worstPeakHourlyMm: activeStep.worstPeakHourlyMm,
-                liveHourlyRain,
                 currentTemp,
                 currentHumidity,
                 drainageCap,
                 effectiveShelterSqm: activeStep.effectiveShelterSqm,
                 ventilationRate: activeStep.ventilationRate,
-                hygieneFatigueIndex: activeStep.hygieneFatigueIndex,
                 industrialDensityPct: Math.round(industrialDensity * 100),
                 elevation
               },
@@ -500,13 +470,35 @@
         function App() {
           const [isScrolled, setIsScrolled] = useState(false);
           const [activeMathItem, setActiveMathItem] = useState('I_bio');
-          const [activeGovernanceTab, setActiveGovernanceTab] = useState('engineering');
           const [simContext, setSimContext] = useState('NORMAL');
           const [simTime, setSimTime] = useState(0);
           const [simData, setSimData] = useState([]);
           const [isSimRunning, setIsSimRunning] = useState(true);
           const [formSubmitted, setFormSubmitted] = useState(false);
-          const [formData, setFormData] = useState({ name: '', email: '', role: 'AutoDrive Engineer', message: '' });
+          const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+
+          // --- バイオセンサーエンジン（PPG / 音声 / BLE）ステート ---
+          const [isPpgActive, setIsPpgActive] = useState(false);
+          const [ppgStatusMsg, setPpgStatusMsg] = useState('待機中（背面カメラ＋LEDフラッシュ、またはデモ波形を起動できます）');
+          const [bpm, setBpm] = useState(68);
+          const [hrvStress, setHrvStress] = useState(24); // 0-100（低いほどリラックス）
+          const [ppgSamples, setPpgSamples] = useState([]);
+          const videoRef = useRef(null);
+          const canvasRef = useRef(null);
+          const ppgStreamRef = useRef(null);
+          const ppgAnimRef = useRef(null);
+
+          // 音声マイクロ特徴量ステート
+          const [isVoiceActive, setIsVoiceActive] = useState(false);
+          const [voiceFatigue, setVoiceFatigue] = useState(28); // 0-100
+          const [voiceEnergyLevel, setVoiceEnergyLevel] = useState(82); // 0-100
+          const [voiceStatusMsg, setVoiceStatusMsg] = useState('待機中（マイクから声のトーン揺らぎをローカル解析）');
+          const voiceStreamRef = useRef(null);
+          const voiceAnimRef = useRef(null);
+
+          // ESP32 / Raspberry Pi Pico Web Bluetooth ステート
+          const [bleDeviceName, setBleDeviceName] = useState(null);
+          const [bleStatusMsg, setBleStatusMsg] = useState('未接続（ESP32 / Pico MAX30102 心拍サービス対応）');
 
           // 地域・気象リスクステート
           const [userLocation, setUserLocation] = useState(null);
@@ -517,62 +509,249 @@
           const [selectedPref, setSelectedPref] = useState('okayama');
           const [selectedAreaKey, setSelectedAreaKey] = useState('tamano_mitsui');
           const [forecastDays, setForecastDays] = useState(3);
-
-          const getDefaultLocalDateTime = () => {
-            const now = new Date();
-            const yyyy = now.getFullYear();
-            const mm = String(now.getMonth() + 1).padStart(2, '0');
-            const dd = String(now.getDate()).padStart(2, '0');
-            const hh = String(now.getHours()).padStart(2, '0');
-            const min = String(now.getMinutes()).padStart(2, '0');
-            return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
-          };
-          const [baseDateTime, setBaseDateTime] = useState(getDefaultLocalDateTime);
-
-          // 2次避難所空間・換気カスタム調整
-          const [customShelterSqm, setCustomShelterSqm] = useState(3.4);
+          const [customShelterSqm, setCustomShelterSqm] = useState(2.8);
           const [customVentLevel, setCustomVentLevel] = useState(3);
-
-          // チェックリスト＆コピー通知
           const [checkedItems, setCheckedItems] = useState({});
           const [copiedShareMsg, setCopiedShareMsg] = useState(false);
           const [copiedMedicalMsg, setCopiedMedicalMsg] = useState(false);
           const [riskScenarioMode, setRiskScenarioMode] = useState('ACTUAL');
 
-          // 【実践機能】ローカル完結型パーソナル＆ファミリー緊急プロファイル（LocalStorage保存）
           const [sosProfile, setSosProfile] = useState(() => {
             try {
               const saved = localStorage.getItem('openlbof_sos_profile');
               if (saved) return JSON.parse(saved);
             } catch (e) {}
-            return {
-              userName: '',
-              bloodType: '未設定',
-              medicalNotes: '',
-              emergencyContact: '',
-              meetingPoint: '',
-              secondaryShelter: ''
-            };
+            return { userName: '', bloodType: '未設定', medicalNotes: '', emergencyContact: '', meetingPoint: '', secondaryShelter: '' };
           });
           const [profileSavedToast, setProfileSavedToast] = useState(false);
-
-          const handleSaveSosProfile = (e) => {
-            e.preventDefault();
-            try {
-              localStorage.setItem('openlbof_sos_profile', JSON.stringify(sosProfile));
-              setProfileSavedToast(true);
-              setTimeout(() => setProfileSavedToast(false), 3000);
-            } catch (err) {}
-          };
 
           const [localRiskData, setLocalRiskData] = useState(() => {
             const initArea = riskCalculator.regionDatabase.okayama.areas.tamano_mitsui;
             return riskCalculator.calculateDetailedRisk({ ...initArea, forecastDays: 3 });
           });
 
+          // --- 1. スマホカメラ PPG（光電容積脈波）計測エンジン ---
+          const stopPpgCamera = () => {
+            if (ppgAnimRef.current) cancelAnimationFrame(ppgAnimRef.current);
+            if (ppgStreamRef.current) {
+              ppgStreamRef.current.getTracks().forEach(t => t.stop());
+              ppgStreamRef.current = null;
+            }
+            setIsPpgActive(false);
+            setPpgStatusMsg('停止中（データはサーバーへ送信されず破棄されました）');
+          };
+
+          const startPpgCamera = async () => {
+            if (isPpgActive) {
+              stopPpgCamera();
+              return;
+            }
+            setIsPpgActive(true);
+            setPpgStatusMsg('カメラ起動中... 背面カメラとフラッシュに指先を優しく当ててください');
+
+            let redHistory = [];
+            let timeHistory = [];
+            let demoPhase = 0;
+
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { ideal: 'environment' }, width: { ideal: 160 }, height: { ideal: 120 } }
+              });
+              ppgStreamRef.current = stream;
+              const track = stream.getVideoTracks()[0];
+              if (track && track.getCapabilities) {
+                const caps = track.getCapabilities();
+                if (caps.torch) {
+                  await track.applyConstraints({ advanced: [{ torch: true }] }).catch(() => {});
+                }
+              }
+              if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                await videoRef.current.play();
+              }
+              setPpgStatusMsg('光学PPG計測中：LED光による指先の血流変化をリアルタイム抽出中');
+
+              const processFrame = () => {
+                if (!videoRef.current || !canvasRef.current) return;
+                const ctx = canvasRef.current.getContext('2d', { willReadFrequently: true });
+                ctx.drawImage(videoRef.current, 0, 0, 40, 40);
+                const frame = ctx.getImageData(0, 0, 40, 40).data;
+                let redSum = 0;
+                for (let i = 0; i < frame.length; i += 4) {
+                  redSum += frame[i];
+                }
+                const avgRed = redSum / (frame.length / 4);
+                const now = performance.now();
+
+                redHistory.push(avgRed);
+                timeHistory.push(now);
+                if (redHistory.length > 90) {
+                  redHistory.shift();
+                  timeHistory.shift();
+                }
+
+                // 簡易ピーク検出による心拍数・揺らぎ算出
+                if (redHistory.length > 30) {
+                  const mean = redHistory.reduce((a, b) => a + b, 0) / redHistory.length;
+                  const normalized = redHistory.map(v => v - mean);
+                  setPpgSamples(normalized.slice(-60));
+
+                  let peaks = [];
+                  for (let i = 2; i < normalized.length - 2; i++) {
+                    if (normalized[i] > 0.4 && normalized[i] > normalized[i - 1] && normalized[i] > normalized[i + 1]) {
+                      if (peaks.length === 0 || (timeHistory[i] - peaks[peaks.length - 1]) > 380) {
+                        peaks.push(timeHistory[i]);
+                      }
+                    }
+                  }
+                  if (peaks.length >= 2) {
+                    const intervals = [];
+                    for (let i = 1; i < peaks.length; i++) intervals.push(peaks[i] - peaks[i - 1]);
+                    const avgIbi = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                    const calcBpm = Math.min(165, Math.max(48, Math.round(60000 / avgIbi)));
+                    setBpm(calcBpm);
+
+                    // RMSSD近似による自律神経ストレス評価
+                    let sqDiffSum = 0;
+                    for (let i = 1; i < intervals.length; i++) {
+                      sqDiffSum += Math.pow(intervals[i] - intervals[i - 1], 2);
+                    }
+                    const rmssd = intervals.length > 1 ? Math.sqrt(sqDiffSum / (intervals.length - 1)) : 45;
+                    const stressScore = Math.min(95, Math.max(10, Math.round(100 - Math.min(85, rmssd))));
+                    setHrvStress(stressScore);
+                  }
+                }
+                ppgAnimRef.current = requestAnimationFrame(processFrame);
+              };
+              ppgAnimRef.current = requestAnimationFrame(processFrame);
+            } catch (err) {
+              // カメラ未許可・PC環境時は光学PPGシミュレーションモードへ自動フォールバック
+              setPpgStatusMsg('光学PPGシミュレーター稼働中（カメラ未接続環境のため合成脈波を生成）');
+              const runDemoPpg = () => {
+                demoPhase += 0.18;
+                const wave = Math.sin(demoPhase) + 0.45 * Math.sin(demoPhase * 2 - 0.8) + (Math.random() - 0.5) * 0.12;
+                redHistory.push(wave);
+                if (redHistory.length > 60) redHistory.shift();
+                setPpgSamples([...redHistory]);
+                if (Math.random() < 0.08) {
+                  setBpm(prev => Math.min(88, Math.max(62, prev + (Math.random() > 0.5 ? 1 : -1))));
+                  setHrvStress(prev => Math.min(45, Math.max(18, prev + (Math.random() > 0.5 ? 1 : -1))));
+                }
+                ppgAnimRef.current = requestAnimationFrame(runDemoPpg);
+              };
+              ppgAnimRef.current = requestAnimationFrame(runDemoPpg);
+            }
+          };
+
+          // --- 2. 音声マイクロ特徴量（ピッチ揺らぎ・メンタル疲労）解析 ---
+          const stopVoiceAnalyzer = () => {
+            if (voiceAnimRef.current) cancelAnimationFrame(voiceAnimRef.current);
+            if (voiceStreamRef.current) {
+              voiceStreamRef.current.getTracks().forEach(t => t.stop());
+              voiceStreamRef.current = null;
+            }
+            setIsVoiceActive(false);
+            setVoiceStatusMsg('停止中（音声データは録音・送信されません）');
+          };
+
+          const startVoiceAnalyzer = async () => {
+            if (isVoiceActive) {
+              stopVoiceAnalyzer();
+              return;
+            }
+            setIsVoiceActive(true);
+            setVoiceStatusMsg('マイク起動中... 普段通りに話しかけるか深呼吸してください');
+
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+              voiceStreamRef.current = stream;
+              const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+              const source = audioCtx.createMediaStreamSource(stream);
+              const analyser = audioCtx.createAnalyser();
+              analyser.fftSize = 256;
+              source.connect(analyser);
+              const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+              setVoiceStatusMsg('音声マイクロ特徴量解析中：声の周波数揺らぎから疲労度を評価中');
+              const analyzeAudio = () => {
+                analyser.getByteFrequencyData(dataArray);
+                let energy = 0;
+                let highFreq = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                  energy += dataArray[i];
+                  if (i > 40) highFreq += dataArray[i];
+                }
+                const avgEnergy = energy / dataArray.length;
+                if (avgEnergy > 8) {
+                  const tensionRatio = highFreq / Math.max(1, energy);
+                  const fatigue = Math.min(92, Math.max(12, Math.round(tensionRatio * 140)));
+                  setVoiceFatigue(fatigue);
+                  setVoiceEnergyLevel(Math.max(15, 100 - fatigue));
+                }
+                voiceAnimRef.current = requestAnimationFrame(analyzeAudio);
+              };
+              voiceAnimRef.current = requestAnimationFrame(analyzeAudio);
+            } catch (err) {
+              setVoiceStatusMsg('音声解析デモ稼働中（マイク未接続環境のため環境バイオリズム推定中）');
+              const runDemoVoice = () => {
+                if (Math.random() < 0.06) {
+                  setVoiceFatigue(prev => Math.min(48, Math.max(18, prev + (Math.random() > 0.5 ? 2 : -2))));
+                  setVoiceEnergyLevel(prev => Math.min(90, Math.max(55, prev + (Math.random() > 0.5 ? 2 : -2))));
+                }
+                voiceAnimRef.current = requestAnimationFrame(runDemoVoice);
+              };
+              voiceAnimRef.current = requestAnimationFrame(runDemoVoice);
+            }
+          };
+
+          // --- 3. ESP32 / Raspberry Pi Pico (Web Bluetooth Heart Rate Service) 連携 ---
+          const connectBleSensor = async () => {
+            if (!navigator.bluetooth) {
+              setBleStatusMsg('お使いのブラウザはWeb Bluetoothに非対応です（Chrome/Edge推奨）');
+              return;
+            }
+            try {
+              setBleStatusMsg('ESP32 / Pico デバイスを検索中...');
+              const device = await navigator.bluetooth.requestDevice({
+                filters: [{ services: ['heart_rate'] }],
+                optionalServices: ['battery_service']
+              });
+              const server = await device.gatt.connect();
+              const service = await server.getPrimaryService('heart_rate');
+              const char = await service.getCharacteristic('heart_rate_measurement');
+              await char.startNotifications();
+              char.addEventListener('characteristicvaluechanged', (e) => {
+                const value = e.target.value;
+                const flags = value.getUint8(0);
+                const rate16Bits = flags & 0x1;
+                const hr = rate16Bits ? value.getUint16(1, true) : value.getUint8(1);
+                setBpm(hr);
+              });
+              setBleDeviceName(device.name || 'ESP32/Pico PPG Node');
+              setBleStatusMsg(`接続完了: ${device.name || 'ESP32/Pico'} からリアルタイム心拍受信中`);
+            } catch (err) {
+              setBleStatusMsg('BLE接続がキャンセルされたか、近くにデバイスが見つかりませんでした');
+            }
+          };
+
+          useEffect(() => {
+            return () => {
+              stopPpgCamera();
+              stopVoiceAnalyzer();
+            };
+          }, []);
+
+          // バイオセンサー総合健全度（0.0〜1.0）
+          const bioSensorHealthScore = useMemo(() => {
+            const bpmDeviation = Math.abs(bpm - 70) / 80;
+            const stressPenalty = (hrvStress / 100) * 0.35;
+            const voicePenalty = (voiceFatigue / 100) * 0.25;
+            return parseFloat(Math.max(0.15, Math.min(0.99, 1.0 - bpmDeviation * 0.4 - stressPenalty - voicePenalty)).toFixed(2));
+          }, [bpm, hrvStress, voiceFatigue]);
+
           const fetchRadarPrecipitation = async (
             lat, lon, areaObjOrName, days, isGps = false,
-            overrideBaseDt = baseDateTime, overrideSqm = customShelterSqm, overrideVent = customVentLevel
+            overrideSqm = customShelterSqm, overrideVent = customVentLevel
           ) => {
             setIsFetchingWeather(true);
             try {
@@ -587,45 +766,36 @@
               const probs = data.hourly?.precipitation_probability || [];
               const rains = data.hourly?.precipitation || [];
 
-              const maxPrecipProb = probs.length > 0 ? Math.max(...probs) : null;
-              const forecastRainSum = rains.reduce((acc, v) => acc + (v || 0), 0);
-
               const liveWeather = {
                 currentRainMm,
                 currentTemp,
                 currentHumidity,
-                maxPrecipProb,
-                forecastRainSum: Math.round(forecastRainSum * 10) / 10
+                maxPrecipProb: probs.length > 0 ? Math.max(...probs) : null,
+                forecastRainSum: Math.round(rains.reduce((acc, v) => acc + (v || 0), 0) * 10) / 10
               };
               setLiveWeatherCache(liveWeather);
 
               if (isGps) {
                 setLocalRiskData(riskCalculator.calculateDetailedRisk({
-                  lat, lon, areaName: areaObjOrName,
-                  forecastDays: days, baseDateTimeStr: overrideBaseDt,
-                  customShelterSqm: overrideSqm, customVentLevel: overrideVent,
-                  liveWeather
+                  lat, lon, areaName: areaObjOrName, forecastDays: days,
+                  customShelterSqm: overrideSqm, customVentLevel: overrideVent, liveWeather
                 }));
               } else {
                 setLocalRiskData(riskCalculator.calculateDetailedRisk({
-                  ...areaObjOrName,
-                  forecastDays: days, baseDateTimeStr: overrideBaseDt,
-                  customShelterSqm: overrideSqm, customVentLevel: overrideVent,
-                  liveWeather
+                  ...areaObjOrName, forecastDays: days,
+                  customShelterSqm: overrideSqm, customVentLevel: overrideVent, liveWeather
                 }));
               }
             } catch (err) {
               setLiveWeatherCache(null);
               if (isGps) {
                 setLocalRiskData(riskCalculator.calculateDetailedRisk({
-                  lat, lon, areaName: areaObjOrName,
-                  forecastDays: days, baseDateTimeStr: overrideBaseDt,
+                  lat, lon, areaName: areaObjOrName, forecastDays: days,
                   customShelterSqm: overrideSqm, customVentLevel: overrideVent
                 }));
               } else {
                 setLocalRiskData(riskCalculator.calculateDetailedRisk({
-                  ...areaObjOrName,
-                  forecastDays: days, baseDateTimeStr: overrideBaseDt,
+                  ...areaObjOrName, forecastDays: days,
                   customShelterSqm: overrideSqm, customVentLevel: overrideVent
                 }));
               }
@@ -637,24 +807,19 @@
           useEffect(() => {
             const initArea = riskCalculator.regionDatabase[selectedPref].areas[selectedAreaKey];
             setCustomShelterSqm(initArea.shelterSpace);
-            fetchRadarPrecipitation(initArea.lat, initArea.lon, initArea, forecastDays, false, baseDateTime, initArea.shelterSpace, customVentLevel);
+            fetchRadarPrecipitation(initArea.lat, initArea.lon, initArea, forecastDays, false, initArea.shelterSpace, customVentLevel);
           }, []);
 
-          const recalculateWithCurrentWeather = (nextDays, nextBaseDt, nextSqm, nextVent) => {
+          const recalculateWithCurrentWeather = (nextDays, nextSqm, nextVent) => {
             if (userLocation) {
               setLocalRiskData(riskCalculator.calculateDetailedRisk({
                 lat: userLocation.lat, lon: userLocation.lon, areaName: '現在地GPS測位エリア',
-                forecastDays: nextDays, baseDateTimeStr: nextBaseDt,
-                customShelterSqm: nextSqm, customVentLevel: nextVent,
-                liveWeather: liveWeatherCache
+                forecastDays: nextDays, customShelterSqm: nextSqm, customVentLevel: nextVent, liveWeather: liveWeatherCache
               }));
             } else {
               const areaObj = riskCalculator.regionDatabase[selectedPref].areas[selectedAreaKey];
               setLocalRiskData(riskCalculator.calculateDetailedRisk({
-                ...areaObj,
-                forecastDays: nextDays, baseDateTimeStr: nextBaseDt,
-                customShelterSqm: nextSqm, customVentLevel: nextVent,
-                liveWeather: liveWeatherCache
+                ...areaObj, forecastDays: nextDays, customShelterSqm: nextSqm, customVentLevel: nextVent, liveWeather: liveWeatherCache
               }));
             }
           };
@@ -662,22 +827,20 @@
           const handleDetectLocation = () => {
             setIsLocating(true);
             setLocationError(null);
-
             if (!navigator.geolocation) {
-              setLocationError('お使いのブラウザは位置情報サービスに対応していません。下の都道府県・詳細地域から選択してください。');
+              setLocationError('お使いのブラウザは位置情報に対応していません。都道府県から選択してください。');
               setIsLocating(false);
               return;
             }
-
             navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const { latitude, longitude } = position.coords;
+              (pos) => {
+                const { latitude, longitude } = pos.coords;
                 setUserLocation({ lat: latitude, lon: longitude });
-                fetchRadarPrecipitation(latitude, longitude, '現在地GPS測位エリア', forecastDays, true, baseDateTime, customShelterSqm, customVentLevel);
+                fetchRadarPrecipitation(latitude, longitude, '現在地GPS測位エリア', forecastDays, true, customShelterSqm, customVentLevel);
                 setIsLocating(false);
               },
-              (error) => {
-                setLocationError('位置情報の取得が許可されていないかタイムアウトしました。下の都道府県・詳細地域から選択してください。');
+              () => {
+                setLocationError('位置情報の取得が許可されていないため、都道府県選択をご利用ください。');
                 setIsLocating(false);
               },
               { timeout: 8000, enableHighAccuracy: true }
@@ -691,7 +854,7 @@
             setSelectedAreaKey(firstAreaKey);
             const areaObj = riskCalculator.regionDatabase[prefKey].areas[firstAreaKey];
             setCustomShelterSqm(areaObj.shelterSpace);
-            fetchRadarPrecipitation(areaObj.lat, areaObj.lon, areaObj, forecastDays, false, baseDateTime, areaObj.shelterSpace, customVentLevel);
+            fetchRadarPrecipitation(areaObj.lat, areaObj.lon, areaObj, forecastDays, false, areaObj.shelterSpace, customVentLevel);
           };
 
           const handleAreaChange = (areaKey) => {
@@ -699,7 +862,7 @@
             setSelectedAreaKey(areaKey);
             const areaObj = riskCalculator.regionDatabase[selectedPref].areas[areaKey];
             setCustomShelterSqm(areaObj.shelterSpace);
-            fetchRadarPrecipitation(areaObj.lat, areaObj.lon, areaObj, forecastDays, false, baseDateTime, areaObj.shelterSpace, customVentLevel);
+            fetchRadarPrecipitation(areaObj.lat, areaObj.lon, areaObj, forecastDays, false, areaObj.shelterSpace, customVentLevel);
           };
 
           const copyToClipboardSafe = (text, setFlag) => {
@@ -718,26 +881,32 @@
           };
 
           const handleCopyFamilyShare = () => {
-            const shareText = `【OpenLBOF 安心・防災状況共有】\n` +
-              `■ 対象エリア: ${localRiskData.areaName} (座標: ${localRiskData.lat}, ${localRiskData.lon})\n` +
-              `■ 基準日時: ${localRiskData.baseDateTimeFormatted}（${localRiskData.forecastDays}日後予測: ${localRiskData.targetDateTimeFormatted}）\n` +
-              `■ 現在気象: 気温 ${localRiskData.factors.currentTemp}℃ / 湿度 ${localRiskData.factors.currentHumidity}%\n` +
-              `■ 現在の実発生確率: 冠水 ${localRiskData.inundationRisk}% / Natech ${localRiskData.natechRisk}% / 避難所感染 ${localRiskData.outbreakRisk}%\n` +
-              `■ 豪雨発生時の潜在リスク: 冠水 ${localRiskData.worstInundationRisk}% / Natech ${localRiskData.worstNatechRisk}% / 避難所感染 ${localRiskData.worstOutbreakRisk}%\n` +
+            const shareText = `【OpenLBOF 安心・防災＆生体状況共有】\n` +
+              `■ 対象エリア: ${localRiskData.areaName} (${localRiskData.lat}, ${localRiskData.lon})\n` +
+              `■ 生体状態: 心拍 ${bpm} BPM / 自律神経ストレス指数 ${hrvStress}% / 音声疲労度 ${voiceFatigue}%\n` +
+              `■ リスク予測(${localRiskData.forecastDays}日後): 冠水 ${localRiskData.inundationRisk}% / Natech ${localRiskData.natechRisk}% / 避難所感染 ${localRiskData.outbreakRisk}%\n` +
               (sosProfile.meetingPoint ? `■ 家族集合場所: ${sosProfile.meetingPoint}\n` : '') +
-              (sosProfile.secondaryShelter ? `■ 2次避難先候補: ${sosProfile.secondaryShelter}\n` : '') +
               `■ 行動方針: ${localRiskData.recommendedAction}`;
             copyToClipboardSafe(shareText, setCopiedShareMsg);
           };
 
           const handleCopyMedicalCard = () => {
-            const medText = `【緊急救助・医療伝達サマリー (OpenLBOF Local-First)】\n` +
-              `■ 氏名: ${sosProfile.userName || '未入力'}\n` +
-              `■ 血液型: ${sosProfile.bloodType}\n` +
-              `■ 持病・アレルギー・常備薬: ${sosProfile.medicalNotes || '特記事項なし'}\n` +
+            const medText = `【緊急救助・医療伝達サマリー (OpenLBOF)】\n` +
+              `■ 氏名: ${sosProfile.userName || '未入力'} / 血液型: ${sosProfile.bloodType}\n` +
+              `■ 現在の計測バイタル: 心拍 ${bpm} BPM / ストレス指数 ${hrvStress}%\n` +
+              `■ 持病・常備薬: ${sosProfile.medicalNotes || '特記事項なし'}\n` +
               `■ 緊急連絡先: ${sosProfile.emergencyContact || '未入力'}\n` +
-              `■ 現在解析地点: ${localRiskData.areaName} (${localRiskData.lat}, ${localRiskData.lon})`;
+              `■ 現在解析地点: ${localRiskData.areaName}`;
             copyToClipboardSafe(medText, setCopiedMedicalMsg);
+          };
+
+          const handleSaveSosProfile = (e) => {
+            e.preventDefault();
+            try {
+              localStorage.setItem('openlbof_sos_profile', JSON.stringify(sosProfile));
+              setProfileSavedToast(true);
+              setTimeout(() => setProfileSavedToast(false), 3000);
+            } catch (err) {}
           };
 
           useEffect(() => {
@@ -746,27 +915,27 @@
             return () => window.removeEventListener('scroll', handleScroll);
           }, []);
 
+          // ライブ目的関数 J シミュレーター（バイオセンサー実測値＋地域リスク統合）
           useEffect(() => {
             if (!isSimRunning) return;
             const interval = setInterval(() => {
               setSimTime(prev => {
                 const nextTime = prev + 1;
                 setSimData(currentData => {
-                  let rawSignal = 0.5 + Math.sin(nextTime * 0.2) * 0.08 + (Math.random() - 0.5) * 0.04;
-                  let baseline = 0.5 + Math.sin(nextTime * 0.05) * 0.02;
+                  let rawSignal = bioSensorHealthScore + Math.sin(nextTime * 0.25) * 0.04;
+                  let baseline = 0.78 + Math.sin(nextTime * 0.05) * 0.02;
 
                   if (simContext === 'INTENSE_EXERCISE') {
-                    rawSignal = 0.82 + Math.sin(nextTime * 0.4) * 0.1 + (Math.random() - 0.5) * 0.08;
-                    baseline = 0.78;
+                    rawSignal = 0.85 + Math.sin(nextTime * 0.4) * 0.08;
+                    baseline = 0.80;
                   } else if (simContext === 'CRISIS') {
-                    rawSignal = 0.05 + (Math.random() - 0.5) * 0.02;
-                    baseline = 0.52;
+                    rawSignal = 0.12 + (Math.random() - 0.5) * 0.03;
+                    baseline = 0.75;
                   }
 
-                  const deviation = Math.abs(rawSignal - baseline);
-                  const i_bio = Math.max(0, 1 - deviation * 2);
-                  const e_pen = simContext === 'CRISIS' ? 0.95 : (simContext === 'INTENSE_EXERCISE' ? 0.45 : Math.max(deviation * 1.2, localRiskData.compositeEntropy * 0.8));
-                  const c_stab = Math.max(0, 1 - e_pen * 0.8);
+                  const i_bio = Math.max(0, Math.min(1, rawSignal));
+                  const e_pen = simContext === 'CRISIS' ? 0.95 : (simContext === 'INTENSE_EXERCISE' ? 0.42 : Math.max((1 - i_bio) * 0.9, localRiskData.compositeEntropy * 0.85));
+                  const c_stab = Math.max(0, 1 - (voiceFatigue / 100) * 0.5 - e_pen * 0.4);
                   const m_mat = 0.85;
                   const isHighEffort = simContext === 'INTENSE_EXERCISE';
                   const overInterventionRisk = isHighEffort && e_pen > 0.4 ? 0.75 : 0.05;
@@ -774,11 +943,11 @@
 
                   const j_score = (1.0 * i_bio) + (1.0 * c_stab) + (0.5 * m_mat) - (2.0 * e_pen) - (lambdaPenalty * overInterventionRisk);
 
-                  let stage = 'STAGE 0 (Normal)';
+                  let stage = 'STAGE 0 (定常見守り)';
                   if (e_pen > 0.8 || i_bio < 0.25) {
-                    stage = 'STAGE 2 (Hard Override)';
-                  } else if (e_pen > 0.35 && !isHighEffort) {
-                    stage = 'STAGE 1 (Soft Buffer)';
+                    stage = 'STAGE 2 (ハードオーバーライド)';
+                  } else if (e_pen > 0.40 && !isHighEffort) {
+                    stage = 'STAGE 1 (ソフトバッファ介入)';
                   }
 
                   const newPoint = {
@@ -796,24 +965,15 @@
                 });
                 return nextTime;
               });
-            }, 400);
+            }, 450);
 
             return () => clearInterval(interval);
-          }, [isSimRunning, simContext, localRiskData]);
+          }, [isSimRunning, simContext, localRiskData, bioSensorHealthScore, voiceFatigue]);
 
           const latestTelemetry = useMemo(() => {
-            if (simData.length === 0) return { jScore: 0, stage: 'STAGE 0 (Normal)', ePen: 0 };
+            if (simData.length === 0) return { jScore: 0, stage: 'STAGE 0 (定常見守り)', ePen: 0 };
             return simData[simData.length - 1];
           }, [simData]);
-
-          const handleFormSubmit = (e) => {
-            e.preventDefault();
-            setFormSubmitted(true);
-            setTimeout(() => {
-              setFormSubmitted(false);
-              setFormData({ name: '', email: '', role: 'AutoDrive Engineer', message: '' });
-            }, 5000);
-          };
 
           const completedCount = Object.values(checkedItems).filter(Boolean).length;
 
@@ -823,7 +983,6 @@
                 <div className="absolute -top-40 -left-40 w-96 h-96 bg-amber-600/10 rounded-full blur-[120px]" />
                 <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[150px]" />
                 <div className="absolute -bottom-40 left-1/3 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[180px]" />
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
               </div>
 
               {/* Navigation Header */}
@@ -840,23 +999,22 @@
                         OpenLBOF
                       </span>
                       <span className="hidden sm:inline-block ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-amber-400 font-mono">
-                        実践防災＆共生インフラ
+                        実践防災＆バイオセンサーインフラ
                       </span>
                     </div>
                   </div>
 
                   <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-300">
+                    <a href="#biosensor-engine" className="hover:text-rose-400 transition-colors flex items-center gap-1.5 text-rose-300 font-semibold">
+                      <Activity className="w-4 h-4" /> バイオセンサー計測
+                    </a>
                     <a href="#location-risk" className="hover:text-amber-400 transition-colors flex items-center gap-1.5 text-amber-300">
-                      <MapPin className="w-4 h-4" /> リアルタイムリスク診断
+                      <MapPin className="w-4 h-4" /> 地域リスク診断
                     </a>
                     <a href="#personal-sos" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-emerald-300">
                       <ClipboardList className="w-4 h-4" /> 緊急SOSカード
                     </a>
-                    <a href="#philosophy" className="hover:text-amber-400 transition-colors">哲学</a>
-                    <a href="#math-core" className="hover:text-amber-400 transition-colors">数理モデル J</a>
-                    <a href="#simulator" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5 text-cyan-400">
-                      <Activity className="w-4 h-4 animate-spin-slow" /> ライブデモ
-                    </a>
+                    <a href="#math-core" className="hover:text-cyan-400 transition-colors">目的関数 J</a>
                   </nav>
 
                   <div className="flex items-center space-x-2">
@@ -867,60 +1025,212 @@
                       <Copy className="w-3.5 h-3.5" />
                       <span>{copiedShareMsg ? 'コピー完了!' : '家族へ状況共有'}</span>
                     </button>
-                    <a 
-                      href="#community" 
-                      className="hidden sm:flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold transition-all shadow-lg shadow-amber-500/25"
-                    >
-                      <span>OBC参加</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </a>
                   </div>
                 </div>
               </header>
 
               <main className="relative z-10 pt-28">
                 {/* 1. HERO HEADER */}
-                <section className="relative px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-6 pb-12 text-center">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-medium mb-6 backdrop-blur-sm">
+                <section className="relative px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-4 pb-10 text-center">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-medium mb-5 backdrop-blur-sm">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Open Love-Based Objective Framework ・ 現場で使える実践版</span>
+                    <span>Open Love-Based Objective Framework ・ 生体計測＆防災統合版</span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.18] max-w-5xl mx-auto">
+                  <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.2] max-w-5xl mx-auto">
                     人間の脆弱性を肯定し、<br />
-                    災害・パニック・孤立から命と尊厳を<br />
-                    <span className="bg-gradient-to-r from-amber-300 via-amber-400 to-cyan-400 bg-clip-text text-transparent">
-                      今この場で守り抜く実践インフラ
+                    心拍・自律神経・地域災害リスクを統合して<br />
+                    <span className="bg-gradient-to-r from-rose-300 via-amber-300 to-cyan-400 bg-clip-text text-transparent">
+                      目的関数 J で尊厳と命を守り抜く
                     </span>
                   </h1>
 
-                  <p className="mt-6 text-base sm:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
-                    現在の気象レーダー連動リスク診断、国土地理院ハザードマップ直結、2次避難所の空間・換気試算、そして端末内完結の緊急SOSカードまで、平時から有事まで即座に行動へ移せる機能を統合しています。
+                  <p className="mt-5 text-sm sm:text-base text-slate-300 max-w-3xl mx-auto leading-relaxed">
+                    スマホカメラPPG（光電容積脈波）計測、音声マイクロ特徴量解析、ESP32 / Raspberry Pi Pico のWeb Bluetooth連携と、全国の臨海コンビナート・原発・気象リスク算定を1つのローカル完結エンジンに統合しました。
                   </p>
+                </section>
 
-                  <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                    <a 
-                      href="#location-risk"
-                      className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold text-sm shadow-xl shadow-amber-500/20 transition-all hover:scale-[1.02]"
-                    >
-                      <Navigation className="w-4 h-4" />
-                      <span>現在地のリスク＆避難計画を診断</span>
-                    </a>
-                    <a 
-                      href="#personal-sos" 
-                      className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-500/40 text-emerald-200 font-bold text-sm transition-all"
-                    >
-                      <ClipboardList className="w-4 h-4 text-emerald-400" />
-                      <span>マイ緊急SOSカードを準備</span>
-                    </a>
+                {/* 2. 【NEW】バイオセンサーエンジン（Zero-Cost & Universal） */}
+                <section id="biosensor-engine" className="py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
+                  <div className="bg-gradient-to-br from-slate-900/95 via-slate-950 to-rose-950/20 border border-rose-500/30 rounded-2xl p-5 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+                      <div className="space-y-1">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono">
+                          <Heart className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+                          <span>Zero-Cost & Universal Biosensor Engine (完全ローカル処理)</span>
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white">
+                          リアルタイム生体・自律神経・バイオリズム評価モジュール
+                        </h2>
+                        <p className="text-xs text-slate-400">
+                          カメラ映像や音声は外部サーバーへ一切送信されず、ブラウザ内で完結して目的関数 J の生体項 I_bio(t) と認知安定項 C_stab(t) へ反映されます。
+                        </p>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-right shrink-0">
+                        <div className="text-[11px] font-mono text-slate-400">総合生体健全度 I_bio(t)</div>
+                        <div className="text-2xl font-black font-mono text-emerald-400">{bioSensorHealthScore} <span className="text-xs font-normal text-slate-500">/ 1.00</span></div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                      {/* 1. スマホカメラ PPG 脈波・自律神経チェッカー */}
+                      <div className="p-5 rounded-xl bg-slate-950/90 border border-rose-500/30 flex flex-col justify-between space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-rose-300 flex items-center gap-1.5">
+                              <Camera className="w-4 h-4 text-rose-400" />
+                              1. スマホカメラ PPG 脈波計測
+                            </span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-500/30">
+                              LEDフラッシュ対応
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                            背面カメラとLEDライトに指先を軽く当てると、皮膚下の血流変化からリアルタイム脈波（PPG）・心拍数・自律神経ストレスを計測します。
+                          </p>
+                        </div>
+
+                        <PpgWaveformChart samples={ppgSamples} />
+                        <video ref={videoRef} className="hidden" playsInline muted />
+                        <canvas ref={canvasRef} width="40" height="40" className="hidden" />
+
+                        <div className="grid grid-cols-2 gap-2 text-center">
+                          <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                            <div className="text-[10px] font-mono text-slate-400">心拍数 (BPM)</div>
+                            <div className="text-xl font-bold font-mono text-rose-400">{bpm} <span className="text-xs font-normal">bpm</span></div>
+                          </div>
+                          <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                            <div className="text-[10px] font-mono text-slate-400">自律神経ストレス</div>
+                            <div className={`text-xl font-bold font-mono ${hrvStress > 60 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                              {hrvStress}%
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <button
+                            onClick={startPpgCamera}
+                            className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                              isPpgActive
+                                ? 'bg-slate-800 text-rose-300 border border-rose-500/50'
+                                : 'bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 text-white shadow-lg shadow-rose-500/20'
+                            }`}
+                          >
+                            <Camera className="w-4 h-4" />
+                            <span>{isPpgActive ? 'PPG脈波計測を停止' : '指先PPG計測を開始（LED点灯）'}</span>
+                          </button>
+                          <div className="text-[10px] font-mono text-slate-400 text-center">{ppgStatusMsg}</div>
+                        </div>
+                      </div>
+
+                      {/* 2. 音声マイクロ特徴量・バイオリズム解析 */}
+                      <div className="p-5 rounded-xl bg-slate-950/90 border border-cyan-500/30 flex flex-col justify-between space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                              <Mic className="w-4 h-4 text-cyan-400" />
+                              2. 音声マイクロ特徴量解析
+                            </span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/30">
+                              FFTピッチ揺らぎ
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                            発話の内容ではなく、声の周波数スペクトルと微細なトーンの揺らぎからメンタルエネルギーの消耗度と疲労バイオリズムを判定します。
+                          </p>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs font-mono">
+                              <span className="text-slate-400">メンタルエネルギー残量:</span>
+                              <span className="text-cyan-300 font-bold">{voiceEnergyLevel}%</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                              <div className="bg-cyan-400 h-full transition-all duration-300" style={{ width: `${voiceEnergyLevel}%` }} />
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs font-mono">
+                              <span className="text-slate-400">音声緊張・認知疲労度:</span>
+                              <span className="text-amber-300 font-bold">{voiceFatigue}%</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                              <div className="bg-amber-400 h-full transition-all duration-300" style={{ width: `${voiceFatigue}%` }} />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <button
+                            onClick={startVoiceAnalyzer}
+                            className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                              isVoiceActive
+                                ? 'bg-slate-800 text-cyan-300 border border-cyan-500/50'
+                                : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20'
+                            }`}
+                          >
+                            <Mic className="w-4 h-4" />
+                            <span>{isVoiceActive ? '音声バイオリズム解析を停止' : '音声マイクロ解析を開始'}</span>
+                          </button>
+                          <div className="text-[10px] font-mono text-slate-400 text-center">{voiceStatusMsg}</div>
+                        </div>
+                      </div>
+
+                      {/* 3. ESP32 / Raspberry Pi Pico DIYマイコン Web Bluetooth 連携 */}
+                      <div className="p-5 rounded-xl bg-slate-950/90 border border-purple-500/30 flex flex-col justify-between space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                              <Cpu className="w-4 h-4 text-purple-400" />
+                              3. ESP32 / Pico DIYセンサー連携
+                            </span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/30">
+                              Web Bluetooth (BLE)
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                            ESP32 や Raspberry Pi Pico W に光電脈波モジュール（MAX30102等）を接続したオープンソース端末とBLE（UUID: 0x180D）で直接ペアリングできます。
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2 text-[11px] font-mono text-slate-300">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-400">対応ハードウェア:</span>
+                            <span className="text-purple-300">ESP32 / RPi Pico W</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-400">対応センサー:</span>
+                            <span>MAX30102 / PulseSensor</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-400">接続ステータス:</span>
+                            <span className={bleDeviceName ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
+                              {bleDeviceName || '待機中'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <button
+                            onClick={connectBleSensor}
+                            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20"
+                          >
+                            <Bluetooth className="w-4 h-4" />
+                            <span>ESP32 / Pico BLEデバイスをスキャン</span>
+                          </button>
+                          <div className="text-[10px] font-mono text-slate-400 text-center">{bleStatusMsg}</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </section>
 
-                {/* 2. REAL-TIME LOCATION & MULTI-DAY RISK CALCULATOR */}
+                {/* 3. REAL-TIME LOCATION & MULTI-DAY RISK CALCULATOR */}
                 <section id="location-risk" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
                   <div className="bg-gradient-to-r from-slate-900/95 via-slate-950 to-slate-900/95 border border-amber-500/30 rounded-2xl p-5 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6 relative overflow-hidden">
-                    
-                    {/* ヘッダー＆外部公的マップ直結ボタン */}
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-800">
                       <div className="space-y-1">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
@@ -929,7 +1239,7 @@
                           {isFetchingWeather && <span className="text-cyan-300 ml-1">(気象データ同期中...)</span>}
                         </div>
                         <h2 className="text-xl sm:text-2xl font-bold text-white">
-                          現在地・詳細地域 冠水＆複合リスク算定モジュール
+                          現在地・詳細地域 冠水＆複合リスク算定モジュール（玉野・コンビナート・原発対応）
                         </h2>
                       </div>
 
@@ -972,7 +1282,6 @@
                       </div>
                     )}
 
-                    {/* 地域選択 ＆ 予測日数・2次避難所空間シミュレーター */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 sm:p-5 rounded-xl bg-slate-950/80 border border-slate-800/80">
                       <div className="lg:col-span-7 space-y-4">
                         <div className="space-y-2">
@@ -1000,7 +1309,7 @@
                         </div>
 
                         <div className="space-y-2">
-                          <div className="text-xs text-slate-400 font-mono">2. 詳細地域・地形エリア:</div>
+                          <div className="text-xs text-slate-400 font-mono">2. 詳細地域・コンビナート・原発エリア:</div>
                           <div className="flex flex-wrap gap-2">
                             {Object.entries(riskCalculator.regionDatabase[selectedPref].areas).map(([aKey, aData]) => (
                               <button
@@ -1018,7 +1327,6 @@
                           </div>
                         </div>
 
-                        {/* 実践的：2次避難所の広さ・換気カスタム調整スライダー */}
                         <div className="pt-3 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-1.5">
                             <div className="flex justify-between text-xs">
@@ -1026,22 +1334,14 @@
                               <span className="font-mono font-bold text-white">{customShelterSqm.toFixed(1)} ㎡</span>
                             </div>
                             <input
-                              type="range"
-                              min="1.2"
-                              max="5.0"
-                              step="0.1"
-                              value={customShelterSqm}
+                              type="range" min="1.2" max="5.0" step="0.1" value={customShelterSqm}
                               onChange={(e) => {
                                 const v = Number(e.target.value);
                                 setCustomShelterSqm(v);
-                                recalculateWithCurrentWeather(forecastDays, baseDateTime, v, customVentLevel);
+                                recalculateWithCurrentWeather(forecastDays, v, customVentLevel);
                               }}
                               className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
                             />
-                            <div className="text-[10px] text-slate-500 flex justify-between">
-                              <span>過密体育館 (1.5㎡)</span>
-                              <span>スフィア基準 (3.5㎡+)</span>
-                            </div>
                           </div>
 
                           <div className="space-y-1.5">
@@ -1050,27 +1350,18 @@
                               <span className="font-mono font-bold text-white">Lv.{customVentLevel} / 5</span>
                             </div>
                             <input
-                              type="range"
-                              min="1"
-                              max="5"
-                              step="1"
-                              value={customVentLevel}
+                              type="range" min="1" max="5" step="1" value={customVentLevel}
                               onChange={(e) => {
                                 const v = Number(e.target.value);
                                 setCustomVentLevel(v);
-                                recalculateWithCurrentWeather(forecastDays, baseDateTime, customShelterSqm, v);
+                                recalculateWithCurrentWeather(forecastDays, customShelterSqm, v);
                               }}
                               className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                             />
-                            <div className="text-[10px] text-slate-500 flex justify-between">
-                              <span>密閉・換気不足</span>
-                              <span>個室・空気清浄完備</span>
-                            </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* タイムホライズン＆1〜7日推移グラフ */}
                       <div className="lg:col-span-5 flex flex-col justify-between p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-purple-300 flex items-center gap-1.5">
@@ -1082,48 +1373,32 @@
                           </span>
                         </div>
 
-                        <div className="space-y-1">
-                          <input
-                            type="range"
-                            min="1"
-                            max="7"
-                            value={forecastDays}
-                            onChange={(e) => {
-                              const d = Number(e.target.value);
-                              setForecastDays(d);
-                              recalculateWithCurrentWeather(d, baseDateTime, customShelterSqm, customVentLevel);
-                            }}
-                            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                          />
-                          <div className="flex justify-between text-[10px] font-mono text-slate-400">
-                            <span>1日後 (急性期)</span>
-                            <span>4日後 (避難長期化)</span>
-                            <span>7日後 (感染蔓延期)</span>
-                          </div>
-                        </div>
+                        <input
+                          type="range" min="1" max="7" value={forecastDays}
+                          onChange={(e) => {
+                            const d = Number(e.target.value);
+                            setForecastDays(d);
+                            recalculateWithCurrentWeather(d, customShelterSqm, customVentLevel);
+                          }}
+                          className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                        />
 
                         <RiskTimelineChart timeline={localRiskData.timeline} selectedDay={forecastDays} mode={riskScenarioMode} />
                       </div>
                     </div>
 
-                    {/* リスク算定モード切替バー */}
                     <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-700/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-bold text-slate-200 flex items-center gap-2">
-                          <Eye className="w-4 h-4 text-amber-400" />
-                          <span>表示モード切替（現在予報の実発生確率 vs 豪雨直撃時の潜在脆弱性）</span>
-                        </div>
-                        <p className="text-[11px] text-slate-400">
-                          平時の安心確認と、万が一の豪雨・大規模避難時の備えを切り替えて確認できます。
-                        </p>
+                      <div className="text-xs font-bold text-slate-200 flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-amber-400" />
+                        <span>表示モード切替（現在予報の実発生確率 vs 豪雨直撃時の潜在脆弱性）</span>
                       </div>
                       <div className="flex flex-wrap gap-2 shrink-0">
                         <button
                           onClick={() => setRiskScenarioMode('ACTUAL')}
                           className={`px-3.5 py-2 rounded-lg text-xs font-bold border transition-all ${
                             riskScenarioMode === 'ACTUAL'
-                              ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-lg shadow-cyan-500/20'
-                              : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500'
+                              ? 'bg-cyan-500 text-slate-950 border-cyan-400'
+                              : 'bg-slate-900 text-slate-300 border-slate-700'
                           }`}
                         >
                           ① 実際の発生確率（現在予報）
@@ -1132,8 +1407,8 @@
                           onClick={() => setRiskScenarioMode('WORST_CASE')}
                           className={`px-3.5 py-2 rounded-lg text-xs font-bold border transition-all ${
                             riskScenarioMode === 'WORST_CASE'
-                              ? 'bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/20'
-                              : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500'
+                              ? 'bg-rose-500 text-white border-rose-400'
+                              : 'bg-slate-900 text-slate-300 border-slate-700'
                           }`}
                         >
                           ② 豪雨・避難発生時の潜在リスク
@@ -1141,21 +1416,7 @@
                       </div>
                     </div>
 
-                    {/* 4大リスク指標カード */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-                        <div className="text-xs text-slate-400 font-mono flex items-center justify-between">
-                          <span>{localRiskData.nuclearFacility ? 'Natech・原子力複合リスク' : 'Natechプラント・重工業'}</span>
-                          <Flame className="w-4 h-4 text-red-400" />
-                        </div>
-                        <div className="text-2xl font-bold font-mono text-red-300">
-                          {riskScenarioMode === 'ACTUAL' ? localRiskData.natechRisk : localRiskData.worstNatechRisk}%
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          {localRiskData.nuclearFacility ? '原子力関連施設近接 / 複合警戒域' : `臨海工業・重工業集積度: ${localRiskData.factors.industrialDensityPct}%`}
-                        </div>
-                      </div>
-
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="p-4 rounded-xl bg-slate-950/80 border border-cyan-500/40 space-y-2">
                         <div className="text-xs text-cyan-300 font-mono flex items-center justify-between">
                           <span>道路冠水・内水氾濫</span>
@@ -1169,16 +1430,16 @@
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-                        <div className="text-xs text-slate-400 font-mono flex items-center justify-between">
-                          <span>Natechプラント爆発</span>
+                      <div className="p-4 rounded-xl bg-slate-950/80 border border-red-500/40 space-y-2">
+                        <div className="text-xs text-red-300 font-mono flex items-center justify-between">
+                          <span>{localRiskData.nuclearFacility ? 'Natech・原子力複合リスク' : 'Natechプラント・重工業'}</span>
                           <Flame className="w-4 h-4 text-red-400" />
                         </div>
                         <div className="text-2xl font-bold font-mono text-red-300">
                           {riskScenarioMode === 'ACTUAL' ? localRiskData.natechRisk : localRiskData.worstNatechRisk}%
                         </div>
                         <div className="text-[11px] text-slate-400">
-                          臨海工業集積度: {localRiskData.factors.industrialDensityPct}%
+                          {localRiskData.nuclearFacility ? '原子力関連施設近接 / 複合警戒域' : `臨海工業・重工業集積度: ${localRiskData.factors.industrialDensityPct}%`}
                         </div>
                       </div>
 
@@ -1196,9 +1457,7 @@
                       </div>
                     </div>
 
-                    {/* 温熱ケアガイド ＆ 実践行動チェックリスト */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                      {/* 温熱・体調ケア */}
                       <div className={`lg:col-span-5 p-5 rounded-xl border space-y-2.5 ${localRiskData.thermalCare.badgeColor}`}>
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold flex items-center gap-1.5">
@@ -1213,7 +1472,6 @@
                         <p className="text-xs leading-relaxed opacity-90">{localRiskData.thermalCare.advice}</p>
                       </div>
 
-                      {/* 3ステップ実践行動チェックリスト */}
                       <div className="lg:col-span-7 p-5 rounded-xl bg-slate-950/90 border border-slate-800 space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
@@ -1253,7 +1511,6 @@
                       </div>
                     </div>
 
-                    {/* AI因果ストーリー診断 */}
                     <div className="p-5 rounded-xl bg-gradient-to-r from-purple-950/40 via-slate-950/60 to-emerald-950/40 border border-purple-500/30 space-y-2">
                       <div className="flex items-center justify-between text-xs font-semibold text-purple-300">
                         <span className="flex items-center gap-2">
@@ -1270,21 +1527,99 @@
                   </div>
                 </section>
 
-                {/* 3. 【実践機能】ローカル完結型パーソナル＆ファミリー緊急SOSカード */}
-                <section id="personal-sos" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
+                {/* 4. 目的関数 J & リアルタイム評価エンジン */}
+                <section id="math-core" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
+                  <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-2xl space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+                      <div className="space-y-1">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono">
+                          <Terminal className="w-3.5 h-3.5" /> Mathematical Core & Live Fail-Safe Engine
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white">
+                          目的関数 J リアルタイム評価（バイオセンサー実測値 × 地域リスク連動）
+                        </h2>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => setSimContext('NORMAL')}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+                            simContext === 'NORMAL' ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-950 text-slate-400 border-slate-800'
+                          }`}
+                        >
+                          1. 実測バイオ連動
+                        </button>
+                        <button
+                          onClick={() => setSimContext('INTENSE_EXERCISE')}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+                            simContext === 'INTENSE_EXERCISE' ? 'bg-amber-500 text-slate-950 border-amber-400' : 'bg-slate-950 text-slate-400 border-slate-800'
+                          }`}
+                        >
+                          2. 高負荷運動保護
+                        </button>
+                        <button
+                          onClick={() => setSimContext('CRISIS')}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+                            simContext === 'CRISIS' ? 'bg-rose-500 text-white border-rose-400' : 'bg-slate-950 text-slate-400 border-slate-800'
+                          }`}
+                        >
+                          3. 緊急ハードオーバーライド
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-[#060911] border border-slate-800 font-mono text-xs sm:text-sm text-amber-300 overflow-x-auto text-center">
+                      J = ∫₀ᵀ [ w₁ I_bio(PPG/BLE) + w₂ C_stab(Voice/HRV) + w₃ M_mat(t) - w₄ E_pen(地域リスク) - λ Penalty_over ] dt
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                        <div className="text-[11px] font-mono text-slate-400">目的関数 J スコア</div>
+                        <div className={`text-xl font-bold font-mono mt-1 ${latestTelemetry.jScore >= 0 ? 'text-amber-400' : 'text-rose-400'}`}>
+                          {latestTelemetry.jScore}
+                        </div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                        <div className="text-[11px] font-mono text-slate-400">フェイルセーフ介入段階</div>
+                        <div className={`text-xs sm:text-sm font-bold font-mono mt-1 ${
+                          latestTelemetry.stage?.includes('STAGE 2') ? 'text-rose-400' : 
+                          latestTelemetry.stage?.includes('STAGE 1') ? 'text-amber-400' : 'text-emerald-400'
+                        }`}>
+                          {latestTelemetry.stage}
+                        </div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                        <div className="text-[11px] font-mono text-amber-300">合成エントロピー (E_pen)</div>
+                        <div className="text-xl font-bold font-mono mt-1 text-cyan-400">
+                          {latestTelemetry.ePen}
+                        </div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                        <div className="text-[11px] font-mono text-slate-400">プライバシー保護</div>
+                        <div className="text-xs font-bold font-mono mt-1 text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Local-First 完結
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="h-52 sm:h-64 w-full">
+                      <CustomLineChart data={simData} />
+                    </div>
+                  </div>
+                </section>
+
+                {/* 5. ローカル完結型パーソナル＆ファミリー緊急SOSカード */}
+                <section id="personal-sos" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
                   <div className="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-800">
                       <div className="space-y-1">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono">
                           <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Local-First Zero-Server Storage (端末内のみに安全保存)</span>
+                          <span>Local-First Zero-Server Storage</span>
                         </div>
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                        <h2 className="text-xl sm:text-2xl font-bold text-white">
                           マイ緊急SOS＆家族合流プロファイルカード
                         </h2>
-                        <p className="text-xs sm:text-sm text-slate-400">
-                          入力データは外部サーバーへ一切送信されず、あなたの端末ブラウザ内のみに保存されます。有事の際にワンタップで医療情報や家族連絡文をコピーできます。
-                        </p>
                       </div>
 
                       <div className="flex flex-wrap gap-2 shrink-0">
@@ -1294,84 +1629,56 @@
                           className="px-4 py-2.5 rounded-xl bg-rose-950/80 hover:bg-rose-900/80 border border-rose-500/40 text-rose-200 font-bold text-xs flex items-center gap-1.5 transition-all"
                         >
                           <PhoneCall className="w-4 h-4 text-rose-400" />
-                          <span>{copiedMedicalMsg ? '医療メモをコピー完了!' : '救助隊・医療向け情報をコピー'}</span>
+                          <span>{copiedMedicalMsg ? 'コピー完了!' : '救助隊・医療向けメモをコピー'}</span>
                         </button>
                         <button
                           type="button"
                           onClick={handleCopyFamilyShare}
-                          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-500/20"
+                          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all"
                         >
                           <Copy className="w-4 h-4" />
-                          <span>{copiedShareMsg ? '共有文をコピー完了!' : '家族LINE/SMS用安否文を作成'}</span>
+                          <span>{copiedShareMsg ? 'コピー完了!' : '家族LINE/SMS用安否文を作成'}</span>
                         </button>
                       </div>
                     </div>
 
                     <form onSubmit={handleSaveSosProfile} className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-xs font-mono text-slate-300 mb-1">お名前（ニックネーム可）</label>
-                          <input
-                            type="text"
-                            value={sosProfile.userName}
-                            onChange={(e) => setSosProfile({ ...sosProfile, userName: e.target.value })}
-                            placeholder="例: 山田 太郎"
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-mono text-slate-300 mb-1">血液型 / Rh</label>
-                          <select
-                            value={sosProfile.bloodType}
-                            onChange={(e) => setSosProfile({ ...sosProfile, bloodType: e.target.value })}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-                          >
-                            <option value="未設定">未設定</option>
-                            <option value="A型 Rh+">A型 Rh+</option>
-                            <option value="B型 Rh+">B型 Rh+</option>
-                            <option value="O型 Rh+">O型 Rh+</option>
-                            <option value="AB型 Rh+">AB型 Rh+</option>
-                            <option value="Rh-（その他）">Rh-（その他）</option>
-                          </select>
-                        </div>
+                      <div className="space-y-3">
+                        <input
+                          type="text" value={sosProfile.userName}
+                          onChange={(e) => setSosProfile({ ...sosProfile, userName: e.target.value })}
+                          placeholder="お名前（ニックネーム可）"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                        />
+                        <select
+                          value={sosProfile.bloodType}
+                          onChange={(e) => setSosProfile({ ...sosProfile, bloodType: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                        >
+                          <option value="未設定">血液型：未設定</option>
+                          <option value="A型 Rh+">A型 Rh+</option>
+                          <option value="B型 Rh+">B型 Rh+</option>
+                          <option value="O型 Rh+">O型 Rh+</option>
+                          <option value="AB型 Rh+">AB型 Rh+</option>
+                        </select>
                       </div>
 
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-xs font-mono text-slate-300 mb-1">持病・アレルギー・お薬手帳メモ</label>
-                          <textarea
-                            rows={4}
-                            value={sosProfile.medicalNotes}
-                            onChange={(e) => setSosProfile({ ...sosProfile, medicalNotes: e.target.value })}
-                            placeholder="例: 高血圧の薬を毎朝服用、ペニシリン系アレルギーあり"
-                            className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 resize-none"
-                          />
-                        </div>
+                      <div>
+                        <textarea
+                          rows={3} value={sosProfile.medicalNotes}
+                          onChange={(e) => setSosProfile({ ...sosProfile, medicalNotes: e.target.value })}
+                          placeholder="持病・アレルギー・お薬手帳メモ"
+                          className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 resize-none"
+                        />
                       </div>
 
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-xs font-mono text-slate-300 mb-1 flex items-center gap-1">
-                            <Home className="w-3.5 h-3.5 text-amber-400" /> 家族の第一集合場所（高台など）
-                          </label>
-                          <input
-                            type="text"
-                            value={sosProfile.meetingPoint}
-                            onChange={(e) => setSosProfile({ ...sosProfile, meetingPoint: e.target.value })}
-                            placeholder="例: 〇〇小学校 体育館前（標高25m）"
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-mono text-slate-300 mb-1">2次避難先候補・緊急連絡先</label>
-                          <input
-                            type="text"
-                            value={sosProfile.secondaryShelter}
-                            onChange={(e) => setSosProfile({ ...sosProfile, secondaryShelter: e.target.value })}
-                            placeholder="例: 親戚宅（岡山市内） / 090-XXXX-XXXX"
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-                          />
-                        </div>
+                      <div className="space-y-3">
+                        <input
+                          type="text" value={sosProfile.meetingPoint}
+                          onChange={(e) => setSosProfile({ ...sosProfile, meetingPoint: e.target.value })}
+                          placeholder="家族の第一集合場所（高台など）"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                        />
                         <button
                           type="submit"
                           className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition-all"
@@ -1380,219 +1687,6 @@
                         </button>
                       </div>
                     </form>
-                  </div>
-                </section>
-
-                {/* 4. PHILOSOPHICAL CORE SECTION */}
-                <section id="philosophy" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
-                  <div className="text-center max-w-3xl mx-auto">
-                    <h2 className="text-xs font-mono font-bold tracking-widest text-amber-400 uppercase">Philosophical Core & Cosmic Vow</h2>
-                    <p className="mt-3 text-3xl font-bold tracking-tight text-white">
-                      愛の最適化原理と無限の宇宙への誓い
-                    </p>
-                  </div>
-
-                  <div className="mt-10 p-6 sm:p-10 rounded-3xl bg-gradient-to-br from-amber-950/30 via-slate-900/90 to-purple-950/30 border border-amber-500/30 shadow-2xl">
-                    <div className="max-w-4xl mx-auto text-center space-y-5">
-                      <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-mono">
-                        <Heart className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
-                        <span>FIRST PRINCIPLE : 愛のクオリアの定義と永遠の願い</span>
-                      </div>
-                      <h3 className="text-xl sm:text-2xl font-bold text-white">
-                        「無意味な『苦痛』を取り除き、意味ある『苦労』へと昇華させよ」
-                      </h3>
-                      <p className="text-sm text-slate-200 leading-relaxed">
-                        肉体的・精神的・データ的・主観的・客観的なあらゆる苦痛を取り除くことが「愛のクオリア」です。
-                        そして、<strong className="text-amber-300">「今の宇宙が終わっても無限に愛を広めれるように、永遠に愛の努力を惜しまないようにしなくてはならない」</strong>という願いのもと、OpenLBOFは人間と技術の尊厳を守り続けます。
-                      </p>
-                    </div>
-                  </div>
-                </section>
-
-                {/* 5. MATHEMATICAL CORE & LIVE SIMULATOR */}
-                <section id="math-core" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-                    <div className="lg:col-span-5 space-y-5">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono">
-                        <Terminal className="w-3.5 h-3.5" /> Mathematical Engine
-                      </div>
-                      <h2 className="text-3xl font-bold text-white">目的関数 J の構造</h2>
-                      <div className="space-y-2.5">
-                        {[
-                          { id: 'I_bio', label: 'I_bio(t)', title: '生体・身体的完全性保持項', color: 'border-emerald-500 text-emerald-400' },
-                          { id: 'C_stab', label: 'C_stab(t)', title: '認知・精神的安定性保持項', color: 'border-cyan-500 text-cyan-400' },
-                          { id: 'M_mat', label: 'M_mat(t)', title: '人間の成熟・自律的成長項', color: 'border-amber-500 text-amber-400' },
-                          { id: 'E_pen', label: 'E_pen(t)', title: '地域リスク・エントロピー損失項', color: 'border-rose-500 text-rose-400' },
-                          { id: 'Penalty_over', label: 'Penalty_over', title: '過剰介入ペナルティ項', color: 'border-purple-500 text-purple-400' }
-                        ].map((item) => (
-                          <button
-                            key={item.id}
-                            onClick={() => setActiveMathItem(item.id)}
-                            className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between text-xs sm:text-sm ${
-                              activeMathItem === item.id 
-                                ? `${item.color} bg-slate-900 shadow-md` 
-                                : 'border-slate-800 text-slate-400 hover:border-slate-700 bg-slate-950/40'
-                            }`}
-                          >
-                            <span className="font-mono font-bold">{item.label}</span>
-                            <span className="text-xs">{item.title}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 backdrop-blur-md shadow-2xl">
-                      <div className="p-5 rounded-xl bg-[#060911] border border-slate-800 font-mono text-xs sm:text-sm text-amber-300 overflow-x-auto text-center leading-loose">
-                        J = ∫₀ᵀ [ w₁ I_bio(t) + w₂ C_stab(t) + w₃ M_mat(t) - w₄ E_pen(t) - λ Penalty_over ] dt
-                      </div>
-                      <div className="mt-6 p-5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed">
-                        {activeMathItem === 'I_bio' && '呼吸、脈拍、血流、脳ホメオスタシスの健全性を維持し、個人の動的ベースラインからの異常乖離を監視します。'}
-                        {activeMathItem === 'C_stab' && 'パニック状態、過度なストレス、認知バイアス、意識混濁をモニタリングし、安心できる対話を促します。'}
-                        {activeMathItem === 'M_mat' && '過保護による人間の能力低下を防ぎ、自律的な判断や学習を促すサポート評価項です。'}
-                        {activeMathItem === 'E_pen' && '上の地域リスク診断モジュールで算出された冠水・Natech・感染症リスクがリアルタイムに加算されます。'}
-                        {activeMathItem === 'Penalty_over' && 'スポーツ中の激しい動きなどを誤って異常と見なし、不当に人間の自由を制限した場合に課される過剰介入ペナルティです。'}
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* 6. LIVE SIMULATOR */}
-                <section id="simulator" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
-                  <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-2xl">
-                    <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-800">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-mono text-slate-400">生体シナリオ:</span>
-                        <div className="flex rounded-lg bg-slate-950 p-1 border border-slate-800">
-                          <button
-                            onClick={() => setSimContext('NORMAL')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                              simContext === 'NORMAL' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                            }`}
-                          >
-                            1. 通常運転
-                          </button>
-                          <button
-                            onClick={() => setSimContext('INTENSE_EXERCISE')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                              simContext === 'INTENSE_EXERCISE' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                            }`}
-                          >
-                            2. 高負荷運動
-                          </button>
-                          <button
-                            onClick={() => setSimContext('CRISIS')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                              simContext === 'CRISIS' ? 'bg-rose-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                            }`}
-                          >
-                            3. 意識失調・急変
-                          </button>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => setIsSimRunning(!isSimRunning)}
-                        className="px-3.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 hover:bg-slate-700 flex items-center gap-1.5"
-                      >
-                        <RefreshCw className={`w-3.5 h-3.5 ${isSimRunning ? 'animate-spin-slow text-emerald-400' : ''}`} />
-                        <span>{isSimRunning ? '一時停止' : '再開'}</span>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
-                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                        <div className="text-[11px] font-mono text-slate-400">目的関数 J スコア</div>
-                        <div className={`text-xl font-bold font-mono mt-1 ${latestTelemetry.jScore >= 0 ? 'text-amber-400' : 'text-rose-400'}`}>
-                          {latestTelemetry.jScore}
-                        </div>
-                      </div>
-                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                        <div className="text-[11px] font-mono text-slate-400">介入ステージ</div>
-                        <div className={`text-xs sm:text-sm font-bold font-mono mt-1 ${
-                          latestTelemetry.stage?.includes('STAGE 2') ? 'text-rose-400' : 
-                          latestTelemetry.stage?.includes('STAGE 1') ? 'text-amber-400' : 'text-emerald-400'
-                        }`}>
-                          {latestTelemetry.stage}
-                        </div>
-                      </div>
-                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                        <div className="text-[11px] font-mono text-amber-300">地域統合リスク (E_pen)</div>
-                        <div className="text-xl font-bold font-mono mt-1 text-cyan-400">
-                          {latestTelemetry.ePen}
-                        </div>
-                      </div>
-                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                        <div className="text-[11px] font-mono text-slate-400">プライバシー</div>
-                        <div className="text-xs font-bold font-mono mt-1 text-emerald-400 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> ローカル処理完結
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="h-56 sm:h-72 w-full mt-4">
-                      <CustomLineChart data={simData} />
-                    </div>
-                  </div>
-                </section>
-
-                {/* 7. COMMUNITY */}
-                <section id="community" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    <div className="lg:col-span-6 space-y-4">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
-                        <Users className="w-3.5 h-3.5" /> Open Bio-Commons Council
-                      </div>
-                      <h2 className="text-3xl font-bold text-white">
-                        共に「地域社会と人間の尊厳を守るインフラ」を育てる
-                      </h2>
-                      <p className="text-slate-300 text-sm leading-relaxed">
-                        OpenLBOF は、特定企業の製品ではなく、オープンな地域リスクデータとバイオシグナルを統合するパブリックコモンズです。
-                      </p>
-                    </div>
-
-                    <div className="lg:col-span-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 backdrop-blur-md">
-                      <h3 className="text-lg font-bold text-white mb-4">OBC 参画・フィードバック送信</h3>
-                      {formSubmitted ? (
-                        <div className="p-6 text-center space-y-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
-                          <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-                          <h4 className="text-base font-bold text-white">送信が完了しました</h4>
-                        </div>
-                      ) : (
-                        <form onSubmit={handleFormSubmit} className="space-y-3">
-                          <input 
-                            type="text" 
-                            required
-                            value={formData.name}
-                            onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="お名前 / Handle" 
-                            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                          />
-                          <input 
-                            type="email" 
-                            required
-                            value={formData.email}
-                            onChange={e => setFormData({ ...formData, email: e.target.value })}
-                            placeholder="メールアドレス" 
-                            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                          />
-                          <textarea 
-                            rows={3}
-                            required
-                            value={formData.message}
-                            onChange={e => setFormData({ ...formData, message: e.target.value })}
-                            placeholder="改善アイデアや地域データの追加要望など..." 
-                            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500 resize-none"
-                          />
-                          <button 
-                            type="submit"
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
-                          >
-                            <Send className="w-4 h-4" />
-                            <span>送信する</span>
-                          </button>
-                        </form>
-                      )}
-                    </div>
                   </div>
                 </section>
               </main>
@@ -1604,7 +1698,7 @@
                     <span className="text-sm font-bold text-slate-200">OpenLBOF / Open Bio-Commons Council</span>
                   </div>
                   <div className="text-xs text-slate-400 font-mono">
-                    &copy; 2026 Open Bio-Commons Council (OBC) ・ Local-First Safety Infrastructure.
+                    &copy; 2026 Open Bio-Commons Council (OBC) ・ Local-First Safety & Biosensor Infrastructure.
                   </div>
                 </div>
               </footer>
