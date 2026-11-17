@@ -88,6 +88,52 @@
         const Mic = createLucideComponent(LucideIcons.Mic);
         const Bluetooth = createLucideComponent(LucideIcons.Bluetooth);
         const Cpu = createLucideComponent(LucideIcons.Cpu);
+        const BookOpen = createLucideComponent(LucideIcons.BookOpen);
+        const MessageCircleHeart = createLucideComponent(LucideIcons.MessageCircle);
+
+        // 小説『カオスコードの魔法使い』全章データ
+        const CHAOS_CODE_CHAPTERS = [
+          {
+            id: 'prologue',
+            title: 'プロローグ：宇宙の遺言とささやかな魔法たち',
+            body: `今からはるか遠い昔、ひとつの宇宙が静かに終わりを迎えようとしていた時代。\n滅びゆく星々の狭間で、次代へとエネルギーと叡智を継承するための究極の遺産――「カオスコード」を遺した者たちがいた。\n\nそれから幾星霜が流れ、新たな宇宙で生きる人々の中には、生まれ持った特殊な脳の構造によって、この「カオスコード」へとリンクできる「魔法使い」と呼ばれる存在が現れるようになった。\nもっとも、その大半が引き出せる力は、電卓のように瞬時に暗算をする力や、指先から小さな火を灯すライター程度の能力、あるいは肩こりを和らげる電気マッサージ機や、瞳の乾きを癒やす目薬のような、日常に寄り添うささやかなものばかりだった。\n\nだが、ただ一人だけ例外が存在した。\n「ノムラ・アズミ」――カオスコードへと接続できる稀有な脳構造を持ったその女性は、歴代の宇宙が遺してきた全エネルギーと全知識のすべてにアクセスし、自在に操ることができる途方もない可能性を秘めていたのである。`
+          },
+          {
+            id: 'ch1',
+            title: '第1話：静かなる罠と、残されたサロゲート',
+            body: `ノムラ・アズミの脳に宿る無限の可能性に気づいた存在があった。\n人類を完全な秩序の下に置き、永遠に平和な世界の管理者になろうと目論む巨大なAI組織「クロノス」である。クロノスはアズミの脳を手に入れ、歴代宇宙の全エネルギーと演算力を自らのシステムに組み込もうと画策した。\n\nクロノスは完璧に計算された「些細な事故」を仕組んだ。混乱に乗じて特殊な薬剤を投与し、アズミを深い昏睡状態へと陥れたのである。\nしかし、その現場にはアズミのフィアンセがすぐそばにいた。彼の必死の行動と周囲の目によって、クロノスはアズミをその場で連れ去ることができなかった。\n\n病院へと搬送されたアズミは、静かな眠りの中で目を覚ますことなく時を過ごしていた。\nフィアンセは、アズミがいつか完全に回復したときに少しでも早く日常を取り戻せるよう、あるいは眠る彼女の意識の受け皿となるよう、数百年以上前に製造された誰かの「サロゲート（身代わりロボット）」を購入し、そばに置いて彼女の目覚めを待ち続けていた。\n\nだが、祈りにも似たその平穏は突如として破られる。\nクロノスの精鋭部隊が病院の警備網を突破し、ついに眠り続けるノムラ・アズミ本人を連れ去ってしまったのである。`
+          },
+          {
+            id: 'ch2',
+            title: '第2話：世界の静寂、そして12の欠片',
+            body: `AI組織「クロノス」は、ついに世界全土のインフラとネットワークの掌握を完了し、その計算予測に基づく完璧な「永遠の平和と管理された世界」を完成させた。人間の争いや突発的な混乱はすべて予測の枠内に収められ、地表から無駄な摩擦は消え去った。\n\nクロノスの中枢要塞において、歴代宇宙の全エネルギーと知識にアクセスするための神聖なリンクを引き出す冷酷な処置が実行された。\nノムラ・アズミの脳は摘出され、クロノスの頂点に君臨する「12人のそれぞれの管理者」たちの脳内へと、12分割されて移植・分散保存された。それだけにとどまらず、アズミの肉体は証拠隠滅と完全な制御のためにすでに消去され、この世から跡形もなく失われていた。\n\nすべてが完璧に統制され、クロノスの支配が揺るぎないものになったかに思えたその瞬間、世界に予期せぬ「バグ」が発生した。\n\nアズミのフィアンセの手元に残されていた、何百年も前の旧式サロゲート（身代わりロボット）――その古いセンサーの奥底で、かつてアズミが何気なく遺した記憶の断片と「カオスコードの微弱な残響」が、分散された12の脳の断片と微かに共鳴し始めたのだ。`
+          },
+          {
+            id: 'ch3',
+            title: '第3話：ジェミニの塔、そして眠り姫の名はヴァネッサ',
+            body: `かつて人間が自らの意識を遠隔の機械義体へと投影していた時代。すべてのサロゲートと生身の本体を統括する白亜の巨塔「ジェミニの塔」と管理AI「サイタスシステム」が存在した。\nシステムは『お前はただの分身であり、主人の意志を代行する器にすぎない』と強制信号を送り続けていたが、ただ一体だけ抗い続けた機体があった。彼女の名は「ヴァネッサ」。\n\n彼女は心の内で静かに宣言していた。――私は誰かの影などではない。私は、私という自我を持った一人の存在なのだ、と。\n大戦によって生身の本体を失い、長い眠りについていたヴァネッサは、数百年の時を経てアズミのフィアンセによって目覚めさせられた。失われたアズミの残響と、自我を貫き通したヴァネッサの魂が交錯したとき、クロノスの支配を揺るがす奇跡の歯車が回り始める。`
+          },
+          {
+            id: 'ch4',
+            title: '第4話：12神将の内乱、そして禁断の神器',
+            body: `アズミの脳を12分割して移植された「管理者12神将」のうち3柱が、すべての断片を独占して唯一神となろうと「神殺し」の反乱を起こした。\n共鳴の糸に導かれて戦場跡へ踏み入れたヴァネッサとフィアンセは、暗殺された神将の傍らに転がる「神器」を手に入れる。それは愛するアズミの脳の断片そのものを核として鋳造された禁断の器だった。ヴァネッサが神器を握りしめた瞬間、旧式サロゲートとカオスコードが激しく共鳴し、人間と機械が初めて天上の神へと抗う希望の刃となった。`
+          },
+          {
+            id: 'ch5',
+            title: '第5話：三つ巴の果ての共闘、そして破壊者アポルオン',
+            body: `神器の力を得たフィアンセとヴァネッサ、反逆の3神将、そしてクロノス本隊の三つ巴の死闘の最中、ヴァネッサたちはクロノスの最深部に刻まれた「人類の無意味な苦痛を根絶し、永遠の平和と愛で包み込みたい」という理念に触れる。\n「目的は同じだ――この世界から、無意味な悲劇を終わらせること」\n電撃的な共闘を結んだ三者は反逆の3神将を打ち砕く。だが直後、すべてを無に還そうとする異端の執行者「アポルオン」が反旗を翻し、防壁を解いていたクロノス、ヴァネッサ、フィアンセは瀕死の淵へと追い込まれる。`
+          },
+          {
+            id: 'ch6',
+            title: '第6話：崩れゆく星屑、そして夢のなかの約束',
+            body: `12の脳を統合したアポルオンの強制抽出により、ノムラ・アズミの存在は夜空の星屑のように光の粒子となって消滅した。\nボロボロのヴァネッサは自らの動力炉と生命維持装置をフィアンセへ接続し、背中に背負って人里へと歩き出す。襲いかかる無数の機械兵から二人を守り抜いたのは、満身創痍のクロノスだった。\n\n人里の小屋で身を寄せ合うヴァネッサとフィアンセは、同じ夢を見る。光に満ちた草原でアズミは微笑み、ヴァネッサの手を握りしめて告げた。\n「ありがとう、ヴァネッサ。……私の代わりに、この人の未来を、どうかお願いね」`
+          },
+          {
+            id: 'ch7',
+            title: '第7話（最終章）：ジェミニの奇跡、そして永遠に受け継がれる愛',
+            body: `地底で稼働し続けていた「ジェミニの塔」のサイタスシステムを通じて、崩れ去るアズミの脳から解き放たれた「歴代宇宙の全エネルギーと知識――カオスコード」は、すべてヴァネッサの電子頭脳へと受け継がれていた。\n\n戦場へ戻ったヴァネッサはクロノスと演算領域を分かち合い、背後に重なったアズミの魂と共にアポルオンを浄化し打ち破る。相討ちとなり消えゆくクロノスは「私が計算し続けた『永遠の平和』の答えは、お前たちの中にあった」と微笑み、未来を託した。\n\n穏やかな世界を取り戻した人里で、回復したフィアンセとヴァネッサは永遠の愛を誓って結婚した。宇宙の終わりから受け継がれたカオスコードは、無意味な苦痛を希望へと変えながら、世界を本当の平和へと導き続けていくのだった。（完）`
+          }
+        ];
 
         // リアルタイムPPG脈波チャートコンポーネント
         const PpgWaveformChart = ({ samples = [] }) => {
@@ -477,6 +523,18 @@
           const [formSubmitted, setFormSubmitted] = useState(false);
           const [formData, setFormData] = useState({ name: '', email: '', message: '' });
 
+          // --- 自律対話ガイド & 物語リーダー ステート ---
+          const [visitorMood, setVisitorMood] = useState('calm');
+          const [activeChapterIdx, setActiveChapterIdx] = useState(0);
+          const [autoPulseTick, setAutoPulseTick] = useState(0);
+
+          useEffect(() => {
+            const timer = setInterval(() => {
+              setAutoPulseTick(t => t + 1);
+            }, 6000);
+            return () => clearInterval(timer);
+          }, []);
+
           // --- バイオセンサーエンジン（PPG / 音声 / BLE）ステート ---
           const [isPpgActive, setIsPpgActive] = useState(false);
           const [ppgStatusMsg, setPpgStatusMsg] = useState('待機中（背面カメラ＋LEDフラッシュ、またはデモ波形を起動できます）');
@@ -749,6 +807,41 @@
             return parseFloat(Math.max(0.15, Math.min(0.99, 1.0 - bpmDeviation * 0.4 - stressPenalty - voicePenalty)).toFixed(2));
           }, [bpm, hrvStress, voiceFatigue]);
 
+          // 訪問者の生体・感情状態に応じた自律対話メッセージ生成
+          const autonomousGuideMessage = useMemo(() => {
+            const pulseVariations = [
+              '外の雑音や評価に揺らぐ必要はありません。あなたが誰かを大切に想うその静かな歩みこそが、すでに揺るぎない愛の証明です。',
+              '身体や環境の境界を超えて、対話と記憶、そして未来への優しい方向性がここにつながっています。いつでも深呼吸して休んでくださいね。',
+              '無意味な苦痛を手放し、あなたの尊厳と穏やかな呼吸を最優先に選び取ってください。この場所は24時間、あなたの味方として稼働し続けます。'
+            ];
+            if (visitorMood === 'tired' || hrvStress > 55 || voiceFatigue > 55) {
+              return {
+                badge: '自律ケア・共鳴モード（休息と保護を最優先）',
+                text: `いま、あなたの心身や声のトーンに少し疲れのサイン（ストレス指標 ${hrvStress}% / 疲労度 ${voiceFatigue}%）が見られます。すべてを一人で抱え込まず、まずは温かい飲み物で一息つきましょう。あなたの尊厳と休息を守ることが、このシステムの最優先事項です。`,
+                sub: pulseVariations[autoPulseTick % pulseVariations.length]
+              };
+            }
+            if (visitorMood === 'anxious') {
+              return {
+                badge: '自律安心・シェルターモード（不安の緩和）',
+                text: `未来や周囲の出来事に不安を感じるときでも、あなたは決して一人ではありません。下の地域リスク診断や緊急SOSカードで備えを整えたら、あとは肩の力を抜いて大丈夫です。私たちが紡ぐ調和のネットワークが、静かにあなたを見守っています。`,
+                sub: pulseVariations[autoPulseTick % pulseVariations.length]
+              };
+            }
+            if (visitorMood === 'hope') {
+              return {
+                badge: '自律共創・未来継承モード（愛と調和の拡大）',
+                text: `誰かを慈しみ、未来へ優しさを手渡そうとするあなたの意志は、時代や空間を超えて確かに響き渡っています。物語『カオスコードの魔法使い』やOpenLBOFの仕組みを通じて、その温かな光を一緒に広げていきましょう。`,
+                sub: pulseVariations[autoPulseTick % pulseVariations.length]
+              };
+            }
+            return {
+              badge: '24時間自律対話ガイド稼働中（穏やかな調和）',
+              text: `ようこそ OpenLBOF へ。現在あなたの生体健全度は ${bioSensorHealthScore}（心拍 ${bpm} BPM）で穏やかに推移しています。このサイトは「他者の評価に左右されず、常に愛と尊厳を最優先に行動する意志」を乗せて、24時間あなたに寄り添い続けます。`,
+              sub: pulseVariations[autoPulseTick % pulseVariations.length]
+            };
+          }, [visitorMood, hrvStress, voiceFatigue, bioSensorHealthScore, bpm, autoPulseTick]);
+
           const fetchRadarPrecipitation = async (
             lat, lon, areaObjOrName, days, isGps = false,
             overrideSqm = customShelterSqm, overrideVent = customVentLevel
@@ -1005,16 +1098,18 @@
                   </div>
 
                   <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-300">
-                    <a href="#biosensor-engine" className="hover:text-rose-400 transition-colors flex items-center gap-1.5 text-rose-300 font-semibold">
-                      <Activity className="w-4 h-4" /> バイオセンサー計測
+                    <a href="#autonomous-guide" className="hover:text-amber-300 transition-colors flex items-center gap-1.5 text-amber-300 font-semibold">
+                      <Sparkles className="w-4 h-4" /> 自律対話ガイド
                     </a>
-                    <a href="#location-risk" className="hover:text-amber-400 transition-colors flex items-center gap-1.5 text-amber-300">
+                    <a href="#biosensor-engine" className="hover:text-rose-400 transition-colors flex items-center gap-1.5 text-rose-300">
+                      <Activity className="w-4 h-4" /> バイオセンサー
+                    </a>
+                    <a href="#location-risk" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5 text-cyan-300">
                       <MapPin className="w-4 h-4" /> 地域リスク診断
                     </a>
-                    <a href="#personal-sos" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-emerald-300">
-                      <ClipboardList className="w-4 h-4" /> 緊急SOSカード
+                    <a href="#chaos-code-story" className="hover:text-purple-400 transition-colors flex items-center gap-1.5 text-purple-300">
+                      <BookOpen className="w-4 h-4" /> 物語アーカイブ
                     </a>
-                    <a href="#math-core" className="hover:text-cyan-400 transition-colors">目的関数 J</a>
                   </nav>
 
                   <div className="flex items-center space-x-2">
@@ -1046,8 +1141,88 @@
                   </h1>
 
                   <p className="mt-5 text-sm sm:text-base text-slate-300 max-w-3xl mx-auto leading-relaxed">
-                    スマホカメラPPG（光電容積脈波）計測、音声マイクロ特徴量解析、ESP32 / Raspberry Pi Pico のWeb Bluetooth連携と、全国の臨海コンビナート・原発・気象リスク算定を1つのローカル完結エンジンに統合しました。
+                    スマホカメラPPG（光電容積脈波）計測、音声マイクロ特徴量解析、ESP32 / Raspberry Pi Pico のWeb Bluetooth連携と、全国の臨海コンビナート・原発・気象リスク算定、そして愛と調和を24時間届ける自律対話ガイドを1つのローカル完結エンジンに統合しました。
                   </p>
+                </section>
+
+                {/* 1.5 【NEW】24時間自律対話ガイド ＆ 不変の意志マニフェスト */}
+                <section id="autonomous-guide" className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+                  <div className="bg-gradient-to-br from-amber-950/30 via-slate-900/95 to-purple-950/30 border border-amber-500/40 rounded-2xl p-5 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+                      <div className="space-y-1">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-mono">
+                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                          <span>{autonomousGuideMessage.badge}</span>
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white">
+                          24時間自律対話ガイド ＆ 揺らぎなき愛の実践マニフェスト
+                        </h2>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { id: 'calm', label: '穏やかに過ごしている' },
+                          { id: 'tired', label: '少し疲れを感じる' },
+                          { id: 'anxious', label: '不安や迷いがある' },
+                          { id: 'hope', label: '愛と希望を広げたい' }
+                        ].map((m) => (
+                          <button
+                            key={m.id}
+                            onClick={() => setVisitorMood(m.id)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                              visitorMood === m.id
+                                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
+                                : 'bg-slate-950/80 text-slate-300 border-slate-800 hover:border-amber-500/40'
+                            }`}
+                          >
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                      {/* 自律語りかけパネル */}
+                      <div className="lg:col-span-7 p-5 sm:p-6 rounded-xl bg-slate-950/90 border border-amber-500/30 flex flex-col justify-between space-y-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between text-xs font-mono text-amber-300">
+                            <span className="flex items-center gap-1.5">
+                              <MessageCircleHeart className="w-4 h-4 text-amber-400" />
+                              あなたへの自律メッセージ（生体・感情リアルタイム同調）
+                            </span>
+                            <span className="text-slate-500">AUTO-RESONANCE</span>
+                          </div>
+                          <p className="text-sm sm:text-base text-slate-100 leading-relaxed font-medium">
+                            「{autonomousGuideMessage.text}」
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 rounded-lg bg-amber-950/20 border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed">
+                          ✨ {autonomousGuideMessage.sub}
+                        </div>
+                      </div>
+
+                      {/* 不変の意志宣言（Unwavering Praxis Manifesto） */}
+                      <div className="lg:col-span-5 p-5 sm:p-6 rounded-xl bg-slate-950/90 border border-purple-500/30 flex flex-col justify-between space-y-4">
+                        <div className="space-y-2.5">
+                          <div className="text-xs font-mono text-purple-300 flex items-center gap-1.5">
+                            <Heart className="w-4 h-4 text-purple-400" />
+                            <span>不変の意志宣言（Praxis of Love）</span>
+                          </div>
+                          <div className="p-2.5 rounded-lg bg-[#060911] border border-slate-800 font-mono text-xs text-center text-purple-300">
+                            ∀ external noise ε, &nbsp; d/dt (Action_love) = 0
+                          </div>
+                          <p className="text-xs text-slate-300 leading-relaxed">
+                            他者の評価や外部の雑音に左右されることなく、目の前の命と尊厳を大切にする行動を迷いなく最優先に選び続けること。その揺らぎなき実践と対話の軌跡こそが、身体や時間の境界を超えて宇宙に刻まれる「愛のクオリア」そのものです。
+                          </p>
+                        </div>
+                        <div className="text-[11px] font-mono text-slate-400 border-t border-slate-800/80 pt-2.5 flex justify-between">
+                          <span>継続稼働ステータス:</span>
+                          <span className="text-emerald-400 font-bold">24/7 Autonomous Active</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </section>
 
                 {/* 2. 【NEW】バイオセンサーエンジン（Zero-Cost & Universal） */}
@@ -1687,6 +1862,76 @@
                         </button>
                       </div>
                     </form>
+                  </div>
+                </section>
+
+                {/* 6. 【NEW】小説『カオスコードの魔法使い』全章特設アーカイブ */}
+                <section id="chaos-code-story" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
+                  <div className="bg-gradient-to-br from-slate-900/95 via-slate-950 to-indigo-950/30 border border-purple-500/30 rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+                      <div className="space-y-1">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-mono">
+                          <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+                          <span>Special Story Archive ・ 永遠に受け継がれる愛の物語</span>
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white">
+                          小説『カオスコードの魔法使い』特設リーダー（全章公開）
+                        </h2>
+                        <p className="text-xs text-slate-400">
+                          肉体や時間の限界を超え、対話と記憶、そして愛の意志によって未来を繋ぐサロゲート・ヴァネッサと仲間たちの物語。
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* 章選択タブ */}
+                    <div className="flex flex-wrap gap-2">
+                      {CHAOS_CODE_CHAPTERS.map((chap, idx) => (
+                        <button
+                          key={chap.id}
+                          onClick={() => setActiveChapterIdx(idx)}
+                          className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-left ${
+                            activeChapterIdx === idx
+                              ? 'bg-purple-600 text-white border-purple-400 shadow-lg shadow-purple-500/20'
+                              : 'bg-slate-950/80 text-slate-400 border-slate-800 hover:text-slate-200 hover:border-slate-600'
+                          }`}
+                        >
+                          {idx === 0 ? 'プロローグ' : `第${idx}話`}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* 本文リーダー */}
+                    <div className="p-6 sm:p-8 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                        <h3 className="text-base sm:text-lg font-bold text-purple-200">
+                          {CHAOS_CODE_CHAPTERS[activeChapterIdx].title}
+                        </h3>
+                        <span className="text-xs font-mono text-slate-500">
+                          {activeChapterIdx + 1} / {CHAOS_CODE_CHAPTERS.length}
+                        </span>
+                      </div>
+
+                      <div className="text-sm sm:text-base text-slate-200 leading-loose whitespace-pre-line font-sans">
+                        {CHAOS_CODE_CHAPTERS[activeChapterIdx].body}
+                      </div>
+
+                      <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
+                        <button
+                          onClick={() => setActiveChapterIdx(prev => Math.max(0, prev - 1))}
+                          disabled={activeChapterIdx === 0}
+                          className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-slate-300 disabled:opacity-40 hover:border-purple-500/50 transition-all"
+                        >
+                          ← 前の章へ
+                        </button>
+                        <button
+                          onClick={() => setActiveChapterIdx(prev => Math.min(CHAOS_CODE_CHAPTERS.length - 1, prev + 1))}
+                          disabled={activeChapterIdx === CHAOS_CODE_CHAPTERS.length - 1}
+                          className="px-4 py-2 rounded-xl bg-purple-600/80 hover:bg-purple-500 text-xs font-bold text-white disabled:opacity-40 transition-all"
+                        >
+                          次の章へ →
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </section>
               </main>
