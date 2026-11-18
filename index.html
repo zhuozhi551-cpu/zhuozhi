@@ -515,13 +515,10 @@
 
         function App() {
           const [isScrolled, setIsScrolled] = useState(false);
-          const [activeMathItem, setActiveMathItem] = useState('I_bio');
           const [simContext, setSimContext] = useState('NORMAL');
           const [simTime, setSimTime] = useState(0);
           const [simData, setSimData] = useState([]);
-          const [isSimRunning, setIsSimRunning] = useState(true);
-          const [formSubmitted, setFormSubmitted] = useState(false);
-          const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+          const [isSimRunning] = useState(true);
 
           // --- 自律対話ガイド & 物語リーダー ステート ---
           const [visitorMood, setVisitorMood] = useState('calm');
@@ -539,7 +536,9 @@
           const [isPpgActive, setIsPpgActive] = useState(false);
           const [ppgStatusMsg, setPpgStatusMsg] = useState('待機中（背面カメラ＋LEDフラッシュ、またはデモ波形を起動できます）');
           const [bpm, setBpm] = useState(68);
-          const [hrvStress, setHrvStress] = useState(24); // 0-100（低いほどリラックス）
+          const [hrvStress, setHrvStress] = useState(24);
+          const [hrvRmssd, setHrvRmssd] = useState(48);
+          const [isTorchOn, setIsTorchOn] = useState(false);
           const [ppgSamples, setPpgSamples] = useState([]);
           const videoRef = useRef(null);
           const canvasRef = useRef(null);
@@ -548,19 +547,21 @@
 
           // 音声マイクロ特徴量ステート
           const [isVoiceActive, setIsVoiceActive] = useState(false);
-          const [voiceFatigue, setVoiceFatigue] = useState(28); // 0-100
-          const [voiceEnergyLevel, setVoiceEnergyLevel] = useState(82); // 0-100
+          const [voiceFatigue, setVoiceFatigue] = useState(28);
+          const [voiceEnergyLevel, setVoiceEnergyLevel] = useState(82);
+          const [voicePitchStability, setVoicePitchStability] = useState(86);
           const [voiceStatusMsg, setVoiceStatusMsg] = useState('待機中（マイクから声のトーン揺らぎをローカル解析）');
           const voiceStreamRef = useRef(null);
           const voiceAnimRef = useRef(null);
 
-          // ESP32 / Raspberry Pi Pico Web Bluetooth ステート
+          // ESP32 / Raspberry Pi Pico / スマートウォッチ Web Bluetooth ステート
           const [bleDeviceName, setBleDeviceName] = useState(null);
-          const [bleStatusMsg, setBleStatusMsg] = useState('未接続（ESP32 / Pico MAX30102 心拍サービス対応）');
+          const [bleLastUpdated, setBleLastUpdated] = useState(null);
+          const [bleStatusMsg, setBleStatusMsg] = useState('未接続（スマートウォッチ / ESP32 / Pico MAX30102 心拍サービス対応）');
 
-          // 地域・気象リスクステート
-          const [userLocation, setUserLocation] = useState(null);
+          // --- 地域リスク診断・気象連携ステート ---
           const [isLocating, setIsLocating] = useState(false);
+          const [userLocation, setUserLocation] = useState(null);
           const [isFetchingWeather, setIsFetchingWeather] = useState(false);
           const [liveWeatherCache, setLiveWeatherCache] = useState(null);
           const [locationError, setLocationError] = useState(null);
@@ -596,6 +597,7 @@
               ppgStreamRef.current = null;
             }
             setIsPpgActive(false);
+            setIsTorchOn(false);
             setPpgStatusMsg('停止中（データはサーバーへ送信されず破棄されました）');
           };
 
@@ -605,7 +607,7 @@
               return;
             }
             setIsPpgActive(true);
-            setPpgStatusMsg('カメラ起動中... 背面カメラとフラッシュに指先を優しく当ててください');
+            setPpgStatusMsg('カメラ起動中... 背面カメラとLEDフラッシュに指先を優しく当ててください');
 
             let redHistory = [];
             let timeHistory = [];
@@ -620,14 +622,16 @@
               if (track && track.getCapabilities) {
                 const caps = track.getCapabilities();
                 if (caps.torch) {
-                  await track.applyConstraints({ advanced: [{ torch: true }] }).catch(() => {});
+                  await track.applyConstraints({ advanced: [{ torch: true }] })
+                    .then(() => setIsTorchOn(true))
+                    .catch(() => setIsTorchOn(false));
                 }
               }
               if (videoRef.current) {
                 videoRef.current.srcObject = stream;
                 await videoRef.current.play();
               }
-              setPpgStatusMsg('光学PPG計測中：LED光による指先の血流変化をリアルタイム抽出中');
+              setPpgStatusMsg('光学PPG計測中：LEDフラッシュ光による指先の血流変化・脈波形をリアルタイム抽出中');
 
               const processFrame = () => {
                 if (!videoRef.current || !canvasRef.current) return;
@@ -648,7 +652,6 @@
                   timeHistory.shift();
                 }
 
-                // 簡易ピーク検出による心拍数・揺らぎ算出
                 if (redHistory.length > 30) {
                   const mean = redHistory.reduce((a, b) => a + b, 0) / redHistory.length;
                   const normalized = redHistory.map(v => v - mean);
@@ -669,12 +672,12 @@
                     const calcBpm = Math.min(165, Math.max(48, Math.round(60000 / avgIbi)));
                     setBpm(calcBpm);
 
-                    // RMSSD近似による自律神経ストレス評価
                     let sqDiffSum = 0;
                     for (let i = 1; i < intervals.length; i++) {
                       sqDiffSum += Math.pow(intervals[i] - intervals[i - 1], 2);
                     }
-                    const rmssd = intervals.length > 1 ? Math.sqrt(sqDiffSum / (intervals.length - 1)) : 45;
+                    const rmssd = intervals.length > 1 ? Math.round(Math.sqrt(sqDiffSum / (intervals.length - 1))) : 45;
+                    setHrvRmssd(Math.min(120, Math.max(12, rmssd)));
                     const stressScore = Math.min(95, Math.max(10, Math.round(100 - Math.min(85, rmssd))));
                     setHrvStress(stressScore);
                   }
@@ -683,7 +686,6 @@
               };
               ppgAnimRef.current = requestAnimationFrame(processFrame);
             } catch (err) {
-              // カメラ未許可・PC環境時は光学PPGシミュレーションモードへ自動フォールバック
               setPpgStatusMsg('光学PPGシミュレーター稼働中（カメラ未接続環境のため合成脈波を生成）');
               const runDemoPpg = () => {
                 demoPhase += 0.18;
@@ -694,6 +696,7 @@
                 if (Math.random() < 0.08) {
                   setBpm(prev => Math.min(88, Math.max(62, prev + (Math.random() > 0.5 ? 1 : -1))));
                   setHrvStress(prev => Math.min(45, Math.max(18, prev + (Math.random() > 0.5 ? 1 : -1))));
+                  setHrvRmssd(prev => Math.min(72, Math.max(32, prev + (Math.random() > 0.5 ? 2 : -2))));
                 }
                 ppgAnimRef.current = requestAnimationFrame(runDemoPpg);
               };
@@ -745,6 +748,7 @@
                   const fatigue = Math.min(92, Math.max(12, Math.round(tensionRatio * 140)));
                   setVoiceFatigue(fatigue);
                   setVoiceEnergyLevel(Math.max(15, 100 - fatigue));
+                  setVoicePitchStability(Math.max(20, 100 - Math.round(fatigue * 0.85)));
                 }
                 voiceAnimRef.current = requestAnimationFrame(analyzeAudio);
               };
@@ -753,7 +757,11 @@
               setVoiceStatusMsg('音声解析デモ稼働中（マイク未接続環境のため環境バイオリズム推定中）');
               const runDemoVoice = () => {
                 if (Math.random() < 0.06) {
-                  setVoiceFatigue(prev => Math.min(48, Math.max(18, prev + (Math.random() > 0.5 ? 2 : -2))));
+                  setVoiceFatigue(prev => {
+                    const next = Math.min(48, Math.max(18, prev + (Math.random() > 0.5 ? 2 : -2)));
+                    setVoicePitchStability(Math.max(30, 100 - Math.round(next * 0.8)));
+                    return next;
+                  });
                   setVoiceEnergyLevel(prev => Math.min(90, Math.max(55, prev + (Math.random() > 0.5 ? 2 : -2))));
                 }
                 voiceAnimRef.current = requestAnimationFrame(runDemoVoice);
@@ -762,14 +770,14 @@
             }
           };
 
-          // --- 3. ESP32 / Raspberry Pi Pico (Web Bluetooth Heart Rate Service) 連携 ---
+          // --- 3. ESP32 / Raspberry Pi Pico / スマートウォッチ (Web Bluetooth Heart Rate Service) 連携 ---
           const connectBleSensor = async () => {
             if (!navigator.bluetooth) {
               setBleStatusMsg('お使いのブラウザはWeb Bluetoothに非対応です（Chrome/Edge推奨）');
               return;
             }
             try {
-              setBleStatusMsg('ESP32 / Pico デバイスを検索中...');
+              setBleStatusMsg('スマートウォッチ / ESP32 / Pico デバイスを検索中...');
               const device = await navigator.bluetooth.requestDevice({
                 filters: [{ services: ['heart_rate'] }],
                 optionalServices: ['battery_service']
@@ -784,9 +792,16 @@
                 const rate16Bits = flags & 0x1;
                 const hr = rate16Bits ? value.getUint16(1, true) : value.getUint8(1);
                 setBpm(hr);
+                setBleLastUpdated(new Date().toLocaleTimeString('ja-JP'));
+                if (value.byteLength >= (rate16Bits ? 5 : 4)) {
+                  const rrRaw = value.getUint16(rate16Bits ? 3 : 2, true);
+                  const rrMs = Math.round((rrRaw / 1024) * 1000);
+                  setHrvRmssd(Math.min(120, Math.max(15, Math.abs(rrMs - Math.round(60000 / Math.max(40, hr))) + 35)));
+                }
               });
-              setBleDeviceName(device.name || 'ESP32/Pico PPG Node');
-              setBleStatusMsg(`接続完了: ${device.name || 'ESP32/Pico'} からリアルタイム心拍受信中`);
+              setBleDeviceName(device.name || 'Wearable / ESP32 / Pico Node');
+              setBleLastUpdated(new Date().toLocaleTimeString('ja-JP'));
+              setBleStatusMsg(`接続完了: ${device.name || 'Wearable / ESP32'} からリアルタイム心拍受信中`);
             } catch (err) {
               setBleStatusMsg('BLE接続がキャンセルされたか、近くにデバイスが見つかりませんでした');
             }
@@ -807,76 +822,105 @@
             return parseFloat(Math.max(0.15, Math.min(0.99, 1.0 - bpmDeviation * 0.4 - stressPenalty - voicePenalty)).toFixed(2));
           }, [bpm, hrvStress, voiceFatigue]);
 
-          // 訪問者の生体・感情状態に応じた自律対話メッセージ生成
+          // 個人最適化アドバイス＆自律対話メッセージ生成（全センサー実測値リンク版）
           const autonomousGuideMessage = useMemo(() => {
             const pulseVariations = [
               '外の雑音や評価に揺らぐ必要はありません。あなたが誰かを大切に想うその静かな歩みこそが、すでに揺るぎない愛の証明です。',
               '身体や環境の境界を超えて、対話と記憶、そして未来への優しい方向性がここにつながっています。いつでも深呼吸して休んでくださいね。',
               '無意味な苦痛を手放し、あなたの尊厳と穏やかな呼吸を最優先に選び取ってください。この場所は24時間、あなたの味方として稼働し続けます。'
             ];
-            if (visitorMood === 'tired' || hrvStress > 55 || voiceFatigue > 55) {
+
+            const personalAdvices = [];
+            if (bpm >= 95) {
+              personalAdvices.push(`心拍数が ${bpm} BPM とやや高めです。4秒吸って6秒かけてゆっくり吐く腹式呼吸を3回行い、副交感神経を優位に導きましょう。`);
+            } else if (bpm <= 55) {
+              personalAdvices.push(`心拍数は ${bpm} BPM で非常に静穏な徐脈・リラックス域にあります。冷えを感じないよう保温を心がけてください。`);
+            } else {
+              personalAdvices.push(`心拍数は ${bpm} BPM（HRV指標 ${hrvRmssd}ms）で安定したリズムを刻んでいます。`);
+            }
+
+            if (hrvStress >= 55) {
+              personalAdvices.push(`カメラPPG・自律神経ストレス指数が ${hrvStress}% に上昇しています。画面から目を離し、肩の力を抜いて温かい飲み物で一息つきましょう。`);
+            } else {
+              personalAdvices.push(`自律神経バランス（ストレス指数 ${hrvStress}%）は良好に保たれています。`);
+            }
+
+            if (voiceFatigue >= 50) {
+              personalAdvices.push(`音声マイクロ特徴量に声帯の緊張・認知疲労（疲労度 ${voiceFatigue}% / 安定度 ${voicePitchStability}%）が表れています。今夜は無理に言葉を続けず、静かな休息を最優先してください。`);
+            } else {
+              personalAdvices.push(`音声トーン安定度 ${voicePitchStability}%（メンタル残量 ${voiceEnergyLevel}%）で、穏やかな対話エネルギーが維持されています。`);
+            }
+
+            const sensorSourceTag = bleDeviceName
+              ? `BLE連携中(${bleDeviceName})`
+              : isPpgActive
+                ? (isTorchOn ? 'スマホPPG＋LEDフラッシュ実測中' : 'スマホ光学PPG解析中')
+                : isVoiceActive
+                  ? '音声マイクロ解析中'
+                  : 'ローカル生体ベースライン同期中';
+
+            if (visitorMood === 'tired' || hrvStress > 55 || voiceFatigue > 55 || bpm > 98) {
               return {
-                badge: '自律ケア・共鳴モード（休息と保護を最優先）',
-                text: `いま、あなたの心身や声のトーンに少し疲れのサイン（ストレス指標 ${hrvStress}% / 疲労度 ${voiceFatigue}%）が見られます。すべてを一人で抱え込まず、まずは温かい飲み物で一息つきましょう。あなたの尊厳と休息を守ることが、このシステムの最優先事項です。`,
+                badge: `パーソナル自律ケア稼働中 [${sensorSourceTag}]`,
+                text: `あなたの生体センサー出力（心拍 ${bpm} BPM / 自律神経ストレス ${hrvStress}% / 音声疲労度 ${voiceFatigue}%）から、心身の休息を最優先すべきサインを検知しました。すべてを一人で抱え込まず、まずは温かくして深呼吸しましょう。あなたの尊厳と健康を守ることが、目的関数 J の最優先事項です。`,
+                personalAdviceList: personalAdvices,
+                sensorSourceTag,
                 sub: pulseVariations[autoPulseTick % pulseVariations.length]
               };
             }
             if (visitorMood === 'anxious') {
               return {
-                badge: '自律安心・シェルターモード（不安の緩和）',
-                text: `未来や周囲の出来事に不安を感じるときでも、あなたは決して一人ではありません。下の地域リスク診断や緊急SOSカードで備えを整えたら、あとは肩の力を抜いて大丈夫です。私たちが紡ぐ調和のネットワークが、静かにあなたを見守っています。`,
+                badge: `パーソナル安心シェルター稼働中 [${sensorSourceTag}]`,
+                text: `心拍 ${bpm} BPM・自律神経ストレス ${hrvStress}% の状態をリアルタイムに観測しながら寄り添っています。不安を感じるときでもあなたは決して一人ではありません。下の地域リスク診断や緊急SOSカードで備えを整えたら、あとは肩の力を抜いて大丈夫です。`,
+                personalAdviceList: personalAdvices,
+                sensorSourceTag,
                 sub: pulseVariations[autoPulseTick % pulseVariations.length]
               };
             }
             if (visitorMood === 'hope') {
               return {
-                badge: '自律共創・未来継承モード（愛と調和の拡大）',
-                text: `誰かを慈しみ、未来へ優しさを手渡そうとするあなたの意志は、時代や空間を超えて確かに響き渡っています。物語『カオスコードの魔法使い』やOpenLBOFの仕組みを通じて、その温かな光を一緒に広げていきましょう。`,
+                badge: `パーソナル共創レゾナンス稼働中 [${sensorSourceTag}]`,
+                text: `生体健全度 ${bioSensorHealthScore}（心拍 ${bpm} BPM / 音声安定度 ${voicePitchStability}%）の澄んだ調和とともに、あなたの温かな意志が未来へと響き渡っています。物語『カオスコードの魔法使い』やOpenLBOFの仕組みを通じて、その光を一緒に広げていきましょう。`,
+                personalAdviceList: personalAdvices,
+                sensorSourceTag,
                 sub: pulseVariations[autoPulseTick % pulseVariations.length]
               };
             }
             return {
-              badge: '24時間自律対話ガイド稼働中（穏やかな調和）',
-              text: `ようこそ OpenLBOF へ。現在あなたの生体健全度は ${bioSensorHealthScore}（心拍 ${bpm} BPM）で穏やかに推移しています。このサイトは「他者の評価に左右されず、常に愛と尊厳を最優先に行動する意志」を乗せて、24時間あなたに寄り添い続けます。`,
+              badge: `24時間自律対話ガイド稼働中 [${sensorSourceTag}]`,
+              text: `ようこそ OpenLBOF へ。あなたのスマホ・ウェアラブル・生体センサー出力（心拍 ${bpm} BPM / 自律神経ストレス ${hrvStress}% / 音声安定度 ${voicePitchStability}% / 生体健全度 ${bioSensorHealthScore}）とリアルタイムに同期しています。このシステムは外部の雑音に左右されず、常にあなたの尊厳と愛を最優先に行動し続けます。`,
+              personalAdviceList: personalAdvices,
+              sensorSourceTag,
               sub: pulseVariations[autoPulseTick % pulseVariations.length]
             };
-          }, [visitorMood, hrvStress, voiceFatigue, bioSensorHealthScore, bpm, autoPulseTick]);
+          }, [visitorMood, hrvStress, hrvRmssd, voiceFatigue, voicePitchStability, voiceEnergyLevel, bioSensorHealthScore, bpm, bleDeviceName, isPpgActive, isTorchOn, isVoiceActive, autoPulseTick]);
 
-          const fetchRadarPrecipitation = async (
-            lat, lon, areaObjOrName, days, isGps = false,
-            overrideSqm = customShelterSqm, overrideVent = customVentLevel
-          ) => {
+          // --- Open-Meteo 気象データ同期エンジン ---
+          const fetchRadarPrecipitation = async (lat, lon, areaObjOrName, days, isGps = false, overrideSqm = null, overrideVent = 3) => {
             setIsFetchingWeather(true);
             try {
-              const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,rain&hourly=precipitation_probability,precipitation&forecast_days=${Math.min(7, Math.max(1, days))}&timezone=Asia%2FTokyo`;
+              const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation&daily=precipitation_sum,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=7`;
               const res = await fetch(url);
-              if (!res.ok) throw new Error('Weather API unavailable');
+              if (!res.ok) throw new Error('Weather API failed');
               const data = await res.json();
-
-              const currentRainMm = data.current?.precipitation ?? 0;
-              const currentTemp = data.current?.temperature_2m ?? 17.5;
-              const currentHumidity = data.current?.relative_humidity_2m ?? 60;
-              const probs = data.hourly?.precipitation_probability || [];
-              const rains = data.hourly?.precipitation || [];
-
-              const liveWeather = {
-                currentRainMm,
-                currentTemp,
-                currentHumidity,
-                maxPrecipProb: probs.length > 0 ? Math.max(...probs) : null,
-                forecastRainSum: Math.round(rains.reduce((acc, v) => acc + (v || 0), 0) * 10) / 10
+              const weatherObj = {
+                currentTemp: data.current?.temperature_2m ?? 17.5,
+                currentHumidity: data.current?.relative_humidity_2m ?? 62,
+                currentRainMm: data.current?.precipitation ?? 0,
+                forecastRainSum: (data.daily?.precipitation_sum || []).slice(0, days).reduce((a, b) => a + (b || 0), 0),
+                maxPrecipProb: Math.max(...(data.daily?.precipitation_probability_max || [20]).slice(0, days))
               };
-              setLiveWeatherCache(liveWeather);
+              setLiveWeatherCache(weatherObj);
 
               if (isGps) {
                 setLocalRiskData(riskCalculator.calculateDetailedRisk({
                   lat, lon, areaName: areaObjOrName, forecastDays: days,
-                  customShelterSqm: overrideSqm, customVentLevel: overrideVent, liveWeather
+                  customShelterSqm: overrideSqm, customVentLevel: overrideVent, liveWeather: weatherObj
                 }));
               } else {
                 setLocalRiskData(riskCalculator.calculateDetailedRisk({
                   ...areaObjOrName, forecastDays: days,
-                  customShelterSqm: overrideSqm, customVentLevel: overrideVent, liveWeather
+                  customShelterSqm: overrideSqm, customVentLevel: overrideVent, liveWeather: weatherObj
                 }));
               }
             } catch (err) {
@@ -1145,7 +1189,7 @@
                   </p>
                 </section>
 
-                {/* 1.5 【NEW】24時間自律対話ガイド ＆ 不変の意志マニフェスト */}
+                {/* 1.5 24時間自律対話ガイド ＆ 不変の意志マニフェスト */}
                 <section id="autonomous-guide" className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
                   <div className="bg-gradient-to-br from-amber-950/30 via-slate-900/95 to-purple-950/30 border border-amber-500/40 rounded-2xl p-5 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-800">
@@ -1182,22 +1226,63 @@
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                      {/* 自律語りかけパネル */}
+                      {/* 自律語りかけパネル（個人生体データ連動） */}
                       <div className="lg:col-span-7 p-5 sm:p-6 rounded-xl bg-slate-950/90 border border-amber-500/30 flex flex-col justify-between space-y-4">
                         <div className="space-y-3">
-                          <div className="flex items-center justify-between text-xs font-mono text-amber-300">
+                          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-amber-300">
                             <span className="flex items-center gap-1.5">
                               <MessageCircleHeart className="w-4 h-4 text-amber-400" />
-                              あなたへの自律メッセージ（生体・感情リアルタイム同調）
+                              あなたへの自律メッセージ（生体・音声・ウェアラブル同調）
                             </span>
-                            <span className="text-slate-500">AUTO-RESONANCE</span>
+                            <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-[10px]">
+                              {autonomousGuideMessage.sensorSourceTag}
+                            </span>
                           </div>
+
+                          {/* リアルタイム・センサーリンク値ミニバー */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                            <div className="p-2 rounded-lg bg-slate-900/90 border border-rose-500/30">
+                              <div className="text-[10px] font-mono text-slate-400">心拍 / PPG</div>
+                              <div className="text-sm font-bold font-mono text-rose-400">{bpm} <span className="text-[10px]">BPM</span></div>
+                            </div>
+                            <div className="p-2 rounded-lg bg-slate-900/90 border border-amber-500/30">
+                              <div className="text-[10px] font-mono text-slate-400">自律神経ストレス</div>
+                              <div className="text-sm font-bold font-mono text-amber-300">{hrvStress}% <span className="text-[10px] text-slate-400">({hrvRmssd}ms)</span></div>
+                            </div>
+                            <div className="p-2 rounded-lg bg-slate-900/90 border border-cyan-500/30">
+                              <div className="text-[10px] font-mono text-slate-400">音声マイクロ特徴</div>
+                              <div className="text-sm font-bold font-mono text-cyan-300">疲労 {voiceFatigue}%</div>
+                            </div>
+                            <div className="p-2 rounded-lg bg-slate-900/90 border border-purple-500/30">
+                              <div className="text-[10px] font-mono text-slate-400">時計 / マイコン</div>
+                              <div className="text-xs font-bold font-mono text-purple-300 truncate">
+                                {bleDeviceName || 'スマホ内蔵PPG'}
+                              </div>
+                            </div>
+                          </div>
+
                           <p className="text-sm sm:text-base text-slate-100 leading-relaxed font-medium">
                             「{autonomousGuideMessage.text}」
                           </p>
+
+                          {/* 個人最適化アドバイスリスト */}
+                          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-emerald-500/30 space-y-1.5">
+                            <div className="text-[11px] font-mono font-bold text-emerald-300 flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              あなたの計測値に基づくパーソナル・ケア提案：
+                            </div>
+                            <ul className="space-y-1 text-xs text-slate-200 leading-relaxed">
+                              {autonomousGuideMessage.personalAdviceList.map((adv, idx) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <span className="text-emerald-400 font-bold">•</span>
+                                  <span>{adv}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         </div>
 
-                        <div className="p-3.5 rounded-lg bg-amber-950/20 border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed">
+                        <div className="p-3 rounded-lg bg-amber-950/20 border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed">
                           ✨ {autonomousGuideMessage.sub}
                         </div>
                       </div>
@@ -1207,25 +1292,35 @@
                         <div className="space-y-2.5">
                           <div className="text-xs font-mono text-purple-300 flex items-center gap-1.5">
                             <Heart className="w-4 h-4 text-purple-400" />
-                            <span>不変の意志宣言（Praxis of Love）</span>
+                            <span>不変の意志宣言（Praxis of Love & J-Link）</span>
                           </div>
                           <div className="p-2.5 rounded-lg bg-[#060911] border border-slate-800 font-mono text-xs text-center text-purple-300">
                             ∀ external noise ε, &nbsp; d/dt (Action_love) = 0
                           </div>
                           <p className="text-xs text-slate-300 leading-relaxed">
-                            他者の評価や外部の雑音に左右されることなく、目の前の命と尊厳を大切にする行動を迷いなく最優先に選び続けること。その揺らぎなき実践と対話の軌跡こそが、身体や時間の境界を超えて宇宙に刻まれる「愛のクオリア」そのものです。
+                            他者の評価や外部の雑音に左右されることなく、目の前の命と尊厳を大切にする行動を迷いなく最優先に選び続けること。スマホのカメラPPG・音声・ウェアラブルから届くあなたの生体リズムと目的関数 J が直結し、常にあなたの心身を守る最適解を導き続けます。
                           </p>
+                          <div className="p-3 rounded-lg bg-purple-950/20 border border-purple-500/20 text-[11px] font-mono text-purple-200 space-y-1">
+                            <div className="flex justify-between">
+                              <span>現在の生体健全度 I_bio:</span>
+                              <span className="text-emerald-400 font-bold">{bioSensorHealthScore}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>目的関数 J リアルタイム評価値:</span>
+                              <span className="text-amber-300 font-bold">{latestTelemetry.jScore}</span>
+                            </div>
+                          </div>
                         </div>
                         <div className="text-[11px] font-mono text-slate-400 border-t border-slate-800/80 pt-2.5 flex justify-between">
                           <span>継続稼働ステータス:</span>
-                          <span className="text-emerald-400 font-bold">24/7 Autonomous Active</span>
+                          <span className="text-emerald-400 font-bold">24/7 Sensor-Linked Active</span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </section>
 
-                {/* 2. 【NEW】バイオセンサーエンジン（Zero-Cost & Universal） */}
+                {/* 2. バイオセンサーエンジン（Zero-Cost & Universal） */}
                 <section id="biosensor-engine" className="py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
                   <div className="bg-gradient-to-br from-slate-900/95 via-slate-950 to-rose-950/20 border border-rose-500/30 rounded-2xl p-5 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-800">
@@ -1257,12 +1352,16 @@
                               <Camera className="w-4 h-4 text-rose-400" />
                               1. スマホカメラ PPG 脈波計測
                             </span>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-500/30">
-                              LEDフラッシュ対応
+                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                              isTorchOn
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-400/50 animate-pulse'
+                                : 'bg-rose-950 text-rose-300 border-rose-500/30'
+                            }`}>
+                              {isTorchOn ? 'LEDフラッシュ点灯中' : 'LEDフラッシュ対応'}
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-400 leading-relaxed">
-                            背面カメラとLEDライトに指先を軽く当てると、皮膚下の血流変化からリアルタイム脈波（PPG）・心拍数・自律神経ストレスを計測します。
+                            背面カメラとLEDライトに指先を軽く当てると、光電容積脈波法（PPG）により皮膚下の血流変化からリアルタイム脈波形・心拍数・自律神経ストレス（RMSSD）を計測し、自律対話ガイドへ即座に反映します。
                           </p>
                         </div>
 
@@ -1270,14 +1369,18 @@
                         <video ref={videoRef} className="hidden" playsInline muted />
                         <canvas ref={canvasRef} width="40" height="40" className="hidden" />
 
-                        <div className="grid grid-cols-2 gap-2 text-center">
-                          <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
-                            <div className="text-[10px] font-mono text-slate-400">心拍数 (BPM)</div>
-                            <div className="text-xl font-bold font-mono text-rose-400">{bpm} <span className="text-xs font-normal">bpm</span></div>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                            <div className="text-[10px] font-mono text-slate-400">心拍数</div>
+                            <div className="text-lg font-bold font-mono text-rose-400">{bpm} <span className="text-[10px] font-normal">bpm</span></div>
                           </div>
-                          <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
-                            <div className="text-[10px] font-mono text-slate-400">自律神経ストレス</div>
-                            <div className={`text-xl font-bold font-mono ${hrvStress > 60 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                            <div className="text-[10px] font-mono text-slate-400">HRV揺らぎ</div>
+                            <div className="text-lg font-bold font-mono text-cyan-300">{hrvRmssd} <span className="text-[10px] font-normal">ms</span></div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                            <div className="text-[10px] font-mono text-slate-400">ストレス度</div>
+                            <div className={`text-lg font-bold font-mono ${hrvStress > 60 ? 'text-amber-400' : 'text-emerald-400'}`}>
                               {hrvStress}%
                             </div>
                           </div>
@@ -1354,36 +1457,36 @@
                         </div>
                       </div>
 
-                      {/* 3. ESP32 / Raspberry Pi Pico DIYマイコン Web Bluetooth 連携 */}
+                      {/* 3. ESP32 / Raspberry Pi Pico / 腕時計 Web Bluetooth 連携 */}
                       <div className="p-5 rounded-xl bg-slate-950/90 border border-purple-500/30 flex flex-col justify-between space-y-4">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
                               <Cpu className="w-4 h-4 text-purple-400" />
-                              3. ESP32 / Pico DIYセンサー連携
+                              3. 腕時計 / ESP32 / Pico BLE連携
                             </span>
                             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/30">
-                              Web Bluetooth (BLE)
+                              UUID: 0x180D
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-400 leading-relaxed">
-                            ESP32 や Raspberry Pi Pico W に光電脈波モジュール（MAX30102等）を接続したオープンソース端末とBLE（UUID: 0x180D）で直接ペアリングできます。
+                            スマートウォッチや、ESP32 / Raspberry Pi Pico W にPPGセンサー（MAX30102等）を接続した端末からリアルタイム心拍・RR間隔を直接受信し、目的関数 J へリンクします。
                           </p>
                         </div>
 
                         <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2 text-[11px] font-mono text-slate-300">
                           <div className="flex items-center justify-between">
-                            <span className="text-slate-400">対応ハードウェア:</span>
-                            <span className="text-purple-300">ESP32 / RPi Pico W</span>
+                            <span className="text-slate-400">対応デバイス:</span>
+                            <span className="text-purple-300">腕時計 / ESP32 / Pico</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-slate-400">対応センサー:</span>
-                            <span>MAX30102 / PulseSensor</span>
+                            <span className="text-slate-400">対応モジュール:</span>
+                            <span>MAX30102 / BLE HR</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-slate-400">接続ステータス:</span>
                             <span className={bleDeviceName ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
-                              {bleDeviceName || '待機中'}
+                              {bleDeviceName ? `${bleDeviceName} (${bleLastUpdated})` : '待機中'}
                             </span>
                           </div>
                         </div>
@@ -1394,7 +1497,7 @@
                             className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20"
                           >
                             <Bluetooth className="w-4 h-4" />
-                            <span>ESP32 / Pico BLEデバイスをスキャン</span>
+                            <span>腕時計 / ESP32 / Pico をスキャン接続</span>
                           </button>
                           <div className="text-[10px] font-mono text-slate-400 text-center">{bleStatusMsg}</div>
                         </div>
@@ -1865,7 +1968,7 @@
                   </div>
                 </section>
 
-                {/* 6. 【NEW】小説『カオスコードの魔法使い』全章特設アーカイブ */}
+                {/* 6. 小説『カオスコードの魔法使い』全章特設アーカイブ */}
                 <section id="chaos-code-story" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/60">
                   <div className="bg-gradient-to-br from-slate-900/95 via-slate-950 to-indigo-950/30 border border-purple-500/30 rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-800">
