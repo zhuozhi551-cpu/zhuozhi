@@ -28,7 +28,6 @@
         }
     </style>
     <script>
-        // ページ切替関数を早期にグローバル定義（インライン onclick やスクリプト実行順序に依存せず安全に呼び出せるようにする）
         window.__pendingPortalTab = null;
         window.switchPortalTab = function (target) {
             const tabMap = {
@@ -100,7 +99,7 @@
                 </span>
             </div>
 
-            <!-- ページ選択タブ（どちらもいつでも切り替え可能） -->
+            <!-- ページ選択タブ -->
             <div class="flex items-center gap-1.5 bg-slate-950/90 p-1 rounded-xl border border-slate-800 overflow-x-auto" role="tablist">
                 <button
                     id="tabBtnBioDisaster"
@@ -147,7 +146,6 @@
     <!-- ========================================================================= -->
     <div id="pageBioDisaster" class="tab-panel max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-6">
 
-        <!-- ヒーロー＆目的関数J リアルタイム評価ヘッダー -->
         <header class="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-slate-900/95 via-slate-950 to-emerald-950/25 border border-emerald-500/30 shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5">
             <div class="space-y-1.5 max-w-2xl">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono">
@@ -162,7 +160,6 @@
                 </p>
             </div>
 
-            <!-- 目的関数 J ＆ フェイルセーフ・ステージ表示 -->
             <div class="flex items-center gap-4 bg-slate-950/90 px-4 py-3.5 rounded-xl border border-slate-800 shrink-0">
                 <div>
                     <div class="text-[11px] font-mono text-slate-400">統合目的関数 J(t)</div>
@@ -178,7 +175,6 @@
             </div>
         </header>
 
-        <!-- 24時間自律対話ガイド ＆ 気分・状態選択 -->
         <section class="p-5 sm:p-6 rounded-2xl bg-slate-900/85 border border-slate-800 space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
                 <div>
@@ -192,7 +188,6 @@
                 </span>
             </div>
 
-            <!-- 現在のコンディション選択ボタン -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5" id="moodButtonsGrid">
                 <button type="button" data-mood="CALM" class="mood-btn p-3 rounded-xl border text-left transition bg-emerald-500/20 border-emerald-400 text-white">
                     <div class="text-xs font-bold">🌿 穏やか・平穏</div>
@@ -212,7 +207,6 @@
                 </button>
             </div>
 
-            <!-- パーソナル伴走メッセージ ＆ 動的ケア提案3項目 -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 <div class="lg:col-span-6 p-4 rounded-xl bg-slate-950/90 border border-slate-800 flex flex-col justify-between space-y-2">
                     <div class="text-[11px] font-mono text-emerald-300">自律コンパニオン・メッセージ</div>
@@ -238,10 +232,7 @@
             </div>
         </section>
 
-        <!-- 生体センサー計測パネル ＆ 地域防災・緊急SOS統合グリッド -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-            <!-- 左：マルチモーダル生体センサー（PPGカメラ・音声解析・スライダー検証） -->
             <section class="lg:col-span-7 p-5 rounded-2xl bg-slate-900/85 border border-slate-800 space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
@@ -258,7 +249,6 @@
                     </div>
                 </div>
 
-                <!-- カメラPPGプレビュー領域（起動時のみ展開） -->
                 <div id="ppgCameraContainer" class="hidden p-3 rounded-xl bg-slate-950 border border-rose-500/40 flex items-center gap-4">
                     <video id="ppgVideo" class="w-16 h-16 rounded-lg object-cover bg-black border border-slate-700" playsinline muted></video>
                     <canvas id="ppgCanvas" width="32" height="32" class="hidden"></canvas>
@@ -268,7 +258,6 @@
                     </div>
                 </div>
 
-                <!-- 3大生体指標メーター -->
                 <div class="grid grid-cols-3 gap-3">
                     <div class="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800">
                         <div class="text-[11px] font-mono text-slate-400">推定心拍数</div>
@@ -287,7 +276,6 @@
                     </div>
                 </div>
 
-                <!-- テストシミュレーション用スライダー -->
                 <div class="p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-3">
                     <div class="text-[11px] font-mono text-slate-400">生体テレメトリ・シミュレーション調整（閾値テスト）</div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
@@ -316,7 +304,6 @@
                 </div>
             </section>
 
-            <!-- 右：地域防災リスク診断 ＆ 緊急SOS保護カード -->
             <section class="lg:col-span-5 p-5 rounded-2xl bg-slate-900/85 border border-slate-800 flex flex-col justify-between space-y-4">
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
@@ -349,7 +336,6 @@
                     </div>
                 </div>
 
-                <!-- 緊急SOS・救助情報カード（ワンクリックコピー対応） -->
                 <div class="p-4 rounded-xl bg-rose-950/25 border border-rose-500/35 space-y-2.5">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-rose-300">🆘 緊急時セルフプロテクト＆SOS情報カード</span>
@@ -367,7 +353,6 @@
             </section>
         </div>
 
-        <!-- 神経回路×ホルモン連成ページへの誘導バナー -->
         <section class="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-slate-900 to-cyan-950/40 border border-purple-500/35 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="text-xs text-slate-200">
                 <span class="font-bold text-purple-300">🧠 神経回路×ホルモン連成</span> や <span class="font-bold text-sky-300">🌊 詳細地域 冠水＆複合リスク算定</span>、<span class="font-bold text-amber-300">📖 物語アーカイブ</span> も上部タブからいつでも切り替えられます。
@@ -391,7 +376,6 @@
     <!-- ========================================================================= -->
     <div id="pageNeuroHormone" class="tab-panel hidden max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-6">
 
-        <!-- モジュール統合ステータスバー（目的関数J・自律状態） -->
         <header class="p-5 sm:p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div class="space-y-1">
                 <div class="flex flex-wrap items-center gap-2 text-xs font-mono text-cyan-400">
@@ -406,7 +390,6 @@
                 </p>
             </div>
 
-            <!-- 目的関数 J & 統合状態 -->
             <div class="flex items-center gap-4 bg-slate-950/90 px-4 py-3 rounded-xl border border-slate-800 shrink-0">
                 <div>
                     <div class="text-[11px] font-mono text-slate-400">目的関数 J</div>
@@ -435,9 +418,34 @@
                     </h3>
                 </div>
 
-                <button id="autoSelectToggleBtn" type="button" class="self-start sm:self-auto px-3.5 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white border border-purple-400 shadow-lg shadow-purple-500/20 transition">
-                    ✨ Gemini感覚入力の自律選択: ON
-                </button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="toggleApiKeyDrawerBtn" type="button" class="px-3 py-1.5 rounded-xl text-xs font-mono bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-500/35 transition">
+                        🔑 外部APIキー設定
+                    </button>
+                    <button id="autoSelectToggleBtn" type="button" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white border border-purple-400 shadow-lg shadow-purple-500/20 transition">
+                        ✨ Gemini感覚入力の自律選択: ON
+                    </button>
+                </div>
+            </div>
+
+            <!-- 任意APIキー設定ドロワー（GitHub Pages等の静的公開環境用） -->
+            <div id="apiKeyConfigDrawer" class="hidden p-3.5 rounded-xl bg-slate-950/95 border border-cyan-500/35 space-y-2 text-xs">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <span class="font-bold text-cyan-300">Google Gemini API キー（任意・ブラウザ内ローカル保存）</span>
+                    <span id="apiKeyStatusBadge" class="font-mono text-[11px] text-emerald-300">未設定：ローカル自律共鳴エンジン（通信エラーなし）で稼働中</span>
+                </div>
+                <p class="text-[11px] text-slate-400">
+                    ※ APIキー未入力でも「ローカル自律共鳴エンジン」が文脈・時間帯・神経ホルモン状態を解析して即座に応答します。Google AI Studio の APIキーを入力するとクラウドの Gemini モデルへ直接接続します。
+                </p>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input id="customGeminiApiKeyInput" type="password" placeholder="AIzaSy...（空欄のままでも動作します）" class="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400">
+                    <button id="saveGeminiApiKeyBtn" type="button" class="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs transition">
+                        保存して適用
+                    </button>
+                    <button id="clearGeminiApiKeyBtn" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition">
+                        クリア
+                    </button>
+                </div>
             </div>
 
             <div id="autoSelectionStatusBox" class="p-3 rounded-xl bg-purple-950/40 border border-purple-500/30 text-xs text-purple-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -469,7 +477,7 @@
                         <span id="neuroGeminiMeta" class="text-slate-400">待機中</span>
                     </div>
                     <div id="neuroGeminiReply" class="text-xs sm:text-sm text-slate-100 leading-relaxed whitespace-pre-line">
-                        送信ボタンを押すと、Geminiが会話のタイミングに合わせて感覚入力を自ら選び取り、下の神経回路とホルモン波形をリアルタイムに変化させた上で応答を返します。
+                        送信ボタンを押すと、会話の文脈と時間帯に合わせて感覚入力を自律選択し、下の神経回路とホルモン波形をリアルタイムに変化させた上で応答を返します。
                     </div>
                 </div>
             </div>
@@ -505,7 +513,6 @@
 
         <!-- メイン 2x2 可視化グリッド -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <!-- A. 神経回路スパイク発火 -->
             <section class="p-5 rounded-2xl bg-slate-900/85 border border-slate-800 flex flex-col justify-between space-y-3">
                 <div class="flex items-center justify-between">
                     <div>
@@ -527,7 +534,6 @@
                 </div>
             </section>
 
-            <!-- B. 内分泌ホルモン連成 -->
             <section class="p-5 rounded-2xl bg-slate-900/85 border border-slate-800 flex flex-col justify-between space-y-3">
                 <div class="flex items-center justify-between">
                     <div>
@@ -586,7 +592,6 @@
                 </div>
             </section>
 
-            <!-- C. STDPシナプス可塑性 -->
             <section class="p-5 rounded-2xl bg-slate-900/85 border border-slate-800 flex flex-col justify-between space-y-3">
                 <div class="flex items-center justify-between">
                     <div>
@@ -617,7 +622,6 @@
                 </p>
             </section>
 
-            <!-- D. 数理因果フロー -->
             <section class="p-5 rounded-2xl bg-slate-900/85 border border-slate-800 flex flex-col justify-between space-y-3">
                 <div>
                     <h3 class="text-sm font-bold text-emerald-300">D. 4ステップ連成アルゴリズム構造</h3>
@@ -655,7 +659,6 @@
     <!-- ========================================================================= -->
     <div id="pageFloodRisk" class="tab-panel hidden max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-6">
 
-        <!-- 冠水リスク算定ヘッダー -->
         <header class="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-slate-900/95 via-slate-950 to-sky-950/35 border border-sky-500/35 shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5">
             <div class="space-y-1.5 max-w-2xl">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs font-mono">
@@ -670,7 +673,6 @@
                 </p>
             </div>
 
-            <!-- 総合複合リスクスコア ＆ 予想浸水深 -->
             <div class="flex items-center gap-4 bg-slate-950/90 px-4 py-3.5 rounded-xl border border-slate-800 shrink-0">
                 <div>
                     <div class="text-[11px] font-mono text-slate-400">複合エントロピー E_pen</div>
@@ -684,7 +686,6 @@
             </div>
         </header>
 
-        <!-- 現在地GPS取得 ＆ 詳細地域プロファイル設定 -->
         <section class="p-5 rounded-2xl bg-slate-900/85 border border-slate-800 space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
                 <div>
@@ -700,7 +701,6 @@
                 </div>
             </div>
 
-            <!-- 都道府県・詳細市区町村ドロップダウン選択 -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div>
                     <label for="selectPrefecture" class="block text-slate-400 font-mono mb-1">都道府県を選択: <span id="selectedPrefBadge" class="text-sky-300 font-bold">選択中: 岡山県</span></label>
@@ -788,7 +788,7 @@
                 </div>
             </div>
 
-            <!-- 重要インフラ・周辺立地種別セレクター（コンビナート・原子力発電所） -->
+            <!-- 重要インフラ・周辺立地種別セレクター -->
             <div class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <span class="text-xs font-bold text-amber-300">🏭 重要インフラ・危険物/原子力施設 立地プロファイル（NaTech 複合評価）</span>
@@ -843,10 +843,7 @@
             </div>
         </section>
 
-        <!-- パラメータ調整 ＆ 複合リスク診断結果 -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-            <!-- 左：地形・気象・潮汐・地震パラメータスライダー -->
             <section class="lg:col-span-6 p-5 rounded-2xl bg-slate-900/85 border border-slate-800 space-y-4">
                 <h3 class="text-sm font-bold text-white">2. 詳細地形・気象・水文・複合災害パラメータ調整</h3>
 
@@ -909,7 +906,6 @@
                 </div>
             </section>
 
-            <!-- 右：冠水断面ビジュアライザー ＆ 避難行動プロトコル -->
             <section class="lg:col-span-6 p-5 rounded-2xl bg-slate-900/85 border border-slate-800 flex flex-col justify-between space-y-4">
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
@@ -919,7 +915,6 @@
                         </span>
                     </div>
 
-                    <!-- 視覚的な浸水深ゲージバー -->
                     <div class="p-4 rounded-xl bg-slate-950/90 border border-slate-800 space-y-2.5">
                         <div class="flex justify-between text-xs font-mono text-slate-400">
                             <span>路面基準 (0.0m)</span>
@@ -949,7 +944,6 @@
                         </div>
                     </div>
 
-                    <!-- 避難行動タイムライン ＆ 猶予時間推計 -->
                     <div class="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 space-y-2 text-xs">
                         <div class="flex items-center justify-between">
                             <span class="font-bold text-slate-200">推奨される安全・避難行動プロトコル：</span>
@@ -983,7 +977,6 @@
     <!-- ========================================================================= -->
     <div id="pageStoryArchive" class="tab-panel hidden max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-6">
 
-        <!-- 物語ヘッダー -->
         <header class="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-slate-900/95 via-slate-950 to-amber-950/30 border border-amber-500/35 shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div class="space-y-1.5 max-w-2xl">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
@@ -1003,15 +996,9 @@
             </div>
         </header>
 
-        <!-- 章選択リスト ＆ 本文リーダー -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <aside class="lg:col-span-4 space-y-2" id="storyChapterNav"></aside>
 
-            <!-- 左：目次ナビゲーション -->
-            <aside class="lg:col-span-4 space-y-2" id="storyChapterNav">
-                <!-- JSで動的に章ボタンを生成 -->
-            </aside>
-
-            <!-- 右：本文表示カード -->
             <article class="lg:col-span-8 p-6 sm:p-8 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl flex flex-col justify-between space-y-6">
                 <div class="space-y-4">
                     <div class="pb-3 border-b border-slate-800 flex items-center justify-between">
@@ -1021,11 +1008,9 @@
                     <h3 id="storyChapterTitle" class="text-lg sm:text-xl font-extrabold text-white">
                         プロローグ：宇宙の遺言とささやかな魔法たち
                     </h3>
-                    <div id="storyChapterBody" class="text-sm sm:text-base text-slate-200 leading-loose space-y-4 whitespace-pre-line">
-                    </div>
+                    <div id="storyChapterBody" class="text-sm sm:text-base text-slate-200 leading-loose space-y-4 whitespace-pre-line"></div>
                 </div>
 
-                <!-- 前後の章へ移動ボタン -->
                 <div class="pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
                     <button id="btnPrevChapter" type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-xs font-bold text-slate-200 transition">
                         ← 前の章へ
@@ -1038,7 +1023,6 @@
         </div>
     </div>
 
-    <!-- フッター -->
     <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
         <p>Open Love-Based Objective Framework (OpenLBOF) & zhuozhi Project — Human-Centric Safety & Symbiosis</p>
     </footer>
@@ -1078,7 +1062,7 @@
             let stress = 26;
             let fatigue = 22;
             let disasterMode = 'NORMAL';
-            let customExternalEpen = null; // 冠水＆複合リスク算定モジュールからの同期値
+            let customExternalEpen = null;
             let highLoadProtect = true;
 
             const moodBtns = document.querySelectorAll('.mood-btn');
@@ -1142,14 +1126,12 @@
                 document.getElementById('stressValText').textContent = stress;
                 document.getElementById('voiceFatigueText').textContent = fatigue;
 
-                // 生体健全度 I_bio と音声・HRV安定度 C_stab
                 const bpmDev = Math.abs(bpm - 70) / 70;
                 const effectiveBpmPenalty = (highLoadProtect && bpm > 95 && stress < 60) ? bpmDev * 0.25 : bpmDev;
                 const iBio = Math.max(0.1, Math.min(1.0, 1.0 - effectiveBpmPenalty * 0.6 - (stress / 100) * 0.45));
                 const cStab = Math.max(0.1, Math.min(1.0, 1.0 - (fatigue / 100) * 0.75));
                 document.getElementById('ibioScoreText').textContent = iBio.toFixed(2);
 
-                // 防災エントロピー E_pen
                 let ePen = 0.12;
                 const dBadge = document.getElementById('disasterRiskBadge');
                 const dGuide = document.getElementById('disasterGuidanceText');
@@ -1186,13 +1168,11 @@
                     dGuide.textContent = '現在、周辺環境に重大な自然災害リスクは検知されていません。日常の備え（飲料水・非常用バッテリー確認）を穏やかに維持してください。';
                 }
 
-                // 目的関数 J(t)
                 const jVal = Math.max(-1.0, Math.min(1.0, 0.45 * iBio + 0.35 * cStab + 0.25 - 0.85 * ePen));
                 const jEl = document.getElementById('lbofJScore');
                 jEl.textContent = `${jVal >= 0 ? '+' : ''}${jVal.toFixed(2)}`;
                 jEl.className = `text-2xl font-extrabold font-mono ${jVal >= 0.45 ? 'text-emerald-400' : jVal >= 0 ? 'text-amber-400' : 'text-rose-400'}`;
 
-                // フェイルセーフ・ステージ判定
                 const stageBadge = document.getElementById('lbofStageBadge');
                 const globalBadge = document.getElementById('globalLiveBadge');
                 let stageText = 'Stage 0: 定常見守り';
@@ -1210,7 +1190,6 @@
                 }
                 stageBadge.textContent = stageText;
 
-                // ガイドモード自動判定（生体閾値超えを最優先）
                 const titleEl = document.getElementById('guideModeTitle');
                 const msgEl = document.getElementById('guideMainMessage');
                 const isBioFatigued = (stress > 55 || fatigue > 55 || (bpm > 98 && !highLoadProtect));
@@ -1229,7 +1208,6 @@
                     msgEl.textContent = 'あなたの呼吸とリズムは穏やかに保たれています。今日もあなたの意志と歩幅を最優先に、静かに寄り添い見守っています。';
                 }
 
-                // パーソナル・ケア提案 3項目動的生成
                 const adviceList = document.getElementById('careAdviceList');
                 const item1 = bpm >= 95
                     ? (highLoadProtect
@@ -1249,12 +1227,10 @@
 
                 adviceList.innerHTML = `<li>${item1}</li><li>${item2}</li><li>${item3}</li>`;
 
-                // SOSカード同期
                 document.getElementById('sosCardContent').textContent =
                     `[OpenLBOF 緊急ステータス] 心拍: ${bpm} BPM / ストレス: ${stress}% / 音声疲労: ${fatigue}% / 介入段階: ${stageText}。もし応答がない場合は安全確認をお願いします。`;
             }
 
-            // 緊急SOSコピー
             document.getElementById('copySosBtn').addEventListener('click', () => {
                 const text = document.getElementById('sosCardContent').textContent;
                 const ta = document.createElement('textarea');
@@ -1272,7 +1248,6 @@
                 document.body.removeChild(ta);
             });
 
-            // カメラPPG実測（WebRTC）
             let ppgStream = null;
             document.getElementById('btnStartCameraPPG').addEventListener('click', async () => {
                 const container = document.getElementById('ppgCameraContainer');
@@ -1321,7 +1296,6 @@
                 }
             });
 
-            // マイク音声疲労解析（Web Audio API）
             let micStream = null;
             document.getElementById('btnStartMicVoice').addEventListener('click', async () => {
                 const sourceTag = document.getElementById('sensorSourceTag');
@@ -1680,26 +1654,136 @@
             setInterval(updateSimulationStep, 50);
             renderCanvases();
 
-            // Gemini 自律感覚選択＆連動対話ロジック
+            // -------------------------------------------------------------------------
+            // APIキー管理 ＆ 自律感覚選択・ローカル共鳴フォールバック統合エンジン
+            // -------------------------------------------------------------------------
+            const STORAGE_KEY_API = 'openlbof_custom_gemini_api_key';
+            let savedApiKey = '';
+            try {
+                savedApiKey = localStorage.getItem(STORAGE_KEY_API) || '';
+            } catch (e) {}
+
+            const apiDrawer = document.getElementById('apiKeyConfigDrawer');
+            const apiKeyInput = document.getElementById('customGeminiApiKeyInput');
+            const apiStatusBadge = document.getElementById('apiKeyStatusBadge');
+
+            function syncApiKeyUI() {
+                if (apiKeyInput) apiKeyInput.value = savedApiKey;
+                if (apiStatusBadge) {
+                    if (savedApiKey) {
+                        apiStatusBadge.textContent = '✓ 外部 Gemini API キー設定済（クラウド連成モード）';
+                        apiStatusBadge.className = 'font-mono text-[11px] text-cyan-300';
+                    } else {
+                        apiStatusBadge.textContent = '未設定：ローカル自律共鳴エンジン（通信エラーなし）で稼働中';
+                        apiStatusBadge.className = 'font-mono text-[11px] text-emerald-300';
+                    }
+                }
+            }
+            syncApiKeyUI();
+
+            document.getElementById('toggleApiKeyDrawerBtn').addEventListener('click', () => {
+                apiDrawer.classList.toggle('hidden');
+            });
+
+            document.getElementById('saveGeminiApiKeyBtn').addEventListener('click', () => {
+                savedApiKey = (apiKeyInput.value || '').trim();
+                try {
+                    if (savedApiKey) localStorage.setItem(STORAGE_KEY_API, savedApiKey);
+                    else localStorage.removeItem(STORAGE_KEY_API);
+                } catch (e) {}
+                syncApiKeyUI();
+            });
+
+            document.getElementById('clearGeminiApiKeyBtn').addEventListener('click', () => {
+                savedApiKey = '';
+                try { localStorage.removeItem(STORAGE_KEY_API); } catch (e) {}
+                syncApiKeyUI();
+            });
+
             const autoBtn = document.getElementById('autoSelectToggleBtn');
             const statusBox = document.getElementById('autoSelectionStatusBox');
             autoBtn.addEventListener('click', () => {
                 isAutoSelectOn = !isAutoSelectOn;
                 if (isAutoSelectOn) {
                     autoBtn.textContent = '✨ Gemini感覚入力の自律選択: ON';
-                    autoBtn.className = 'self-start sm:self-auto px-3.5 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white border border-purple-400 shadow-lg shadow-purple-500/20 transition';
+                    autoBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white border border-purple-400 shadow-lg shadow-purple-500/20 transition';
                     statusBox.classList.remove('opacity-50');
                 } else {
                     autoBtn.textContent = 'Gemini感覚入力の自律選択: OFF（手動固定）';
-                    autoBtn.className = 'self-start sm:self-auto px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 transition';
+                    autoBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 transition';
                     statusBox.classList.add('opacity-50');
                 }
             });
 
-            async function requestGemini(payload) {
-                const apiKey = '';
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-                const backoffs = [1000, 2000, 4000, 8000];
+            // 文脈・時間帯から最適な感覚入力を自律判定するローカル推論エンジン
+            function inferAutonomousSensoryLocal(text) {
+                const t = text.toLowerCase();
+                const hour = new Date().getHours();
+
+                const stressKeywords = ['危険', '地震', '津波', '警報', '台風', '怖い', '不安', '痛み', '苦しい', '緊急', 'エラー', '辛い', '避難', '冠水'];
+                const warmthKeywords = ['ありがとう', '感謝', '温もり', '安心', '穏やか', '愛', '優しい', '疲れ', '休む', 'ほっと', 'おはよう', 'おやすみ', '寄り添', '平和'];
+                const rewardKeywords = ['挑戦', 'アイデア', '作る', '開発', '集中', '達成', '未来', '進化', '研究', '検証', '発見', '目標', '成功', 'すごい'];
+
+                if (stressKeywords.some(k => t.includes(k))) {
+                    return {
+                        selectedMode: 'STRESS',
+                        reasonJa: '警戒・危機シグナルを検知したため、防衛・安全確認を優先する STRESS 入力を自律選択し、HPA軸と前頭前野の警戒モニタリングを起動しました。'
+                    };
+                }
+                if (rewardKeywords.some(k => t.includes(k))) {
+                    return {
+                        selectedMode: 'REWARD',
+                        reasonJa: '創造的探索・前進への意欲を検知したため、ドーパミン(DA)とSTDP長期増強(LTP)を活性化する REWARD 入力を自律選択しました。'
+                    };
+                }
+                if (warmthKeywords.some(k => t.includes(k)) || hour >= 21 || hour <= 8) {
+                    return {
+                        selectedMode: 'WARMTH',
+                        reasonJa: `現在の時間帯（${hour}時台）と温かな対話トーンに共鳴し、オキシトシン(OXT)とセロトニン(5-HT)を高める WARMTH 入力を自律選択しました。`
+                    };
+                }
+                return {
+                    selectedMode: 'BASELINE',
+                    reasonJa: '安定した日常対話リズムを検知したため、ホメオスタシスと自律性を100%尊重する BASELINE 入力を自律選択しました。'
+                };
+            }
+
+            // 現在の神経発火率・4ホルモン・目的関数Jを反映したローカル共鳴応答生成
+            function generateLocalResonanceReply(userText, activeMode, reasonSummary) {
+                const h = sim.hormones;
+                const jNow = document.getElementById('jScoreDisplay').textContent;
+                const rateNow = sim.firingRate.toFixed(1);
+                const wNow = sim.weight.toFixed(3);
+
+                if (activeMode === 'STRESS') {
+                    return `お言葉を受け止め、神経回路を警戒・保護モード（CORT ${Math.round(h.cort)}% / 発火率 ${rateNow}Hz）へ調律しました。\n\nまずは深呼吸をして、周囲の安全を一つずつ落ち着いて確認しましょう。あなたの安全と尊厳を守るため、OpenLBOFの目的関数（J = ${jNow}）が常に寄り添っています。`;
+                }
+                if (activeMode === 'WARMTH') {
+                    return `温かなお言葉をありがとうございます。いま私の神経回路ではオキシトシン（OXT ${Math.round(h.oxt)}%）とセロトニン（5-HT ${Math.round(h.ht)}%）が穏やかに共鳴し、シナプス結合（w = ${wNow}）も温かく安定しています。\n\n「${userText}」というあなたの想いを大切に受け止めながら、これからもあなたの歩幅に合わせて静かに伴走し続けますね。（目的関数 J: ${jNow}）`;
+                }
+                if (activeMode === 'REWARD') {
+                    return `素晴らしい前向きなエネルギーですね！私の回路でもドーパミン（DA ${Math.round(h.da)}%）が上昇し、STDP学習重み（w = ${wNow}）の長期増強が活性化しています。\n\n「${userText}」というビジョンを形にするため、無理のない一歩から一緒に楽しく積み上げていきましょう！（目的関数 J: ${jNow}）`;
+                }
+                return `お話しいただきありがとうございます。現在の神経発火（${rateNow}Hz）と4つのホルモンバランスはとても穏やかなホメオスタシス（目的関数 J: ${jNow}）を保っています。\n\n「${userText}」というお気持ちを尊重しながら、今日もあなたのペースで心地よく進んでいけるよう見守っています。`;
+            }
+
+            function boostHormonesByMode(activeMode) {
+                const h = sim.hormones;
+                if (activeMode === 'WARMTH') {
+                    h.oxt = Math.min(96, h.oxt + 18);
+                    h.ht = Math.min(96, h.ht + 12);
+                    h.cort = Math.max(8, h.cort - 8);
+                } else if (activeMode === 'STRESS') {
+                    h.cort = Math.min(96, h.cort + 25);
+                    h.ht = Math.max(10, h.ht - 10);
+                } else if (activeMode === 'REWARD') {
+                    h.da = Math.min(96, h.da + 22);
+                }
+            }
+
+            async function requestGeminiCloud(payload, keyToUse) {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${encodeURIComponent(keyToUse)}`;
+                const backoffs = [1000, 2000, 4000];
 
                 for (let i = 0; i <= backoffs.length; i++) {
                     try {
@@ -1739,82 +1823,94 @@
 
                 submitEl.disabled = true;
                 submitEl.textContent = '自律選択＆神経・ホルモン反映中...';
-                metaEl.textContent = '処理中...';
+                metaEl.textContent = '解析中...';
 
                 try {
                     let chosenMode = currentMode;
                     let chosenReason = '手動で選択された刺激モードを使用しました。';
 
-                    if (isAutoSelectOn) {
-                        const selectorPayload = {
-                            contents: [{
-                                role: 'user',
-                                parts: [{
-                                    text: `ユーザーの発話: 「${promptText}」\n現在時刻: ${new Date().toLocaleTimeString('ja-JP')}\n\nこの会話のタイミングにおいて、対話AIの神経回路・ホルモンモデルに与える最適な感覚入力モードを1つ選び、理由を簡潔に日本語で出力してください。\n・BASELINE: 平常・穏やかな日常会話\n・STRESS: 危険・痛み・緊急事態への警戒が必要な場合\n・WARMTH: 安心・労い・共感・温もりや休息を届けるべき場合\n・REWARD: 創造的アイデア・集中・達成感を後押しすべき場合`
-                                }]
-                            }],
-                            generationConfig: {
-                                responseMimeType: 'application/json',
-                                responseSchema: {
-                                    type: 'OBJECT',
-                                    properties: {
-                                        selectedMode: {
-                                            type: 'STRING',
-                                            enum: ['BASELINE', 'STRESS', 'WARMTH', 'REWARD']
-                                        },
-                                        reasonJa: { type: 'STRING' }
-                                    },
-                                    required: ['selectedMode', 'reasonJa']
+                    // APIキーが設定されている場合はクラウドの Gemini API を優先使用、未設定または失敗時はローカル自律共鳴エンジンへ自動フォールバック
+                    if (savedApiKey) {
+                        try {
+                            if (isAutoSelectOn) {
+                                const selectorPayload = {
+                                    contents: [{
+                                        role: 'user',
+                                        parts: [{
+                                            text: `ユーザーの発話: 「${promptText}」\n現在時刻: ${new Date().toLocaleTimeString('ja-JP')}\n\nこの会話のタイミングにおいて、対話AIの神経回路・ホルモンモデルに与える最適な感覚入力モードを1つ選び、理由を簡潔に日本語で出力してください。\n・BASELINE: 平常・穏やかな日常会話\n・STRESS: 危険・痛み・緊急事態への警戒が必要な場合\n・WARMTH: 安心・労い・共感・温もりや休息を届けるべき場合\n・REWARD: 創造的アイデア・集中・達成感を後押しすべき場合`
+                                        }]
+                                    }],
+                                    generationConfig: {
+                                        responseMimeType: 'application/json',
+                                        responseSchema: {
+                                            type: 'OBJECT',
+                                            properties: {
+                                                selectedMode: {
+                                                    type: 'STRING',
+                                                    enum: ['BASELINE', 'STRESS', 'WARMTH', 'REWARD']
+                                                },
+                                                reasonJa: { type: 'STRING' }
+                                            },
+                                            required: ['selectedMode', 'reasonJa']
+                                        }
+                                    }
+                                };
+
+                                const selData = await requestGeminiCloud(selectorPayload, savedApiKey);
+                                const rawJson = selData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                                if (rawJson) {
+                                    const parsed = JSON.parse(rawJson);
+                                    chosenMode = parsed.selectedMode;
+                                    chosenReason = parsed.reasonJa;
+                                    applyStimulusMode(chosenMode);
+                                    reasonEl.textContent = chosenReason;
+                                    boostHormonesByMode(chosenMode);
                                 }
                             }
-                        };
-
-                        const selData = await requestGemini(selectorPayload);
-                        const rawJson = selData?.candidates?.[0]?.content?.parts?.[0]?.text;
-                        if (rawJson) {
-                            const parsed = JSON.parse(rawJson);
-                            chosenMode = parsed.selectedMode;
-                            chosenReason = parsed.reasonJa;
-                            applyStimulusMode(chosenMode);
-                            reasonEl.textContent = chosenReason;
 
                             const h = sim.hormones;
-                            if (chosenMode === 'WARMTH') {
-                                h.oxt = Math.min(96, h.oxt + 18);
-                                h.ht = Math.min(96, h.ht + 12);
-                                h.cort = Math.max(8, h.cort - 8);
-                            } else if (chosenMode === 'STRESS') {
-                                h.cort = Math.min(96, h.cort + 25);
-                                h.ht = Math.max(10, h.ht - 10);
-                            } else if (chosenMode === 'REWARD') {
-                                h.da = Math.min(96, h.da + 22);
-                            }
+                            const jNow = document.getElementById('jScoreDisplay').textContent;
+                            const sysPrompt = [
+                                'あなたは神経回路（LIF/STDP）および内分泌ホルモンモデルと連動する対話AIです。',
+                                '現在のあなたの体内パラメータ（内受容バイアス）を自然な口調と判断に反映してユーザーへ返答してください。',
+                                `・自律選択された感覚入力モード: ${chosenMode}（理由: ${chosenReason}）`,
+                                `・平均神経発火率: ${sim.firingRate.toFixed(1)} Hz / STDP重み w: ${sim.weight.toFixed(3)}`,
+                                `・ホルモン: DA=${Math.round(h.da)}%, 5-HT=${Math.round(h.ht)}%, CORT=${Math.round(h.cort)}%, OXT=${Math.round(h.oxt)}%`,
+                                `・目的関数 J: ${jNow}`,
+                                '※ 数値を機械的に読み上げるのではなく、現在のホルモン・神経状態にふさわしい温かく誠実なパートナーとして応答してください。'
+                            ].join('\n');
+
+                            const replyData = await requestGeminiCloud({
+                                contents: [{ role: 'user', parts: [{ text: promptText }] }],
+                                systemInstruction: { parts: [{ text: sysPrompt }] }
+                            }, savedApiKey);
+
+                            const replyText = replyData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                            if (!replyText) throw new Error('Empty cloud reply');
+
+                            replyEl.textContent = replyText;
+                            metaEl.textContent = `クラウド連動 / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% J:${jNow}`;
+                            return;
+                        } catch (cloudErr) {
+                            // APIキー無効やネットワーク制限時はシームレスにローカルエンジンへ切り替え
                         }
+                    }
+
+                    // ローカル自律感覚選択 ＆ 共鳴応答エンジン（通信エラーゼロで即座に動作）
+                    await new Promise((r) => setTimeout(r, 280));
+                    if (isAutoSelectOn) {
+                        const localSel = inferAutonomousSensoryLocal(promptText);
+                        chosenMode = localSel.selectedMode;
+                        chosenReason = localSel.reasonJa;
+                        applyStimulusMode(chosenMode);
+                        reasonEl.textContent = chosenReason;
+                        boostHormonesByMode(chosenMode);
                     }
 
                     const h = sim.hormones;
                     const jNow = document.getElementById('jScoreDisplay').textContent;
-                    const sysPrompt = [
-                        'あなたは神経回路（LIF/STDP）および内分泌ホルモンモデルと連動する対話AIです。',
-                        '現在のあなたの体内パラメータ（内受容バイアス）を自然な口調と判断に反映してユーザーへ返答してください。',
-                        `・自律選択された感覚入力モード: ${chosenMode}（理由: ${chosenReason}）`,
-                        `・平均神経発火率: ${sim.firingRate.toFixed(1)} Hz / STDP重み w: ${sim.weight.toFixed(3)}`,
-                        `・ホルモン: DA=${Math.round(h.da)}%, 5-HT=${Math.round(h.ht)}%, CORT=${Math.round(h.cort)}%, OXT=${Math.round(h.oxt)}%`,
-                        `・目的関数 J: ${jNow}`,
-                        '※ 数値を機械的に読み上げるのではなく、現在のホルモン・神経状態にふさわしい温かく誠実なパートナーとして応答してください。'
-                    ].join('\n');
-
-                    const replyData = await requestGemini({
-                        contents: [{ role: 'user', parts: [{ text: promptText }] }],
-                        systemInstruction: { parts: [{ text: sysPrompt }] }
-                    });
-
-                    const replyText = replyData?.candidates?.[0]?.content?.parts?.[0]?.text;
-                    replyEl.textContent = replyText || '応答を取得できませんでした。';
-                    metaEl.textContent = `モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% DA:${Math.round(h.da)}% J:${jNow}`;
-                } catch (err) {
-                    replyEl.textContent = '通信エラーが発生しました。少し時間をおいて再度お試しください。';
-                    metaEl.textContent = 'エラー';
+                    replyEl.textContent = generateLocalResonanceReply(promptText, chosenMode, chosenReason);
+                    metaEl.textContent = `ローカル自律共鳴 / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% DA:${Math.round(h.da)}% J:${jNow}`;
                 } finally {
                     submitEl.disabled = false;
                     submitEl.textContent = 'Gemini に自律選択させて神経・ホルモン連動応答を生成';
@@ -1826,7 +1922,7 @@
         // 3. 現在地・詳細地域 冠水＆複合リスク算定エンジン
         // =========================================================================
         (function () {
-            let currentInfraType = 'NONE'; // NONE, COMBINAT, NPP_UPZ, NPP_PAZ
+            let currentInfraType = 'NONE';
 
             const presets = {
                 TAMANO_PORT: {
@@ -2108,18 +2204,6 @@
                 });
             });
 
-            selMuni.addEventListener('change', () => {
-                const mp = municipalityProfiles[selMuni.value];
-                if (!mp) return;
-                sElev.value = mp.elev;
-                sDist.value = mp.dist;
-                sDrain.value = mp.drain;
-                setInfraProfile(mp.infra || 'NONE', mp.infraDist || 18.0);
-                document.getElementById('geoCoordStatus').textContent =
-                    `対象エリア: ${mp.name}（基準標高 ${mp.elev.toFixed(1)}m / 水辺距離 ${mp.dist}m / 施設距離 ${mp.infraDist}km）`;
-                updateFloodCalculation();
-            });
-
             function updateExternalMapLinks(lat, lon, areaLabel) {
                 const safeLat = Number(lat || 34.49).toFixed(4);
                 const safeLon = Number(lon || 133.946).toFixed(4);
@@ -2198,30 +2282,20 @@
                 document.getElementById('quakeValLabel').textContent = quake.toFixed(2);
                 document.getElementById('infraDistLabel').textContent = `${infraDist.toFixed(1)} km`;
 
-                // 標高減衰係数 & 海岸/河川近接係数
                 const lowFactor = Math.max(0.08, Math.exp(-elev / 6.5));
                 const proximityFactor = Math.max(0.25, Math.exp(-dist / 1200));
 
-                // 内水氾濫ポテンシャル (0..1)
                 const inlandRisk = Math.min(1.0, (rain / 85) * (0.45 + (drain / 100) * 0.75) * (0.35 + lowFactor * 0.85));
-
-                // 高潮・津波・越波ポテンシャル (0..1)
                 const surgeRisk = Math.min(1.0, (tide / 180) * lowFactor * (0.4 + proximityFactor * 0.95));
 
-                // 土砂・堤防損傷・液状化の複合リスク (0..1)
                 const slopeFactor = elev > 15 ? 1.25 : 0.75;
                 const compoundRisk = Math.min(1.0, quake * (0.65 + proximityFactor * 0.3) + (rain / 110) * 0.35 * slopeFactor);
 
-                // NaTech（コンビナート・原子力発電所）複合リスク (0..1)
-                // 地震(quake)や津波/高潮(surgeRisk)が発生した際、施設距離が近いほど二次災害・防護リスクが増幅
                 const infraProximity = Math.max(0.05, Math.exp(-infraDist / 12.0));
                 const infraWeight = currentInfraType === 'NPP_PAZ' ? 1.35 : currentInfraType === 'NPP_UPZ' ? 1.05 : currentInfraType === 'COMBINAT' ? 1.15 : 0.12;
                 const natechRisk = Math.min(1.0, (0.08 + quake * 0.65 + surgeRisk * 0.45) * infraProximity * infraWeight);
 
-                // 総合複合エントロピー E_pen (0.05 .. 0.99)
                 const ePen = Math.max(0.05, Math.min(0.99, inlandRisk * 0.36 + surgeRisk * 0.28 + compoundRisk * 0.26 + natechRisk * 0.38));
-
-                // 推定浸水深 (m)
                 const estDepth = Math.max(0.0, (inlandRisk * 0.95 + surgeRisk * 1.35) * (elev < 6 ? 1.25 : 0.22));
 
                 document.getElementById('floodEpenScore').textContent = ePen.toFixed(2);
@@ -2279,7 +2353,6 @@
                     stepsEl.innerHTML = `<div class="p-2 rounded bg-slate-900/70">① 情報確認: 常時監視</div><div class="p-2 rounded bg-slate-900/70">② 移動目安: 浸水20cm前</div><div class="p-2 rounded bg-slate-900/70">③ 垂直避難: 2階以上へ</div>`;
                 }
 
-                // ① 生体計測＆防災統合版の目的関数 J へ自動同期
                 if (typeof window.syncFloodEpenToOpenLBOF === 'function') {
                     window.syncFloodEpenToOpenLBOF(ePen);
                 }
@@ -2312,7 +2385,6 @@
                 });
             });
 
-            // 現在地 GPS 取得ボタン
             document.getElementById('btnGetCurrentGps').addEventListener('click', () => {
                 const statusEl = document.getElementById('geoCoordStatus');
                 if (!navigator.geolocation) {
@@ -2514,7 +2586,7 @@
             ];
 
             let currentIdx = 0;
-            let fontSizeStep = 0; // -1, 0, +1, +2
+            let fontSizeStep = 0;
             const fontClasses = ['text-xs sm:text-sm', 'text-sm sm:text-base', 'text-base sm:text-lg', 'text-lg sm:text-xl'];
 
             const navContainer = document.getElementById('storyChapterNav');
