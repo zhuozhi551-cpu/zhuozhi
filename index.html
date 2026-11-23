@@ -1829,88 +1829,85 @@
                     let chosenMode = currentMode;
                     let chosenReason = '手動で選択された刺激モードを使用しました。';
 
-                    // APIキーが設定されている場合はクラウドの Gemini API を優先使用、未設定または失敗時はローカル自律共鳴エンジンへ自動フォールバック
-                    if (savedApiKey) {
-                        try {
-                            if (isAutoSelectOn) {
-                                const selectorPayload = {
-                                    contents: [{
-                                        role: 'user',
-                                        parts: [{
-                                            text: `ユーザーの発話: 「${promptText}」\n現在時刻: ${new Date().toLocaleTimeString('ja-JP')}\n\nこの会話のタイミングにおいて、対話AIの神経回路・ホルモンモデルに与える最適な感覚入力モードを1つ選び、理由を簡潔に日本語で出力してください。\n・BASELINE: 平常・穏やかな日常会話\n・STRESS: 危険・痛み・緊急事態への警戒が必要な場合\n・WARMTH: 安心・労い・共感・温もりや休息を届けるべき場合\n・REWARD: 創造的アイデア・集中・達成感を後押しすべき場合`
-                                        }]
-                                    }],
-                                    generationConfig: {
-                                        responseMimeType: 'application/json',
-                                        responseSchema: {
-                                            type: 'OBJECT',
-                                            properties: {
-                                                selectedMode: {
-                                                    type: 'STRING',
-                                                    enum: ['BASELINE', 'STRESS', 'WARMTH', 'REWARD']
-                                                },
-                                                reasonJa: { type: 'STRING' }
+                    // 環境提供キーまたは保存されたユーザーAPIキーを使用して Gemini API を呼び出し
+                    const activeApiKey = savedApiKey || '';
+
+                    try {
+                        if (isAutoSelectOn) {
+                            const selectorPayload = {
+                                contents: [{
+                                    role: 'user',
+                                    parts: [{
+                                        text: `ユーザーの発話: 「${promptText}」\n現在時刻: ${new Date().toLocaleTimeString('ja-JP')}\n\nこの会話のタイミングにおいて、対話AIの神経回路・ホルモンモデルに与える最適な感覚入力モードを1つ選び、理由を簡潔に日本語で出力してください。\n・BASELINE: 平常・穏やかな日常会話\n・STRESS: 危険・痛み・緊急事態への警戒が必要な場合\n・WARMTH: 安心・労い・共感・温もりや休息を届けるべき場合\n・REWARD: 創造的アイデア・集中・達成感を後押しすべき場合`
+                                    }]
+                                }],
+                                generationConfig: {
+                                    responseMimeType: 'application/json',
+                                    responseSchema: {
+                                        type: 'OBJECT',
+                                        properties: {
+                                            selectedMode: {
+                                                type: 'STRING',
+                                                enum: ['BASELINE', 'STRESS', 'WARMTH', 'REWARD']
                                             },
-                                            required: ['selectedMode', 'reasonJa']
-                                        }
+                                            reasonJa: { type: 'STRING' }
+                                        },
+                                        required: ['selectedMode', 'reasonJa']
                                     }
-                                };
-
-                                const selData = await requestGeminiCloud(selectorPayload, savedApiKey);
-                                const rawJson = selData?.candidates?.[0]?.content?.parts?.[0]?.text;
-                                if (rawJson) {
-                                    const parsed = JSON.parse(rawJson);
-                                    chosenMode = parsed.selectedMode;
-                                    chosenReason = parsed.reasonJa;
-                                    applyStimulusMode(chosenMode);
-                                    reasonEl.textContent = chosenReason;
-                                    boostHormonesByMode(chosenMode);
                                 }
+                            };
+
+                            const selData = await requestGeminiCloud(selectorPayload, activeApiKey);
+                            const rawJson = selData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                            if (rawJson) {
+                                const parsed = JSON.parse(rawJson);
+                                chosenMode = parsed.selectedMode;
+                                chosenReason = parsed.reasonJa;
+                                applyStimulusMode(chosenMode);
+                                reasonEl.textContent = chosenReason;
+                                boostHormonesByMode(chosenMode);
                             }
-
-                            const h = sim.hormones;
-                            const jNow = document.getElementById('jScoreDisplay').textContent;
-                            const sysPrompt = [
-                                'あなたは神経回路（LIF/STDP）および内分泌ホルモンモデルと連動する対話AIです。',
-                                '現在のあなたの体内パラメータ（内受容バイアス）を自然な口調と判断に反映してユーザーへ返答してください。',
-                                `・自律選択された感覚入力モード: ${chosenMode}（理由: ${chosenReason}）`,
-                                `・平均神経発火率: ${sim.firingRate.toFixed(1)} Hz / STDP重み w: ${sim.weight.toFixed(3)}`,
-                                `・ホルモン: DA=${Math.round(h.da)}%, 5-HT=${Math.round(h.ht)}%, CORT=${Math.round(h.cort)}%, OXT=${Math.round(h.oxt)}%`,
-                                `・目的関数 J: ${jNow}`,
-                                '※ 数値を機械的に読み上げるのではなく、現在のホルモン・神経状態にふさわしい温かく誠実なパートナーとして応答してください。'
-                            ].join('\n');
-
-                            const replyData = await requestGeminiCloud({
-                                contents: [{ role: 'user', parts: [{ text: promptText }] }],
-                                systemInstruction: { parts: [{ text: sysPrompt }] }
-                            }, savedApiKey);
-
-                            const replyText = replyData?.candidates?.[0]?.content?.parts?.[0]?.text;
-                            if (!replyText) throw new Error('Empty cloud reply');
-
-                            replyEl.textContent = replyText;
-                            metaEl.textContent = `クラウド連動 / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% J:${jNow}`;
-                            return;
-                        } catch (cloudErr) {
-                            // APIキー無効やネットワーク制限時はシームレスにローカルエンジンへ切り替え
                         }
-                    }
 
-                    // ローカル自律感覚選択 ＆ 共鳴応答エンジン（通信エラーゼロで即座に動作）
-                    await new Promise((r) => setTimeout(r, 280));
-                    if (isAutoSelectOn) {
-                        const localSel = inferAutonomousSensoryLocal(promptText);
-                        chosenMode = localSel.selectedMode;
-                        chosenReason = localSel.reasonJa;
-                        applyStimulusMode(chosenMode);
-                        reasonEl.textContent = chosenReason;
-                        boostHormonesByMode(chosenMode);
-                    }
+                        const h = sim.hormones;
+                        const jNow = document.getElementById('jScoreDisplay').textContent;
+                        const sysPrompt = [
+                            'あなたは神経回路（LIF/STDP）および内分泌ホルモンモデルと連動する対話AIです。',
+                            '現在のあなたの体内パラメータ（内受容バイアス）を自然な口調と判断に反映してユーザーへ返答してください。',
+                            `・自律選択された感覚入力モード: ${chosenMode}（理由: ${chosenReason}）`,
+                            `・平均神経発火率: ${sim.firingRate.toFixed(1)} Hz / STDP重み w: ${sim.weight.toFixed(3)}`,
+                            `・ホルモン: DA=${Math.round(h.da)}%, 5-HT=${Math.round(h.ht)}%, CORT=${Math.round(h.cort)}%, OXT=${Math.round(h.oxt)}%`,
+                            `・目的関数 J: ${jNow}`,
+                            '※ 数値を機械的に読み上げるのではなく、現在のホルモン・神経状態にふさわしい温かく誠実なパートナーとして応答してください。'
+                        ].join('\n');
 
-                    const h = sim.hormones;
-                    const jNow = document.getElementById('jScoreDisplay').textContent;
-                    replyEl.textContent = generateLocalResonanceReply(promptText, chosenMode, chosenReason);
-                    metaEl.textContent = `ローカル自律共鳴 / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% DA:${Math.round(h.da)}% J:${jNow}`;
+                        const replyData = await requestGeminiCloud({
+                            contents: [{ role: 'user', parts: [{ text: promptText }] }],
+                            systemInstruction: { parts: [{ text: sysPrompt }] }
+                        }, activeApiKey);
+
+                        const replyText = replyData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (!replyText) throw new Error('Empty Gemini reply');
+
+                        replyEl.textContent = replyText;
+                        metaEl.textContent = `Gemini 応答 / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% DA:${Math.round(h.da)}% J:${jNow}`;
+                        return;
+                    } catch (geminiErr) {
+                        // 外部公開環境でAPIキー未設定等の場合はローカル自律共鳴エンジンへ自動フォールバック
+                        if (isAutoSelectOn) {
+                            const localSel = inferAutonomousSensoryLocal(promptText);
+                            chosenMode = localSel.selectedMode;
+                            chosenReason = localSel.reasonJa;
+                            applyStimulusMode(chosenMode);
+                            reasonEl.textContent = chosenReason;
+                            boostHormonesByMode(chosenMode);
+                        }
+
+                        const h = sim.hormones;
+                        const jNow = document.getElementById('jScoreDisplay').textContent;
+                        replyEl.textContent = generateLocalResonanceReply(promptText, chosenMode, chosenReason);
+                        metaEl.textContent = `ローカル自律共鳴 / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% DA:${Math.round(h.da)}% J:${jNow}`;
+                    }
                 } finally {
                     submitEl.disabled = false;
                     submitEl.textContent = 'Gemini に自律選択させて神経・ホルモン連動応答を生成';
