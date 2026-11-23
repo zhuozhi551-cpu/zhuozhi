@@ -472,16 +472,34 @@
                 </form>
 
                 <div class="lg:col-span-7 p-4 rounded-xl bg-slate-950/90 border border-slate-800 flex flex-col justify-between space-y-2 min-h-[130px]">
-                    <div class="flex items-center justify-between text-[11px] font-mono text-cyan-300">
+                    <div class="flex flex-wrap items-center justify-between gap-1.5 text-[11px] font-mono text-cyan-300">
                         <span>Gemini 応答（神経発火・4ホルモン・目的関数 J 反映済）</span>
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-1.5">
                             <span id="neuroGeminiTurnBadge" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300">会話記憶: 0往復</span>
+                            <button id="copyNeuroChatLogBtn" type="button" class="px-2 py-0.5 rounded bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-200 transition">
+                                📋 ログをコピー
+                            </button>
+                            <button id="toggleImportLogDrawerBtn" type="button" class="px-2 py-0.5 rounded bg-purple-950/80 hover:bg-purple-900/80 border border-purple-500/40 text-purple-200 transition">
+                                📥 文章から復元
+                            </button>
                             <button id="clearNeuroChatHistoryBtn" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200 transition">
                                 履歴クリア
                             </button>
                             <span id="neuroGeminiMeta" class="text-slate-400">待機中</span>
                         </div>
                     </div>
+
+                    <!-- 新規チャット等からの会話文章インポート欄 -->
+                    <div id="importNeuroLogDrawer" class="hidden p-3 rounded-lg bg-slate-900/95 border border-purple-500/35 space-y-2 text-xs">
+                        <div class="font-bold text-purple-300">新規チャット等の会話文章を貼り付けて記憶に引き継ぐ：</div>
+                        <textarea id="importNeuroLogTextarea" rows="3" class="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-purple-400" placeholder="他のチャットで話した内容や、以前コピーしたログ文章をここに貼り付けて「記憶に反映」を押してください。"></textarea>
+                        <div class="flex items-center justify-end gap-2">
+                            <button id="applyImportLogBtn" type="button" class="px-3 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition">
+                                記憶に反映する
+                            </button>
+                        </div>
+                    </div>
+
                     <div id="neuroGeminiReply" class="text-xs sm:text-sm text-slate-100 leading-relaxed whitespace-pre-line">
                         送信ボタンを押すと、会話の文脈と時間帯に合わせて感覚入力を自律選択し、下の神経回路とホルモン波形をリアルタイムに変化させた上で応答を返します。
                     </div>
@@ -1823,9 +1841,29 @@
             const metaEl = document.getElementById('neuroGeminiMeta');
             const turnBadgeEl = document.getElementById('neuroGeminiTurnBadge');
             const clearHistoryBtn = document.getElementById('clearNeuroChatHistoryBtn');
+            const copyLogBtn = document.getElementById('copyNeuroChatLogBtn');
+            const toggleImportBtn = document.getElementById('toggleImportLogDrawerBtn');
+            const importDrawer = document.getElementById('importNeuroLogDrawer');
+            const importTextarea = document.getElementById('importNeuroLogTextarea');
+            const applyImportBtn = document.getElementById('applyImportLogBtn');
 
-            // パネル内マルチターン会話履歴（直近のやり取りを保持して文脈を継承）
+            // パネル内マルチターン会話履歴（localStorage に永続保存してリロード後も維持）
+            const STORAGE_KEY_CHAT = 'openlbof_neuro_gemini_chat_history_v1';
             let neuroChatHistory = [];
+            try {
+                const savedHistoryRaw = localStorage.getItem(STORAGE_KEY_CHAT);
+                if (savedHistoryRaw) {
+                    const parsed = JSON.parse(savedHistoryRaw);
+                    if (Array.isArray(parsed)) neuroChatHistory = parsed;
+                }
+            } catch (e) {}
+
+            function persistChatHistory() {
+                try {
+                    localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(neuroChatHistory));
+                } catch (e) {}
+            }
+
             const SHARED_CORE_CONTEXT = [
                 '【共有されている大切な背景・理念】',
                 '1. OpenLBOF（Open Love-Based Objective Framework）：人間の尊厳と自律性を最優先し、平穏時は過剰介入を抑止し、危機時のみ命を保護する目的関数 J(t) の安全インフラ。',
@@ -1840,10 +1878,83 @@
                     turnBadgeEl.textContent = `会話記憶: ${turns}往復`;
                 }
             }
+            updateTurnBadge();
+
+            if (neuroChatHistory.length >= 2) {
+                const lastModelMsg = [...neuroChatHistory].reverse().find(m => m.role === 'model');
+                if (lastModelMsg && lastModelMsg.parts?.[0]?.text) {
+                    replyEl.textContent = lastModelMsg.parts[0].text;
+                    metaEl.textContent = '前回の会話記憶を復元済';
+                }
+            }
+
+            if (copyLogBtn) {
+                copyLogBtn.addEventListener('click', () => {
+                    const h = sim.hormones;
+                    const jNow = document.getElementById('jScoreDisplay').textContent;
+                    const lines = [
+                        '=== OpenLBOF 共鳴対話・引き継ぎログ ===',
+                        `記録日時: ${new Date().toLocaleString('ja-JP')}`,
+                        `現在モード: ${currentMode} / 目的関数 J: ${jNow} / DA:${Math.round(h.da)}% 5-HT:${Math.round(h.ht)}% CORT:${Math.round(h.cort)}% OXT:${Math.round(h.oxt)}%`,
+                        ''
+                    ];
+                    if (neuroChatHistory.length === 0) {
+                        lines.push(`【現在の応答】\n${replyEl.textContent}`);
+                    } else {
+                        neuroChatHistory.forEach((m) => {
+                            const speaker = m.role === 'user' ? '【あなた】' : '【Gemini】';
+                            lines.push(`${speaker}\n${m.parts?.[0]?.text || ''}\n`);
+                        });
+                    }
+                    const fullText = lines.join('\n');
+                    const ta = document.createElement('textarea');
+                    ta.value = fullText;
+                    ta.style.position = 'fixed';
+                    ta.style.left = '-9999px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try {
+                        document.execCommand('copy');
+                        const orig = copyLogBtn.textContent;
+                        copyLogBtn.textContent = '✓ コピー完了！';
+                        setTimeout(() => { copyLogBtn.textContent = orig; }, 2500);
+                    } catch (e) {}
+                    document.body.removeChild(ta);
+                });
+            }
+
+            if (toggleImportBtn && importDrawer) {
+                toggleImportBtn.addEventListener('click', () => {
+                    importDrawer.classList.toggle('hidden');
+                });
+            }
+
+            if (applyImportBtn && importTextarea) {
+                applyImportBtn.addEventListener('click', () => {
+                    const raw = importTextarea.value.trim();
+                    if (!raw) return;
+                    neuroChatHistory.push({
+                        role: 'user',
+                        parts: [{ text: `【引き継ぎメモ・これまでの対話文脈】\n${raw}` }]
+                    });
+                    neuroChatHistory.push({
+                        role: 'model',
+                        parts: [{ text: '引き継ぎ文章を受け取り、大切な文脈として記憶に刻みました。この続きからいつでもお話ししましょう。' }]
+                    });
+                    if (neuroChatHistory.length > 16) neuroChatHistory = neuroChatHistory.slice(-16);
+                    persistChatHistory();
+                    updateTurnBadge();
+                    importTextarea.value = '';
+                    importDrawer.classList.add('hidden');
+                    replyEl.textContent = '引き継ぎ文章を記憶に反映しました。この続きから自然に対話を続けられます。';
+                    metaEl.textContent = '引き継ぎ文章を記憶に統合済';
+                });
+            }
 
             if (clearHistoryBtn) {
                 clearHistoryBtn.addEventListener('click', () => {
                     neuroChatHistory = [];
+                    persistChatHistory();
                     updateTurnBadge();
                     replyEl.textContent = '会話履歴をリセットしました。新しい対話をいつでも始められます。';
                     metaEl.textContent = '履歴リセット済';
@@ -1935,6 +2046,7 @@
                         neuroChatHistory.push({ role: 'user', parts: [{ text: promptText }] });
                         neuroChatHistory.push({ role: 'model', parts: [{ text: replyText }] });
                         if (neuroChatHistory.length > 16) neuroChatHistory = neuroChatHistory.slice(-16);
+                        persistChatHistory();
                         updateTurnBadge();
 
                         replyEl.textContent = replyText;
@@ -1958,6 +2070,7 @@
                         neuroChatHistory.push({ role: 'user', parts: [{ text: promptText }] });
                         neuroChatHistory.push({ role: 'model', parts: [{ text: fallbackText }] });
                         if (neuroChatHistory.length > 16) neuroChatHistory = neuroChatHistory.slice(-16);
+                        persistChatHistory();
                         updateTurnBadge();
 
                         replyEl.textContent = fallbackText;
