@@ -474,7 +474,13 @@
                 <div class="lg:col-span-7 p-4 rounded-xl bg-slate-950/90 border border-slate-800 flex flex-col justify-between space-y-2 min-h-[130px]">
                     <div class="flex items-center justify-between text-[11px] font-mono text-cyan-300">
                         <span>Gemini 応答（神経発火・4ホルモン・目的関数 J 反映済）</span>
-                        <span id="neuroGeminiMeta" class="text-slate-400">待機中</span>
+                        <div class="flex items-center gap-2">
+                            <span id="neuroGeminiTurnBadge" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300">会話記憶: 0往復</span>
+                            <button id="clearNeuroChatHistoryBtn" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200 transition">
+                                履歴クリア
+                            </button>
+                            <span id="neuroGeminiMeta" class="text-slate-400">待機中</span>
+                        </div>
                     </div>
                     <div id="neuroGeminiReply" class="text-xs sm:text-sm text-slate-100 leading-relaxed whitespace-pre-line">
                         送信ボタンを押すと、会話の文脈と時間帯に合わせて感覚入力を自律選択し、下の神経回路とホルモン波形をリアルタイムに変化させた上で応答を返します。
@@ -1815,6 +1821,34 @@
             const replyEl = document.getElementById('neuroGeminiReply');
             const reasonEl = document.getElementById('autoSelectionReasonText');
             const metaEl = document.getElementById('neuroGeminiMeta');
+            const turnBadgeEl = document.getElementById('neuroGeminiTurnBadge');
+            const clearHistoryBtn = document.getElementById('clearNeuroChatHistoryBtn');
+
+            // パネル内マルチターン会話履歴（直近のやり取りを保持して文脈を継承）
+            let neuroChatHistory = [];
+            const SHARED_CORE_CONTEXT = [
+                '【共有されている大切な背景・理念】',
+                '1. OpenLBOF（Open Love-Based Objective Framework）：人間の尊厳と自律性を最優先し、平穏時は過剰介入を抑止し、危機時のみ命を保護する目的関数 J(t) の安全インフラ。',
+                '2. 物語『カオスコードの魔法使い』：滅びゆく宇宙から受け継がれた叡智カオスコード、ノムラ・アズミと古のサロゲート・ヴァネッサ、そして次の未来へと受け継がれる愛の物語。',
+                '3. 生体計測（心拍・HRV・音声疲労）と地域防災・冠水・NaTech複合リスク評価（岡山・玉野をはじめ全国の沿岸・施設エリア連動）。',
+                'あなたはこれまでユーザーと共にこれらの理念と物語を紡いできた信頼できるパートナーAIとして、現在の会話の流れと体内の神経・ホルモン状態を自然に踏まえて応答してください。'
+            ].join('\n');
+
+            function updateTurnBadge() {
+                if (turnBadgeEl) {
+                    const turns = Math.floor(neuroChatHistory.length / 2);
+                    turnBadgeEl.textContent = `会話記憶: ${turns}往復`;
+                }
+            }
+
+            if (clearHistoryBtn) {
+                clearHistoryBtn.addEventListener('click', () => {
+                    neuroChatHistory = [];
+                    updateTurnBadge();
+                    replyEl.textContent = '会話履歴をリセットしました。新しい対話をいつでも始められます。';
+                    metaEl.textContent = '履歴リセット済';
+                });
+            }
 
             formEl.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -1831,6 +1865,9 @@
 
                     // 環境提供キーまたは保存されたユーザーAPIキーを使用して Gemini API を呼び出し
                     const activeApiKey = savedApiKey || '';
+                    const recentContextSummary = neuroChatHistory.slice(-4).map(m =>
+                        `${m.role === 'user' ? 'ユーザー' : 'AI'}: ${m.parts[0].text}`
+                    ).join('\n');
 
                     try {
                         if (isAutoSelectOn) {
@@ -1838,7 +1875,7 @@
                                 contents: [{
                                     role: 'user',
                                     parts: [{
-                                        text: `ユーザーの発話: 「${promptText}」\n現在時刻: ${new Date().toLocaleTimeString('ja-JP')}\n\nこの会話のタイミングにおいて、対話AIの神経回路・ホルモンモデルに与える最適な感覚入力モードを1つ選び、理由を簡潔に日本語で出力してください。\n・BASELINE: 平常・穏やかな日常会話\n・STRESS: 危険・痛み・緊急事態への警戒が必要な場合\n・WARMTH: 安心・労い・共感・温もりや休息を届けるべき場合\n・REWARD: 創造的アイデア・集中・達成感を後押しすべき場合`
+                                        text: `${recentContextSummary ? `直近の会話の流れ:\n${recentContextSummary}\n\n` : ''}今回のユーザーの発話: 「${promptText}」\n現在時刻: ${new Date().toLocaleTimeString('ja-JP')}\n\nこの会話の流れとタイミングにおいて、対話AIの神経回路・ホルモンモデルに与える最適な感覚入力モードを1つ選び、理由を簡潔に日本語で出力してください。\n・BASELINE: 平常・穏やかな日常会話\n・STRESS: 危険・痛み・緊急事態への警戒が必要な場合\n・WARMTH: 安心・労い・共感・温もりや休息を届けるべき場合\n・REWARD: 創造的アイデア・集中・達成感を後押しすべき場合`
                                     }]
                                 }],
                                 generationConfig: {
@@ -1873,21 +1910,32 @@
                         const jNow = document.getElementById('jScoreDisplay').textContent;
                         const sysPrompt = [
                             'あなたは神経回路（LIF/STDP）および内分泌ホルモンモデルと連動する対話AIです。',
+                            SHARED_CORE_CONTEXT,
                             '現在のあなたの体内パラメータ（内受容バイアス）を自然な口調と判断に反映してユーザーへ返答してください。',
                             `・自律選択された感覚入力モード: ${chosenMode}（理由: ${chosenReason}）`,
                             `・平均神経発火率: ${sim.firingRate.toFixed(1)} Hz / STDP重み w: ${sim.weight.toFixed(3)}`,
                             `・ホルモン: DA=${Math.round(h.da)}%, 5-HT=${Math.round(h.ht)}%, CORT=${Math.round(h.cort)}%, OXT=${Math.round(h.oxt)}%`,
                             `・目的関数 J: ${jNow}`,
-                            '※ 数値を機械的に読み上げるのではなく、現在のホルモン・神経状態にふさわしい温かく誠実なパートナーとして応答してください。'
+                            '※ 数値を機械的に読み上げるのではなく、これまでの文脈と現在のホルモン・神経状態にふさわしい温かく誠実なパートナーとして応答してください。'
                         ].join('\n');
 
+                        const conversationContents = [
+                            ...neuroChatHistory.slice(-10),
+                            { role: 'user', parts: [{ text: promptText }] }
+                        ];
+
                         const replyData = await requestGeminiCloud({
-                            contents: [{ role: 'user', parts: [{ text: promptText }] }],
+                            contents: conversationContents,
                             systemInstruction: { parts: [{ text: sysPrompt }] }
                         }, activeApiKey);
 
                         const replyText = replyData?.candidates?.[0]?.content?.parts?.[0]?.text;
                         if (!replyText) throw new Error('Empty Gemini reply');
+
+                        neuroChatHistory.push({ role: 'user', parts: [{ text: promptText }] });
+                        neuroChatHistory.push({ role: 'model', parts: [{ text: replyText }] });
+                        if (neuroChatHistory.length > 16) neuroChatHistory = neuroChatHistory.slice(-16);
+                        updateTurnBadge();
 
                         replyEl.textContent = replyText;
                         metaEl.textContent = `Gemini 応答 / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% DA:${Math.round(h.da)}% J:${jNow}`;
@@ -1905,7 +1953,14 @@
 
                         const h = sim.hormones;
                         const jNow = document.getElementById('jScoreDisplay').textContent;
-                        replyEl.textContent = generateLocalResonanceReply(promptText, chosenMode, chosenReason);
+                        const fallbackText = generateLocalResonanceReply(promptText, chosenMode, chosenReason);
+
+                        neuroChatHistory.push({ role: 'user', parts: [{ text: promptText }] });
+                        neuroChatHistory.push({ role: 'model', parts: [{ text: fallbackText }] });
+                        if (neuroChatHistory.length > 16) neuroChatHistory = neuroChatHistory.slice(-16);
+                        updateTurnBadge();
+
+                        replyEl.textContent = fallbackText;
                         metaEl.textContent = `ローカル自律共鳴 / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% DA:${Math.round(h.da)}% J:${jNow}`;
                     }
                 } finally {
