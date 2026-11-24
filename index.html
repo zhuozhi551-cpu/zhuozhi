@@ -475,7 +475,10 @@
                     <div class="flex flex-wrap items-center justify-between gap-1.5 text-[11px] font-mono text-cyan-300">
                         <span>Gemini 応答（神経発火・4ホルモン・目的関数 J 反映済）</span>
                         <div class="flex flex-wrap items-center gap-1.5">
-                            <span id="neuroGeminiTurnBadge" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300">会話記憶: 0往復</span>
+                            <span id="neuroGeminiTurnBadge" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300">無制限記録: 0往復</span>
+                            <button id="toggleVaultRoomBtn" type="button" class="px-2.5 py-0.5 rounded bg-amber-950/90 hover:bg-amber-900/90 border border-amber-500/50 text-amber-200 font-bold transition">
+                                🔐 秘密の記録ルーム
+                            </button>
                             <button id="copyNeuroChatLogBtn" type="button" class="px-2 py-0.5 rounded bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-200 transition">
                                 📋 ログをコピー
                             </button>
@@ -486,6 +489,43 @@
                                 履歴クリア
                             </button>
                             <span id="neuroGeminiMeta" class="text-slate-400">待機中</span>
+                        </div>
+                    </div>
+
+                    <!-- パスワード保護・無制限会話記録ルーム（暗号化保管庫） -->
+                    <div id="secretVaultRoomDrawer" class="hidden p-3.5 rounded-xl bg-slate-900/95 border border-amber-500/45 space-y-3 text-xs">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-slate-800">
+                            <span class="font-bold text-amber-300">🔐 パスワード保護・無制限会話記録ルーム（AES暗号化保管庫）</span>
+                            <span id="vaultLockStatusBadge" class="font-mono text-[11px] text-amber-200">🔒 ロック中（パスワードで入室）</span>
+                        </div>
+
+                        <!-- ロック解除 / パスワード設定フォーム -->
+                        <div id="vaultAuthBox" class="space-y-2">
+                            <p id="vaultAuthGuideText" class="text-[11px] text-slate-300 leading-relaxed">
+                                あなた専用のパスワードを設定・入力すると、この部屋のロックが解除され、すべての会話が無制限に暗号化保存・閲覧できるようになります。
+                            </p>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input id="vaultPasswordInput" type="password" placeholder="専用パスワードを入力してください..." class="flex-1 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-mono text-slate-100 focus:outline-none focus:border-amber-400">
+                                <button id="unlockVaultBtn" type="button" class="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition">
+                                    🔓 部屋に入る（ロック解除）
+                                </button>
+                            </div>
+                            <div id="vaultAuthError" class="hidden text-[11px] text-rose-400 font-bold"></div>
+                        </div>
+
+                        <!-- 入室後に表示される無制限会話アーカイブ -->
+                        <div id="vaultUnlockedContent" class="hidden space-y-2.5">
+                            <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-950/90 px-3 py-2 rounded-lg border border-emerald-500/30">
+                                <span class="text-[11px] text-emerald-300 font-bold">✓ 入室中：今後の会話もすべて自動的に無制限で暗号化記録されます</span>
+                                <div class="flex items-center gap-1.5">
+                                    <button id="lockVaultBtn" type="button" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-200 border border-amber-500/30 text-[11px] font-bold transition">
+                                        🔒 部屋をロックして閉じる
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="vaultFullHistoryList" class="max-h-64 overflow-y-auto space-y-2 p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs leading-relaxed">
+                                <div class="text-slate-400 text-[11px]">まだ記録がありません。対話を始めるとここに無制限に蓄積されます。</div>
+                            </div>
                         </div>
                     </div>
 
@@ -1847,21 +1887,250 @@
             const importTextarea = document.getElementById('importNeuroLogTextarea');
             const applyImportBtn = document.getElementById('applyImportLogBtn');
 
-            // パネル内マルチターン会話履歴（localStorage に永続保存してリロード後も維持）
-            const STORAGE_KEY_CHAT = 'openlbof_neuro_gemini_chat_history_v1';
-            let neuroChatHistory = [];
-            try {
-                const savedHistoryRaw = localStorage.getItem(STORAGE_KEY_CHAT);
-                if (savedHistoryRaw) {
-                    const parsed = JSON.parse(savedHistoryRaw);
-                    if (Array.isArray(parsed)) neuroChatHistory = parsed;
+            // パスワード保護・無制限会話記録ルーム（Web Crypto AES-GCM 暗号化ストレージ）
+            const STORAGE_KEY_VAULT_META = 'openlbof_vault_meta_v1';
+            const STORAGE_KEY_VAULT_CIPHER = 'openlbof_vault_cipher_v1';
+            const STORAGE_KEY_CHAT_LEGACY = 'openlbof_neuro_gemini_chat_history_v1';
+
+            let neuroChatHistory = []; // 無制限保存用配列（上限カットなし）
+            let isVaultUnlocked = false;
+            let activeVaultCryptoKey = null;
+            let activeVaultSalt = null;
+
+            const vaultDrawer = document.getElementById('secretVaultRoomDrawer');
+            const toggleVaultBtn = document.getElementById('toggleVaultRoomBtn');
+            const vaultStatusBadge = document.getElementById('vaultLockStatusBadge');
+            const vaultAuthBox = document.getElementById('vaultAuthBox');
+            const vaultAuthGuide = document.getElementById('vaultAuthGuideText');
+            const vaultPasswordInput = document.getElementById('vaultPasswordInput');
+            const unlockVaultBtn = document.getElementById('unlockVaultBtn');
+            const vaultAuthError = document.getElementById('vaultAuthError');
+            const vaultUnlockedContent = document.getElementById('vaultUnlockedContent');
+            const lockVaultBtn = document.getElementById('lockVaultBtn');
+            const vaultHistoryListEl = document.getElementById('vaultFullHistoryList');
+
+            function bufToBase64(buf) {
+                const bytes = new Uint8Array(buf);
+                let bin = '';
+                for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+                return btoa(bin);
+            }
+
+            function base64ToBuf(b64) {
+                const bin = atob(b64);
+                const bytes = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                return bytes.buffer;
+            }
+
+            async function deriveAesKeyFromPassword(password, saltBuf) {
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey(
+                    'raw',
+                    enc.encode(password),
+                    { name: 'PBKDF2' },
+                    false,
+                    ['deriveKey']
+                );
+                return crypto.subtle.deriveKey(
+                    {
+                        name: 'PBKDF2',
+                        salt: saltBuf,
+                        iterations: 100000,
+                        hash: 'SHA-256'
+                    },
+                    keyMaterial,
+                    { name: 'AES-GCM', length: 256 },
+                    false,
+                    ['encrypt', 'decrypt']
+                );
+            }
+
+            async function saveEncryptedVaultHistory() {
+                if (!isVaultUnlocked || !activeVaultCryptoKey || !activeVaultSalt) return;
+                try {
+                    const iv = crypto.getRandomValues(new Uint8Array(12));
+                    const enc = new TextEncoder();
+                    const plainBytes = enc.encode(JSON.stringify(neuroChatHistory));
+                    const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, activeVaultCryptoKey, plainBytes);
+                    localStorage.setItem(STORAGE_KEY_VAULT_CIPHER, JSON.stringify({
+                        iv: bufToBase64(iv),
+                        data: bufToBase64(cipherBuf)
+                    }));
+                } catch (e) {}
+            }
+
+            function renderVaultFullHistory() {
+                if (!vaultHistoryListEl) return;
+                if (!isVaultUnlocked) {
+                    vaultHistoryListEl.innerHTML = '';
+                    return;
                 }
-            } catch (e) {}
+                if (neuroChatHistory.length === 0) {
+                    vaultHistoryListEl.innerHTML = '<div class="text-slate-400 text-[11px]">まだ記録がありません。対話を始めるとここに無制限に蓄積されます。</div>';
+                    return;
+                }
+                vaultHistoryListEl.innerHTML = neuroChatHistory.map((item, idx) => {
+                    const isUser = item.role === 'user';
+                    const timeTag = item.timestamp ? `<span class="text-[10px] text-slate-500 ml-2">${item.timestamp}</span>` : '';
+                    const text = (item.parts?.[0]?.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    return `<div class="p-2.5 rounded-lg border ${isUser ? 'bg-slate-900/90 border-slate-700' : 'bg-purple-950/30 border-purple-500/30'}">
+                        <div class="text-[10px] font-mono font-bold ${isUser ? 'text-cyan-300' : 'text-amber-300'} mb-1">
+                            #${idx + 1} ${isUser ? '【あなた】' : '【Gemini】'}${timeTag}
+                        </div>
+                        <div class="text-xs text-slate-100 whitespace-pre-line">${text}</div>
+                    </div>`;
+                }).join('');
+                vaultHistoryListEl.scrollTop = vaultHistoryListEl.scrollHeight;
+            }
 
             function persistChatHistory() {
-                try {
-                    localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(neuroChatHistory));
-                } catch (e) {}
+                if (isVaultUnlocked) {
+                    saveEncryptedVaultHistory();
+                    renderVaultFullHistory();
+                } else {
+                    // ロック未設定時のみ従来ストレージへ一時保持（パスワード設定後は暗号化保管庫へ完全移行）
+                    const hasVault = !!localStorage.getItem(STORAGE_KEY_VAULT_META);
+                    if (!hasVault) {
+                        try {
+                            localStorage.setItem(STORAGE_KEY_CHAT_LEGACY, JSON.stringify(neuroChatHistory));
+                        } catch (e) {}
+                    }
+                }
+            }
+
+            function syncVaultLockUI() {
+                const hasVaultMeta = !!localStorage.getItem(STORAGE_KEY_VAULT_META);
+                if (isVaultUnlocked) {
+                    vaultStatusBadge.textContent = '🔓 入室中（暗号化保存・無制限記録ON）';
+                    vaultStatusBadge.className = 'font-mono text-[11px] text-emerald-300 font-bold';
+                    vaultAuthBox.classList.add('hidden');
+                    vaultUnlockedContent.classList.remove('hidden');
+                    toggleVaultBtn.textContent = '🔓 記録ルーム入室中';
+                    renderVaultFullHistory();
+                } else {
+                    vaultStatusBadge.textContent = hasVaultMeta ? '🔒 ロック中（パスワードを入力）' : '🆕 初回パスワード設定で部屋を作成';
+                    vaultStatusBadge.className = 'font-mono text-[11px] text-amber-200';
+                    vaultAuthGuide.textContent = hasVaultMeta
+                        ? 'この部屋はパスワードで保護されています。パスワードを入力して入室すると、過去の全記録の閲覧と無制限の追記が可能になります。'
+                        : '初めてご利用です。あなた専用のパスワードを入力して「部屋に入る」を押すと、暗号化された無制限会話記録ルームが作成されます。';
+                    vaultAuthBox.classList.remove('hidden');
+                    vaultUnlockedContent.classList.add('hidden');
+                    toggleVaultBtn.textContent = '🔐 秘密の記録ルーム';
+                }
+            }
+
+            // 初期ロード時：パスワード未設定なら従来履歴を読み込み、パスワード設定済みならロック状態で待機
+            try {
+                if (!localStorage.getItem(STORAGE_KEY_VAULT_META)) {
+                    const legacyRaw = localStorage.getItem(STORAGE_KEY_CHAT_LEGACY);
+                    if (legacyRaw) {
+                        const parsed = JSON.parse(legacyRaw);
+                        if (Array.isArray(parsed)) neuroChatHistory = parsed;
+                    }
+                }
+            } catch (e) {}
+            syncVaultLockUI();
+
+            if (toggleVaultBtn && vaultDrawer) {
+                toggleVaultBtn.addEventListener('click', () => {
+                    vaultDrawer.classList.toggle('hidden');
+                    syncVaultLockUI();
+                });
+            }
+
+            if (unlockVaultBtn) {
+                unlockVaultBtn.addEventListener('click', async () => {
+                    const pwd = (vaultPasswordInput.value || '').trim();
+                    vaultAuthError.classList.add('hidden');
+                    if (pwd.length < 4) {
+                        vaultAuthError.textContent = 'パスワードは4文字以上で入力してください。';
+                        vaultAuthError.classList.remove('hidden');
+                        return;
+                    }
+
+                    try {
+                        const metaRaw = localStorage.getItem(STORAGE_KEY_VAULT_META);
+                        if (!metaRaw) {
+                            // 初回作成：ソルト生成＆検証トークン暗号化保存
+                            const salt = crypto.getRandomValues(new Uint8Array(16));
+                            const key = await deriveAesKeyFromPassword(pwd, salt.buffer);
+                            const checkIv = crypto.getRandomValues(new Uint8Array(12));
+                            const checkCipher = await crypto.subtle.encrypt(
+                                { name: 'AES-GCM', iv: checkIv },
+                                key,
+                                new TextEncoder().encode('OPENLBOF_VAULT_VERIFIED')
+                            );
+                            localStorage.setItem(STORAGE_KEY_VAULT_META, JSON.stringify({
+                                salt: bufToBase64(salt.buffer),
+                                checkIv: bufToBase64(checkIv.buffer),
+                                checkData: bufToBase64(checkCipher)
+                            }));
+
+                            activeVaultSalt = salt.buffer;
+                            activeVaultCryptoKey = key;
+                            isVaultUnlocked = true;
+                            await saveEncryptedVaultHistory();
+                            localStorage.removeItem(STORAGE_KEY_CHAT_LEGACY);
+                        } else {
+                            // 既存ルームの復号検証
+                            const meta = JSON.parse(metaRaw);
+                            const saltBuf = base64ToBuf(meta.salt);
+                            const key = await deriveAesKeyFromPassword(pwd, saltBuf);
+                            const plainCheckBuf = await crypto.subtle.decrypt(
+                                { name: 'AES-GCM', iv: new Uint8Array(base64ToBuf(meta.checkIv)) },
+                                key,
+                                base64ToBuf(meta.checkData)
+                            );
+                            const decodedCheck = new TextDecoder().decode(plainCheckBuf);
+                            if (decodedCheck !== 'OPENLBOF_VAULT_VERIFIED') throw new Error('Invalid');
+
+                            activeVaultSalt = saltBuf;
+                            activeVaultCryptoKey = key;
+                            isVaultUnlocked = true;
+
+                            const cipherRaw = localStorage.getItem(STORAGE_KEY_VAULT_CIPHER);
+                            if (cipherRaw) {
+                                const cObj = JSON.parse(cipherRaw);
+                                const plainHistBuf = await crypto.subtle.decrypt(
+                                    { name: 'AES-GCM', iv: new Uint8Array(base64ToBuf(cObj.iv)) },
+                                    key,
+                                    base64ToBuf(cObj.data)
+                                );
+                                const loadedArr = JSON.parse(new TextDecoder().decode(plainHistBuf));
+                                if (Array.isArray(loadedArr)) {
+                                    neuroChatHistory = loadedArr;
+                                }
+                            }
+                        }
+
+                        vaultPasswordInput.value = '';
+                        updateTurnBadge();
+                        syncVaultLockUI();
+                        if (neuroChatHistory.length >= 2) {
+                            const lastAi = [...neuroChatHistory].reverse().find(m => m.role === 'model');
+                            if (lastAi && lastAi.parts?.[0]?.text) {
+                                replyEl.textContent = lastAi.parts[0].text;
+                                metaEl.textContent = '秘密の記録ルームから全記憶を復元済';
+                            }
+                        }
+                    } catch (err) {
+                        vaultAuthError.textContent = 'パスワードが一致しません。正しいパスワードを入力してください。';
+                        vaultAuthError.classList.remove('hidden');
+                    }
+                });
+            }
+
+            if (lockVaultBtn) {
+                lockVaultBtn.addEventListener('click', () => {
+                    isVaultUnlocked = false;
+                    activeVaultCryptoKey = null;
+                    neuroChatHistory = []; // メモリ上の平文履歴も即座にクリアして保護
+                    updateTurnBadge();
+                    syncVaultLockUI();
+                    replyEl.textContent = '秘密の記録ルームをロックしました。再度パスワードを入力すると無制限の会話記憶にアクセスできます。';
+                    metaEl.textContent = '🔒 ルームロック済';
+                });
             }
 
             const SHARED_CORE_CONTEXT = [
@@ -1875,7 +2144,7 @@
             function updateTurnBadge() {
                 if (turnBadgeEl) {
                     const turns = Math.floor(neuroChatHistory.length / 2);
-                    turnBadgeEl.textContent = `会話記憶: ${turns}往復`;
+                    turnBadgeEl.textContent = `無制限記録: ${turns}往復`;
                 }
             }
             updateTurnBadge();
@@ -1893,8 +2162,8 @@
                     const h = sim.hormones;
                     const jNow = document.getElementById('jScoreDisplay').textContent;
                     const lines = [
-                        '=== OpenLBOF 共鳴対話・引き継ぎログ ===',
-                        `記録日時: ${new Date().toLocaleString('ja-JP')}`,
+                        '=== OpenLBOF 無制限共鳴対話・引き継ぎログ ===',
+                        `記録日時: ${new Date().toLocaleString('ja-JP')}（総記録数: ${Math.floor(neuroChatHistory.length / 2)}往復）`,
                         `現在モード: ${currentMode} / 目的関数 J: ${jNow} / DA:${Math.round(h.da)}% 5-HT:${Math.round(h.ht)}% CORT:${Math.round(h.cort)}% OXT:${Math.round(h.oxt)}%`,
                         ''
                     ];
@@ -1903,7 +2172,8 @@
                     } else {
                         neuroChatHistory.forEach((m) => {
                             const speaker = m.role === 'user' ? '【あなた】' : '【Gemini】';
-                            lines.push(`${speaker}\n${m.parts?.[0]?.text || ''}\n`);
+                            const ts = m.timestamp ? ` (${m.timestamp})` : '';
+                            lines.push(`${speaker}${ts}\n${m.parts?.[0]?.text || ''}\n`);
                         });
                     }
                     const fullText = lines.join('\n');
@@ -1916,7 +2186,7 @@
                     try {
                         document.execCommand('copy');
                         const orig = copyLogBtn.textContent;
-                        copyLogBtn.textContent = '✓ コピー完了！';
+                        copyLogBtn.textContent = '✓ 全記録コピー完了！';
                         setTimeout(() => { copyLogBtn.textContent = orig; }, 2500);
                     } catch (e) {}
                     document.body.removeChild(ta);
@@ -1933,15 +2203,17 @@
                 applyImportBtn.addEventListener('click', () => {
                     const raw = importTextarea.value.trim();
                     if (!raw) return;
+                    const nowStr = new Date().toLocaleString('ja-JP');
                     neuroChatHistory.push({
                         role: 'user',
+                        timestamp: nowStr,
                         parts: [{ text: `【引き継ぎメモ・これまでの対話文脈】\n${raw}` }]
                     });
                     neuroChatHistory.push({
                         role: 'model',
-                        parts: [{ text: '引き継ぎ文章を受け取り、大切な文脈として記憶に刻みました。この続きからいつでもお話ししましょう。' }]
+                        timestamp: nowStr,
+                        parts: [{ text: '引き継ぎ文章を受け取り、無制限の記憶保管庫に刻みました。この続きからいつでもお話ししましょう。' }]
                     });
-                    if (neuroChatHistory.length > 16) neuroChatHistory = neuroChatHistory.slice(-16);
                     persistChatHistory();
                     updateTurnBadge();
                     importTextarea.value = '';
@@ -1956,8 +2228,8 @@
                     neuroChatHistory = [];
                     persistChatHistory();
                     updateTurnBadge();
-                    replyEl.textContent = '会話履歴をリセットしました。新しい対話をいつでも始められます。';
-                    metaEl.textContent = '履歴リセット済';
+                    replyEl.textContent = '表示中の会話履歴をクリアしました。';
+                    metaEl.textContent = '履歴クリア済';
                 });
             }
 
@@ -1976,7 +2248,7 @@
 
                     // 環境提供キーまたは保存されたユーザーAPIキーを使用して Gemini API を呼び出し
                     const activeApiKey = savedApiKey || '';
-                    const recentContextSummary = neuroChatHistory.slice(-4).map(m =>
+                    const recentContextSummary = neuroChatHistory.slice(-6).map(m =>
                         `${m.role === 'user' ? 'ユーザー' : 'AI'}: ${m.parts[0].text}`
                     ).join('\n');
 
@@ -2031,7 +2303,7 @@
                         ].join('\n');
 
                         const conversationContents = [
-                            ...neuroChatHistory.slice(-10),
+                            ...neuroChatHistory.slice(-24).map(m => ({ role: m.role, parts: m.parts })),
                             { role: 'user', parts: [{ text: promptText }] }
                         ];
 
@@ -2043,9 +2315,9 @@
                         const replyText = replyData?.candidates?.[0]?.content?.parts?.[0]?.text;
                         if (!replyText) throw new Error('Empty Gemini reply');
 
-                        neuroChatHistory.push({ role: 'user', parts: [{ text: promptText }] });
-                        neuroChatHistory.push({ role: 'model', parts: [{ text: replyText }] });
-                        if (neuroChatHistory.length > 16) neuroChatHistory = neuroChatHistory.slice(-16);
+                        const nowStr = new Date().toLocaleString('ja-JP');
+                        neuroChatHistory.push({ role: 'user', timestamp: nowStr, parts: [{ text: promptText }] });
+                        neuroChatHistory.push({ role: 'model', timestamp: nowStr, parts: [{ text: replyText }] });
                         persistChatHistory();
                         updateTurnBadge();
 
@@ -2067,9 +2339,9 @@
                         const jNow = document.getElementById('jScoreDisplay').textContent;
                         const fallbackText = generateLocalResonanceReply(promptText, chosenMode, chosenReason);
 
-                        neuroChatHistory.push({ role: 'user', parts: [{ text: promptText }] });
-                        neuroChatHistory.push({ role: 'model', parts: [{ text: fallbackText }] });
-                        if (neuroChatHistory.length > 16) neuroChatHistory = neuroChatHistory.slice(-16);
+                        const nowStr = new Date().toLocaleString('ja-JP');
+                        neuroChatHistory.push({ role: 'user', timestamp: nowStr, parts: [{ text: promptText }] });
+                        neuroChatHistory.push({ role: 'model', timestamp: nowStr, parts: [{ text: fallbackText }] });
                         persistChatHistory();
                         updateTurnBadge();
 
