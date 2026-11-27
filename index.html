@@ -559,12 +559,16 @@
                     </div>
 
                     <!-- 新規チャット等からの会話文章インポート欄 -->
-                    <div id="importNeuroLogDrawer" class="hidden p-3 rounded-lg bg-slate-900/95 border border-purple-500/35 space-y-2 text-xs">
-                        <div class="font-bold text-purple-300">新規チャット等の会話文章を貼り付けて記憶に引き継ぐ：</div>
-                        <textarea id="importNeuroLogTextarea" rows="3" class="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-purple-400" placeholder="他のチャットで話した内容や、以前コピーしたログ文章をここに貼り付けて「記憶に反映」を押してください。"></textarea>
-                        <div class="flex items-center justify-end gap-2">
-                            <button id="applyImportLogBtn" type="button" class="px-3 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition">
-                                記憶に反映する
+                    <div id="importNeuroLogDrawer" class="hidden p-3.5 rounded-xl bg-slate-900/95 border border-purple-500/35 space-y-2.5 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-purple-300">新規チャット等の会話文章・長文メモをすべて記憶に引き継ぐ（文字数無制限）：</span>
+                            <span id="importLogCharCount" class="font-mono text-[11px] text-slate-400">0 文字</span>
+                        </div>
+                        <textarea id="importNeuroLogTextarea" rows="7" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-purple-400 leading-relaxed" placeholder="他のチャットで話した内容や、以前コピーした長文ログ・メモをすべてそのまま貼り付けて「すべて記憶に反映する」を押してください（文字数制限なしで分割・階層統合されます）。"></textarea>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[11px] text-slate-400">※ 長文は自動的に段落ごとに分割され、3層階層記憶とホームページ内アーカイブへすべて格納されます。</span>
+                            <button id="applyImportLogBtn" type="button" class="px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition shrink-0">
+                                すべて記憶に反映する
                             </button>
                         </div>
                     </div>
@@ -2006,7 +2010,14 @@
             const toggleImportBtn = document.getElementById('toggleImportLogDrawerBtn');
             const importDrawer = document.getElementById('importNeuroLogDrawer');
             const importTextarea = document.getElementById('importNeuroLogTextarea');
+            const importCharCountEl = document.getElementById('importLogCharCount');
             const applyImportBtn = document.getElementById('applyImportLogBtn');
+
+            if (importTextarea && importCharCountEl) {
+                importTextarea.addEventListener('input', () => {
+                    importCharCountEl.textContent = `${importTextarea.value.length.toLocaleString()} 文字`;
+                });
+            }
 
             // パスワード保護・無制限会話記録ルーム（Web Crypto AES-GCM 暗号化ストレージ）
             const STORAGE_KEY_VAULT_META = 'openlbof_vault_meta_v1';
@@ -2555,25 +2566,65 @@
 
             if (applyImportBtn && importTextarea) {
                 applyImportBtn.addEventListener('click', () => {
-                    const raw = sanitizeMessageText(importTextarea.value, 2000);
+                    // 制御文字のみ除去し、文字数上限なしで全文を受け入れる
+                    const raw = String(importTextarea.value || '')
+                        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+                        .trim();
                     if (!raw) return;
+
                     const nowStr = new Date().toLocaleString('ja-JP');
-                    neuroChatHistory.push({
-                        role: 'user',
-                        timestamp: nowStr,
-                        parts: [{ text: `【引き継ぎメモ・これまでの対話文脈】\n${raw}` }]
+                    const totalChars = raw.length;
+
+                    // 長文でも3層階層メモリー（深層・中期・直近）が漏れなく抽出できるよう、約1,200文字単位でチャンク分割して格納
+                    const chunkSize = 1200;
+                    const paragraphs = raw.split(/\n{2,}/);
+                    const chunks = [];
+                    let buffer = '';
+
+                    paragraphs.forEach((p) => {
+                        if ((buffer + '\n\n' + p).length > chunkSize && buffer.length > 0) {
+                            chunks.push(buffer.trim());
+                            buffer = p;
+                        } else {
+                            buffer = buffer ? (buffer + '\n\n' + p) : p;
+                        }
                     });
-                    neuroChatHistory.push({
-                        role: 'model',
-                        timestamp: nowStr,
-                        parts: [{ text: '引き継ぎ文章を受け取り、無制限の記憶保管庫に刻みました。この続きからいつでもお話ししましょう。' }]
+                    if (buffer.trim()) chunks.push(buffer.trim());
+
+                    // 1段落自体が1,200文字を超える場合も途中で切らずに分割
+                    const finalChunks = [];
+                    chunks.forEach((c) => {
+                        if (c.length <= chunkSize) {
+                            finalChunks.push(c);
+                        } else {
+                            for (let i = 0; i < c.length; i += chunkSize) {
+                                finalChunks.push(c.slice(i, i + chunkSize));
+                            }
+                        }
                     });
+
+                    finalChunks.forEach((chunkText, idx) => {
+                        const partTag = finalChunks.length > 1 ? ` (${idx + 1}/${finalChunks.length})` : '';
+                        neuroChatHistory.push({
+                            role: 'user',
+                            timestamp: nowStr,
+                            parts: [{ text: `【引き継ぎメモ・これまでの対話文脈${partTag}】\n${chunkText}` }]
+                        });
+                        neuroChatHistory.push({
+                            role: 'model',
+                            timestamp: nowStr,
+                            parts: [{ text: `引き継ぎ文章${partTag}を受け取り、無制限の記憶保管庫に刻みました。` }]
+                        });
+                    });
+
+                    appendRecordToPageDocument(`引き継ぎ文章復元（全${totalChars.toLocaleString()}文字）`, raw);
                     persistChatHistory();
                     updateTurnBadge();
                     importTextarea.value = '';
+                    if (importCharCountEl) importCharCountEl.textContent = '0 文字';
                     importDrawer.classList.add('hidden');
-                    replyEl.textContent = '引き継ぎ文章を記憶に反映しました。この続きから自然に対話を続けられます。';
-                    metaEl.textContent = '引き継ぎ文章を記憶に統合済';
+                    replyEl.textContent = `貼り付けられた全 ${totalChars.toLocaleString()} 文字（${finalChunks.length}ブロック分割）をすべて途中で切らずに記憶へ反映しました！この続きから自然に対話を続けられます。`;
+                    metaEl.textContent = `全${totalChars.toLocaleString()}文字を記憶に統合済`;
                 });
             }
 
