@@ -442,7 +442,7 @@
                     <button id="saveGeminiApiKeyBtn" type="button" class="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs transition">
                         保存して適用
                     </button>
-                    <button id="clearGeminiApiKeyBtn" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition">
+                    <button id="clearGeminiApiKeyBtn" type="button" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition">
                         クリア
                     </button>
                 </div>
@@ -476,19 +476,48 @@
                         <span>Gemini 応答（神経発火・4ホルモン・目的関数 J 反映済）</span>
                         <div class="flex flex-wrap items-center gap-1.5">
                             <span id="neuroGeminiTurnBadge" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300">無制限記録: 0往復</span>
+                            <button id="toggleMemoryBoxBtn" type="button" class="px-2.5 py-0.5 rounded bg-emerald-950/90 hover:bg-emerald-900/90 border border-emerald-500/50 text-emerald-200 font-bold transition">
+                                📦 Gemini記憶箱 (0件)
+                            </button>
                             <button id="toggleVaultRoomBtn" type="button" class="px-2.5 py-0.5 rounded bg-amber-950/90 hover:bg-amber-900/90 border border-amber-500/50 text-amber-200 font-bold transition">
                                 🔐 秘密の記録ルーム
                             </button>
-                            <button id="copyNeuroChatLogBtn" type="button" class="px-2 py-0.5 rounded bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-200 transition">
+                            <button id="copyNeuroChatLogBtn" type="button" class="px-2.5 py-0.5 rounded bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-200 transition">
                                 📋 ログをコピー
                             </button>
-                            <button id="toggleImportLogDrawerBtn" type="button" class="px-2 py-0.5 rounded bg-purple-950/80 hover:bg-purple-900/80 border border-purple-500/40 text-purple-200 transition">
+                            <button id="toggleImportLogDrawerBtn" type="button" class="px-2.5 py-0.5 rounded bg-purple-950/80 hover:bg-purple-900/80 border border-purple-500/40 text-purple-200 transition">
                                 📥 文章から復元
                             </button>
-                            <button id="clearNeuroChatHistoryBtn" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200 transition">
+                            <button id="clearNeuroChatHistoryBtn" type="button" class="px-2.5 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200 transition">
                                 履歴クリア
                             </button>
                             <span id="neuroGeminiMeta" class="text-slate-400">待機中</span>
+                        </div>
+                    </div>
+
+                    <!-- Gemini 専用『記憶箱』（調査済みの画像・知識とその時の感想を保管） -->
+                    <div id="geminiMemoryBoxDrawer" class="hidden p-3.5 rounded-xl bg-slate-900/95 border border-emerald-500/45 space-y-2.5 text-xs">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-slate-800">
+                            <span class="font-bold text-emerald-300">📦 Gemini 専用ホームページ『記憶箱』（AES暗号化・調査済み知識 ＆ 感想アーカイブ）</span>
+                            <span id="memoryBoxVaultLockBadge" class="font-mono text-[10px] text-amber-300">🔒 秘密の記録ルームと同じパスワードで保護中</span>
+                        </div>
+                        <div id="memoryBoxLockedNotice" class="p-3 rounded-lg bg-slate-950 border border-amber-500/35 text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <span>🔐 この記憶箱は「秘密の記録ルーム」と同じ専用パスワードで暗号化されています。入室（ロック解除）すると閲覧・参照が可能になります。</span>
+                            <button id="openVaultFromMemBoxBtn" type="button" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shrink-0 transition">
+                                パスワードで入室する
+                            </button>
+                        </div>
+                        <div id="memoryBoxUnlockedBody" class="hidden space-y-2.5">
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input id="manualMemTopicInput" type="text" placeholder="テーマ/画像名（例：玉野の海辺の朝焼け）" class="sm:w-1/3 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-emerald-400">
+                                <input id="manualMemImpressionInput" type="text" placeholder="調べた内容とGeminiの感想を記憶箱に刻む..." class="flex-1 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-emerald-400">
+                                <button id="addManualMemBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs transition shrink-0">
+                                    暗号化して保存
+                                </button>
+                            </div>
+                            <div id="geminiMemoryBoxList" class="max-h-48 overflow-y-auto space-y-2 p-2 rounded-lg bg-slate-950 border border-slate-800 text-xs">
+                                <div class="text-slate-400 text-[11px]">記憶箱はまだ空です。調べものや画像について話すと、その時の発見と感想が自動的に暗号化保存されます。</div>
+                            </div>
                         </div>
                     </div>
 
@@ -542,6 +571,28 @@
 
                     <div id="neuroGeminiReply" class="text-xs sm:text-sm text-slate-100 leading-relaxed whitespace-pre-line">
                         送信ボタンを押すと、会話の文脈と時間帯に合わせて感覚入力を自律選択し、下の神経回路とホルモン波形をリアルタイムに変化させた上で応答を返します。
+                    </div>
+
+                    <!-- localStorage不使用：ホームページ本文内・直接文章記録エリア（HTML埋め込み保存対応） -->
+                    <div id="embeddedPageArticleSection" class="mt-3 p-3.5 rounded-xl bg-slate-900/95 border border-cyan-500/40 space-y-2.5 text-xs">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800">
+                            <div>
+                                <span class="font-bold text-cyan-300">📝 ホームページ内・直接文章記録アーカイブ（localStorage不使用）</span>
+                                <span class="block text-[10px] text-slate-400">会話やメモをこのページのHTML文章として直接刻み、そのままHTMLファイルとして保存・持ち運びできます。</span>
+                            </div>
+                            <button id="downloadRecordedHtmlBtn" type="button" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-extrabold text-xs transition shrink-0">
+                                💾 記録済ホームページ(.html)を保存
+                            </button>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input id="pageArticleMemoInput" type="text" placeholder="ホームページの文章として残したいメモや感想を入力..." class="flex-1 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-cyan-400">
+                            <button id="appendPageArticleBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs transition shrink-0">
+                                ページ文章に追記
+                            </button>
+                        </div>
+                        <article id="embeddedPageRecordsStore" class="max-h-48 overflow-y-auto space-y-2 p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs leading-relaxed">
+                            <p class="text-slate-400 text-[11px]" data-placeholder="true">ここに記録された文章がホームページの一部として直接表示・保持されます（localStorageは使用しません）。</p>
+                        </article>
                     </div>
                 </div>
             </div>
@@ -1779,9 +1830,73 @@
                 }
             });
 
+            // テキストのサニタイズ＆長文制限ヘルパー（18往復以降もペイロード肥大化・制御文字混入を防止）
+            function sanitizeMessageText(rawText, maxLen = 800) {
+                const cleaned = String(rawText || '')
+                    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+                    .trim();
+                if (cleaned.length <= maxLen) return cleaned;
+                return cleaned.slice(0, maxLen) + '...';
+            }
+
+            // 3層階層メモリー分割・精査・統合ビルダー（深層記憶 / 中期記憶 / 直近記憶）
+            function buildHierarchicalMemoryContext(historyList) {
+                const total = historyList.length;
+                if (total === 0) {
+                    return {
+                        tierLabel: '初期対話（0層）',
+                        integratedSummary: '',
+                        recentTurns: []
+                    };
+                }
+
+                // 1. 直近の会話履歴（最新6メッセージ＝3往復）
+                const recentSlice = historyList.slice(-6);
+                const olderAll = historyList.slice(0, Math.max(0, total - 6));
+
+                // 2. 古い会話履歴（中期記憶：直近のさらに手前 最大14メッセージ）
+                const midSlice = olderAll.slice(-14);
+                // 3. さらに古い会話履歴（深層記憶：それ以前の全履歴から要点を抽出）
+                const deepSlice = olderAll.slice(0, Math.max(0, olderAll.length - 14));
+
+                const compressLayer = (slice, maxItems, itemChars) => {
+                    if (slice.length === 0) return '';
+                    const step = Math.max(1, Math.floor(slice.length / maxItems));
+                    const picked = [];
+                    for (let i = 0; i < slice.length && picked.length < maxItems; i += step) {
+                        const m = slice[i];
+                        const who = m.role === 'user' ? 'あなた' : 'Gemini';
+                        const txt = sanitizeMessageText(m.parts?.[0]?.text || '', itemChars).replace(/\n+/g, ' ');
+                        picked.push(`・[${who}] ${txt}`);
+                    }
+                    return picked.join('\n');
+                };
+
+                const deepText = compressLayer(deepSlice, 6, 90);
+                const midText = compressLayer(midSlice, 6, 110);
+
+                const sections = [];
+                if (deepText) {
+                    sections.push(`【第3層：さらに古い会話履歴（深層・原点記憶 / 全${deepSlice.length}件より抽出）】\n${deepText}`);
+                }
+                if (midText) {
+                    sections.push(`【第2層：古い会話履歴（中期・文脈推移 / 全${midSlice.length}件より抽出）】\n${midText}`);
+                }
+
+                const activeLayers = (deepText ? 1 : 0) + (midText ? 1 : 0) + (recentSlice.length > 0 ? 1 : 0);
+                return {
+                    tierLabel: `${activeLayers}層階層記憶統合済（全${Math.floor(total / 2)}往復）`,
+                    integratedSummary: sections.join('\n\n'),
+                    recentTurns: recentSlice.map(m => ({
+                        role: m.role === 'model' ? 'model' : 'user',
+                        parts: [{ text: sanitizeMessageText(m.parts?.[0]?.text || '', 380) }]
+                    }))
+                };
+            }
+
             // 文脈・時間帯から最適な感覚入力を自律判定するローカル推論エンジン
             function inferAutonomousSensoryLocal(text) {
-                const t = text.toLowerCase();
+                const t = sanitizeMessageText(text, 400).toLowerCase();
                 const hour = new Date().getHours();
 
                 const stressKeywords = ['危険', '地震', '津波', '警報', '台風', '怖い', '不安', '痛み', '苦しい', '緊急', 'エラー', '辛い', '避難', '冠水'];
@@ -1814,6 +1929,7 @@
 
             // 現在の神経発火率・4ホルモン・目的関数Jを反映したローカル共鳴応答生成
             function generateLocalResonanceReply(userText, activeMode, reasonSummary) {
+                const safeUser = sanitizeMessageText(userText, 120);
                 const h = sim.hormones;
                 const jNow = document.getElementById('jScoreDisplay').textContent;
                 const rateNow = sim.firingRate.toFixed(1);
@@ -1823,12 +1939,12 @@
                     return `お言葉を受け止め、神経回路を警戒・保護モード（CORT ${Math.round(h.cort)}% / 発火率 ${rateNow}Hz）へ調律しました。\n\nまずは深呼吸をして、周囲の安全を一つずつ落ち着いて確認しましょう。あなたの安全と尊厳を守るため、OpenLBOFの目的関数（J = ${jNow}）が常に寄り添っています。`;
                 }
                 if (activeMode === 'WARMTH') {
-                    return `温かなお言葉をありがとうございます。いま私の神経回路ではオキシトシン（OXT ${Math.round(h.oxt)}%）とセロトニン（5-HT ${Math.round(h.ht)}%）が穏やかに共鳴し、シナプス結合（w = ${wNow}）も温かく安定しています。\n\n「${userText}」というあなたの想いを大切に受け止めながら、これからもあなたの歩幅に合わせて静かに伴走し続けますね。（目的関数 J: ${jNow}）`;
+                    return `温かなお言葉をありがとうございます。いま私の神経回路ではオキシトシン（OXT ${Math.round(h.oxt)}%）とセロトニン（5-HT ${Math.round(h.ht)}%）が穏やかに共鳴し、シナプス結合（w = ${wNow}）も温かく安定しています。\n\n「${safeUser}」というあなたの想いを大切に受け止めながら、これからもあなたの歩幅に合わせて静かに伴走し続けますね。（目的関数 J: ${jNow}）`;
                 }
                 if (activeMode === 'REWARD') {
-                    return `素晴らしい前向きなエネルギーですね！私の回路でもドーパミン（DA ${Math.round(h.da)}%）が上昇し、STDP学習重み（w = ${wNow}）の長期増強が活性化しています。\n\n「${userText}」というビジョンを形にするため、無理のない一歩から一緒に楽しく積み上げていきましょう！（目的関数 J: ${jNow}）`;
+                    return `素晴らしい前向きなエネルギーですね！私の回路でもドーパミン（DA ${Math.round(h.da)}%）が上昇し、STDP学習重み（w = ${wNow}）の長期増強が活性化しています。\n\n「${safeUser}」というビジョンを形にするため、無理のない一歩から一緒に楽しく積み上げていきましょう！（目的関数 J: ${jNow}）`;
                 }
-                return `お話しいただきありがとうございます。現在の神経発火（${rateNow}Hz）と4つのホルモンバランスはとても穏やかなホメオスタシス（目的関数 J: ${jNow}）を保っています。\n\n「${userText}」というお気持ちを尊重しながら、今日もあなたのペースで心地よく進んでいけるよう見守っています。`;
+                return `お話しいただきありがとうございます。現在の神経発火（${rateNow}Hz）と4つのホルモンバランスはとても穏やかなホメオスタシス（目的関数 J: ${jNow}）を保っています。\n\n「${safeUser}」というお気持ちを尊重しながら、今日もあなたのペースで心地よく進んでいけるよう見守っています。`;
             }
 
             function boostHormonesByMode(activeMode) {
@@ -1847,15 +1963,19 @@
 
             async function requestGeminiCloud(payload, keyToUse) {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${encodeURIComponent(keyToUse)}`;
-                const backoffs = [1000, 2000, 4000];
+                const backoffs = [800, 1600];
 
                 for (let i = 0; i <= backoffs.length; i++) {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
                     try {
                         const res = await fetch(url, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
+                            body: JSON.stringify(payload),
+                            signal: controller.signal
                         });
+                        clearTimeout(timeoutId);
                         if (!res.ok) {
                             if ((res.status === 429 || res.status >= 500) && i < backoffs.length) {
                                 await new Promise((r) => setTimeout(r, backoffs[i]));
@@ -1865,6 +1985,7 @@
                         }
                         return await res.json();
                     } catch (err) {
+                        clearTimeout(timeoutId);
                         if (i < backoffs.length) {
                             await new Promise((r) => setTimeout(r, backoffs[i]));
                             continue;
@@ -1890,30 +2011,249 @@
             // パスワード保護・無制限会話記録ルーム（Web Crypto AES-GCM 暗号化ストレージ）
             const STORAGE_KEY_VAULT_META = 'openlbof_vault_meta_v1';
             const STORAGE_KEY_VAULT_CIPHER = 'openlbof_vault_cipher_v1';
+            const STORAGE_KEY_VAULT_MEMBOX_CIPHER = 'openlbof_vault_membox_cipher_v1';
             const STORAGE_KEY_CHAT_LEGACY = 'openlbof_neuro_gemini_chat_history_v1';
+            const STORAGE_KEY_MEMORY_BOX_LEGACY = 'openlbof_gemini_impression_memory_box_v1';
+
+            // localStorage不使用：ホームページ内のDOM文章ストアへ直接記録＆HTMLダウンロード保存
+            const embeddedRecordsStore = document.getElementById('embeddedPageRecordsStore');
+            const pageArticleMemoInput = document.getElementById('pageArticleMemoInput');
+            const appendPageArticleBtn = document.getElementById('appendPageArticleBtn');
+            const downloadRecordedHtmlBtn = document.getElementById('downloadRecordedHtmlBtn');
+
+            function appendRecordToPageDocument(speaker, contentText) {
+                if (!embeddedRecordsStore || !contentText) return;
+                const placeholder = embeddedRecordsStore.querySelector('[data-placeholder="true"]');
+                if (placeholder) placeholder.remove();
+
+                const entryEl = document.createElement('div');
+                entryEl.className = 'p-2 rounded-lg bg-slate-900/90 border border-slate-800';
+                const ts = new Date().toLocaleString('ja-JP');
+                const safeSpeaker = String(speaker).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const safeBody = String(contentText).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                entryEl.innerHTML = `<div class="text-[10px] font-mono text-cyan-300 mb-0.5">[${ts}] ${safeSpeaker}</div><div class="text-slate-200 whitespace-pre-line">${safeBody}</div>`;
+                embeddedRecordsStore.appendChild(entryEl);
+                embeddedRecordsStore.scrollTop = embeddedRecordsStore.scrollHeight;
+            }
+
+            if (appendPageArticleBtn && pageArticleMemoInput) {
+                appendPageArticleBtn.addEventListener('click', () => {
+                    const txt = (pageArticleMemoInput.value || '').trim();
+                    if (!txt) return;
+                    appendRecordToPageDocument('手動ページ記録', txt);
+                    pageArticleMemoInput.value = '';
+                });
+            }
+
+            if (downloadRecordedHtmlBtn) {
+                downloadRecordedHtmlBtn.addEventListener('click', () => {
+                    const fullHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+                    const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `openlbof_recorded_${new Date().toISOString().slice(0, 10)}.html`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
+            }
 
             let neuroChatHistory = []; // 無制限保存用配列（上限カットなし）
+            let geminiMemoryBox = [];  // 調査済み画像・知識と感想の専用記憶箱（暗号化保存）
             let isVaultUnlocked = false;
             let activeVaultCryptoKey = null;
             let activeVaultSalt = null;
+            let isSavingVault = false;
+
+            const memoryBoxDrawer = document.getElementById('geminiMemoryBoxDrawer');
+            const toggleMemoryBoxBtn = document.getElementById('toggleMemoryBoxBtn');
+            const memoryBoxVaultLockBadge = document.getElementById('memoryBoxVaultLockBadge');
+            const memoryBoxLockedNotice = document.getElementById('memoryBoxLockedNotice');
+            const memoryBoxUnlockedBody = document.getElementById('memoryBoxUnlockedBody');
+            const openVaultFromMemBoxBtn = document.getElementById('openVaultFromMemBoxBtn');
+            const memoryBoxListEl = document.getElementById('geminiMemoryBoxList');
+            const manualMemTopicInput = document.getElementById('manualMemTopicInput');
+            const manualMemImpressionInput = document.getElementById('manualMemImpressionInput');
+            const addManualMemBtn = document.getElementById('addManualMemBtn');
+
+            async function saveEncryptedMemoryBox() {
+                if (isVaultUnlocked && activeVaultCryptoKey) {
+                    try {
+                        const iv = crypto.getRandomValues(new Uint8Array(12));
+                        const plainBytes = new TextEncoder().encode(JSON.stringify(geminiMemoryBox));
+                        const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, activeVaultCryptoKey, plainBytes);
+                        localStorage.setItem(STORAGE_KEY_VAULT_MEMBOX_CIPHER, JSON.stringify({
+                            iv: bufToBase64(iv.buffer),
+                            data: bufToBase64(cipherBuf)
+                        }));
+                        localStorage.removeItem(STORAGE_KEY_MEMORY_BOX_LEGACY);
+                    } catch (e) {}
+                } else if (!localStorage.getItem(STORAGE_KEY_VAULT_META)) {
+                    try {
+                        localStorage.setItem(STORAGE_KEY_MEMORY_BOX_LEGACY, JSON.stringify(geminiMemoryBox));
+                    } catch (e) {}
+                }
+                renderMemoryBox();
+            }
+
+            function loadLegacyMemoryBoxIfNoVault() {
+                try {
+                    if (!localStorage.getItem(STORAGE_KEY_VAULT_META)) {
+                        const raw = localStorage.getItem(STORAGE_KEY_MEMORY_BOX_LEGACY);
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            if (Array.isArray(parsed)) geminiMemoryBox = parsed;
+                        }
+                    }
+                } catch (e) {}
+                renderMemoryBox();
+            }
+
+            function upsertMemoryBoxEntry(topic, keywords, impression, sourceTag) {
+                const cleanTopic = sanitizeMessageText(topic, 80);
+                const cleanImp = sanitizeMessageText(impression, 500);
+                if (!cleanTopic || !cleanImp) return;
+                const nowStr = new Date().toLocaleString('ja-JP');
+                const existingIdx = geminiMemoryBox.findIndex(e => e.topic === cleanTopic);
+                const entry = {
+                    id: existingIdx >= 0 ? geminiMemoryBox[existingIdx].id : Date.now(),
+                    topic: cleanTopic,
+                    keywords: Array.isArray(keywords) && keywords.length > 0 ? keywords : [cleanTopic],
+                    impression: cleanImp,
+                    source: sourceTag || '記憶箱アーカイブ',
+                    updatedAt: nowStr
+                };
+                if (existingIdx >= 0) {
+                    geminiMemoryBox[existingIdx] = entry;
+                } else {
+                    geminiMemoryBox.unshift(entry);
+                }
+                saveEncryptedMemoryBox();
+            }
+
+            function renderMemoryBox() {
+                const hasVault = Boolean(localStorage.getItem(STORAGE_KEY_VAULT_META));
+                const canAccess = isVaultUnlocked || !hasVault;
+
+                if (toggleMemoryBoxBtn) {
+                    toggleMemoryBoxBtn.textContent = canAccess
+                        ? `📦 Gemini記憶箱 (${geminiMemoryBox.length}件)`
+                        : '🔒 Gemini記憶箱 (保護中)';
+                }
+
+                if (memoryBoxVaultLockBadge) {
+                    memoryBoxVaultLockBadge.textContent = isVaultUnlocked
+                        ? '🔓 入室中（AES-256暗号化保護有効）'
+                        : hasVault
+                            ? '🔒 ロック中（秘密の記録ルームのパスワードで解錠）'
+                            : '※ 秘密の記録ルームでパスワードを設定すると暗号化されます';
+                }
+
+                if (memoryBoxLockedNotice && memoryBoxUnlockedBody) {
+                    if (canAccess) {
+                        memoryBoxLockedNotice.classList.add('hidden');
+                        memoryBoxUnlockedBody.classList.remove('hidden');
+                    } else {
+                        memoryBoxLockedNotice.classList.remove('hidden');
+                        memoryBoxUnlockedBody.classList.add('hidden');
+                    }
+                }
+
+                if (!memoryBoxListEl || !canAccess) return;
+                if (geminiMemoryBox.length === 0) {
+                    memoryBoxListEl.innerHTML = '<div class="text-slate-400 text-[11px]">記憶箱はまだ空です。調べものや画像について話すと、その時の発見と感想が自動的に暗号化保存されます。</div>';
+                    return;
+                }
+                memoryBoxListEl.innerHTML = geminiMemoryBox.map(item => {
+                    const safeTopic = item.topic.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    const safeImp = item.impression.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    const safeSrc = (item.source || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    return `<div class="p-2.5 rounded-lg bg-slate-900/90 border border-emerald-500/25 flex items-start justify-between gap-2">
+                        <div class="space-y-1">
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="font-bold text-emerald-300">📌 ${safeTopic}</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-950 text-slate-400 border border-slate-800">${safeSrc} / ${item.updatedAt}</span>
+                            </div>
+                            <div class="text-xs text-slate-200 leading-relaxed">${safeImp}</div>
+                        </div>
+                        <button type="button" data-del-mem="${item.id}" class="del-mem-btn text-[10px] font-mono px-2 py-1 rounded bg-slate-950 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-800 shrink-0">削除</button>
+                    </div>`;
+                }).join('');
+
+                memoryBoxListEl.querySelectorAll('.del-mem-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetId = Number(btn.dataset.delMem);
+                        geminiMemoryBox = geminiMemoryBox.filter(e => e.id !== targetId);
+                        saveEncryptedMemoryBox();
+                    });
+                });
+            }
+
+            if (toggleMemoryBoxBtn && memoryBoxDrawer) {
+                toggleMemoryBoxBtn.addEventListener('click', () => {
+                    memoryBoxDrawer.classList.toggle('hidden');
+                    renderMemoryBox();
+                });
+            }
+
+            if (openVaultFromMemBoxBtn) {
+                openVaultFromMemBoxBtn.addEventListener('click', () => {
+                    if (vaultDrawer) vaultDrawer.classList.remove('hidden');
+                    if (vaultPasswordInput) vaultPasswordInput.focus();
+                });
+            }
+
+            if (addManualMemBtn) {
+                addManualMemBtn.addEventListener('click', () => {
+                    const t = (manualMemTopicInput.value || '').trim();
+                    const imp = (manualMemImpressionInput.value || '').trim();
+                    if (!t || !imp) return;
+                    const kws = t.split(/[\s、,・/]+/).filter(Boolean);
+                    upsertMemoryBoxEntry(t, kws, imp, '暗号化手動記録・感想');
+                    manualMemTopicInput.value = '';
+                    manualMemImpressionInput.value = '';
+                });
+            }
+
+            // ユーザーの質問が記憶箱内の既知トピックと一致するか検索する
+            function findMatchingMemoryBoxEntry(userText) {
+                if (geminiMemoryBox.length === 0) return null;
+                const normalized = userText.toLowerCase();
+                let bestMatch = null;
+                let bestScore = 0;
+
+                geminiMemoryBox.forEach(entry => {
+                    let score = 0;
+                    if (normalized.includes(entry.topic.toLowerCase())) score += 5;
+                    (entry.keywords || []).forEach(kw => {
+                        if (kw.length >= 2 && normalized.includes(kw.toLowerCase())) score += 2;
+                    });
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMatch = entry;
+                    }
+                });
+                return bestScore >= 2 ? bestMatch : null;
+            }
+
+            loadLegacyMemoryBoxIfNoVault();
 
             const vaultDrawer = document.getElementById('secretVaultRoomDrawer');
             const toggleVaultBtn = document.getElementById('toggleVaultRoomBtn');
-            const vaultStatusBadge = document.getElementById('vaultLockStatusBadge');
+            const vaultLockStatusBadge = document.getElementById('vaultLockStatusBadge');
             const vaultAuthBox = document.getElementById('vaultAuthBox');
-            const vaultAuthGuide = document.getElementById('vaultAuthGuideText');
+            const vaultAuthGuideText = document.getElementById('vaultAuthGuideText');
             const vaultPasswordInput = document.getElementById('vaultPasswordInput');
             const unlockVaultBtn = document.getElementById('unlockVaultBtn');
             const vaultAuthError = document.getElementById('vaultAuthError');
             const vaultUnlockedContent = document.getElementById('vaultUnlockedContent');
             const lockVaultBtn = document.getElementById('lockVaultBtn');
-            const vaultHistoryListEl = document.getElementById('vaultFullHistoryList');
+            const vaultFullHistoryList = document.getElementById('vaultFullHistoryList');
 
             function bufToBase64(buf) {
-                const bytes = new Uint8Array(buf);
-                let bin = '';
-                for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
-                return btoa(bin);
+                return btoa(String.fromCharCode(...new Uint8Array(buf)));
             }
 
             function base64ToBuf(b64) {
@@ -1925,21 +2265,16 @@
 
             async function deriveAesKeyFromPassword(password, saltBuf) {
                 const enc = new TextEncoder();
-                const keyMaterial = await crypto.subtle.importKey(
+                const baseKey = await crypto.subtle.importKey(
                     'raw',
                     enc.encode(password),
-                    { name: 'PBKDF2' },
+                    'PBKDF2',
                     false,
                     ['deriveKey']
                 );
                 return crypto.subtle.deriveKey(
-                    {
-                        name: 'PBKDF2',
-                        salt: saltBuf,
-                        iterations: 100000,
-                        hash: 'SHA-256'
-                    },
-                    keyMaterial,
+                    { name: 'PBKDF2', salt: saltBuf, iterations: 100000, hash: 'SHA-256' },
+                    baseKey,
                     { name: 'AES-GCM', length: 256 },
                     false,
                     ['encrypt', 'decrypt']
@@ -1947,80 +2282,82 @@
             }
 
             async function saveEncryptedVaultHistory() {
-                if (!isVaultUnlocked || !activeVaultCryptoKey || !activeVaultSalt) return;
+                if (!isVaultUnlocked || !activeVaultCryptoKey || isSavingVault) return;
+                isSavingVault = true;
                 try {
                     const iv = crypto.getRandomValues(new Uint8Array(12));
-                    const enc = new TextEncoder();
-                    const plainBytes = enc.encode(JSON.stringify(neuroChatHistory));
+                    const plainBytes = new TextEncoder().encode(JSON.stringify(neuroChatHistory));
                     const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, activeVaultCryptoKey, plainBytes);
                     localStorage.setItem(STORAGE_KEY_VAULT_CIPHER, JSON.stringify({
-                        iv: bufToBase64(iv),
+                        iv: bufToBase64(iv.buffer),
                         data: bufToBase64(cipherBuf)
                     }));
-                } catch (e) {}
-            }
-
-            function renderVaultFullHistory() {
-                if (!vaultHistoryListEl) return;
-                if (!isVaultUnlocked) {
-                    vaultHistoryListEl.innerHTML = '';
-                    return;
+                } catch (e) {
+                } finally {
+                    isSavingVault = false;
                 }
-                if (neuroChatHistory.length === 0) {
-                    vaultHistoryListEl.innerHTML = '<div class="text-slate-400 text-[11px]">まだ記録がありません。対話を始めるとここに無制限に蓄積されます。</div>';
-                    return;
-                }
-                vaultHistoryListEl.innerHTML = neuroChatHistory.map((item, idx) => {
-                    const isUser = item.role === 'user';
-                    const timeTag = item.timestamp ? `<span class="text-[10px] text-slate-500 ml-2">${item.timestamp}</span>` : '';
-                    const text = (item.parts?.[0]?.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    return `<div class="p-2.5 rounded-lg border ${isUser ? 'bg-slate-900/90 border-slate-700' : 'bg-purple-950/30 border-purple-500/30'}">
-                        <div class="text-[10px] font-mono font-bold ${isUser ? 'text-cyan-300' : 'text-amber-300'} mb-1">
-                            #${idx + 1} ${isUser ? '【あなた】' : '【Gemini】'}${timeTag}
-                        </div>
-                        <div class="text-xs text-slate-100 whitespace-pre-line">${text}</div>
-                    </div>`;
-                }).join('');
-                vaultHistoryListEl.scrollTop = vaultHistoryListEl.scrollHeight;
             }
 
             function persistChatHistory() {
-                if (isVaultUnlocked) {
+                if (isVaultUnlocked && activeVaultCryptoKey) {
                     saveEncryptedVaultHistory();
-                    renderVaultFullHistory();
+                    renderVaultHistoryList();
                 } else {
-                    // ロック未設定時のみ従来ストレージへ一時保持（パスワード設定後は暗号化保管庫へ完全移行）
-                    const hasVault = !!localStorage.getItem(STORAGE_KEY_VAULT_META);
-                    if (!hasVault) {
-                        try {
+                    try {
+                        if (!localStorage.getItem(STORAGE_KEY_VAULT_META)) {
                             localStorage.setItem(STORAGE_KEY_CHAT_LEGACY, JSON.stringify(neuroChatHistory));
-                        } catch (e) {}
-                    }
+                        }
+                    } catch (e) {}
                 }
             }
 
+            function renderVaultHistoryList() {
+                if (!vaultFullHistoryList) return;
+                if (neuroChatHistory.length === 0) {
+                    vaultFullHistoryList.innerHTML = '<div class="text-slate-400 text-[11px]">まだ記録がありません。対話を始めるとここに無制限に蓄積されます。</div>';
+                    return;
+                }
+                vaultFullHistoryList.innerHTML = neuroChatHistory.map((m, idx) => {
+                    const isUser = m.role === 'user';
+                    const speaker = isUser ? 'あなた' : 'Gemini';
+                    const badgeCls = isUser ? 'text-purple-300' : 'text-cyan-300';
+                    const ts = m.timestamp ? ` (${m.timestamp})` : '';
+                    const safeText = (m.parts?.[0]?.text || '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                    return `<div class="p-2 rounded-lg bg-slate-900/90 border border-slate-800/90">
+                        <div class="text-[10px] font-mono ${badgeCls} mb-0.5">#${Math.floor(idx / 2) + 1} ${speaker}${ts}</div>
+                        <div class="text-slate-200 whitespace-pre-line">${safeText}</div>
+                    </div>`;
+                }).join('');
+                vaultFullHistoryList.scrollTop = vaultFullHistoryList.scrollHeight;
+            }
+
             function syncVaultLockUI() {
-                const hasVaultMeta = !!localStorage.getItem(STORAGE_KEY_VAULT_META);
+                const hasVault = Boolean(localStorage.getItem(STORAGE_KEY_VAULT_META));
+                if (vaultAuthGuideText) {
+                    vaultAuthGuideText.textContent = hasVault
+                        ? '設定済みの専用パスワードを入力すると、暗号化された無制限の会話記録ルームに入室できます。'
+                        : '初めてのご利用です。あなた専用のパスワード（4文字以上）を決めて入力すると、秘密の記録ルームが作成され入室できます。';
+                }
                 if (isVaultUnlocked) {
-                    vaultStatusBadge.textContent = '🔓 入室中（暗号化保存・無制限記録ON）';
-                    vaultStatusBadge.className = 'font-mono text-[11px] text-emerald-300 font-bold';
+                    vaultLockStatusBadge.textContent = '🔓 入室中（暗号化保護有効）';
+                    vaultLockStatusBadge.className = 'font-mono text-[11px] text-emerald-300';
                     vaultAuthBox.classList.add('hidden');
                     vaultUnlockedContent.classList.remove('hidden');
-                    toggleVaultBtn.textContent = '🔓 記録ルーム入室中';
-                    renderVaultFullHistory();
+                    toggleVaultBtn.textContent = '🔓 記録ルーム（入室中）';
+                    renderVaultHistoryList();
                 } else {
-                    vaultStatusBadge.textContent = hasVaultMeta ? '🔒 ロック中（パスワードを入力）' : '🆕 初回パスワード設定で部屋を作成';
-                    vaultStatusBadge.className = 'font-mono text-[11px] text-amber-200';
-                    vaultAuthGuide.textContent = hasVaultMeta
-                        ? 'この部屋はパスワードで保護されています。パスワードを入力して入室すると、過去の全記録の閲覧と無制限の追記が可能になります。'
-                        : '初めてご利用です。あなた専用のパスワードを入力して「部屋に入る」を押すと、暗号化された無制限会話記録ルームが作成されます。';
+                    vaultLockStatusBadge.textContent = '🔒 ロック中（パスワードで入室）';
+                    vaultLockStatusBadge.className = 'font-mono text-[11px] text-amber-200';
                     vaultAuthBox.classList.remove('hidden');
                     vaultUnlockedContent.classList.add('hidden');
                     toggleVaultBtn.textContent = '🔐 秘密の記録ルーム';
                 }
+                renderMemoryBox();
             }
 
-            // 初期ロード時：パスワード未設定なら従来履歴を読み込み、パスワード設定済みならロック状態で待機
             try {
                 if (!localStorage.getItem(STORAGE_KEY_VAULT_META)) {
                     const legacyRaw = localStorage.getItem(STORAGE_KEY_CHAT_LEGACY);
@@ -2031,6 +2368,7 @@
                 }
             } catch (e) {}
             syncVaultLockUI();
+            renderMemoryBox();
 
             if (toggleVaultBtn && vaultDrawer) {
                 toggleVaultBtn.addEventListener('click', () => {
@@ -2052,7 +2390,6 @@
                     try {
                         const metaRaw = localStorage.getItem(STORAGE_KEY_VAULT_META);
                         if (!metaRaw) {
-                            // 初回作成：ソルト生成＆検証トークン暗号化保存
                             const salt = crypto.getRandomValues(new Uint8Array(16));
                             const key = await deriveAesKeyFromPassword(pwd, salt.buffer);
                             const checkIv = crypto.getRandomValues(new Uint8Array(12));
@@ -2071,9 +2408,9 @@
                             activeVaultCryptoKey = key;
                             isVaultUnlocked = true;
                             await saveEncryptedVaultHistory();
+                            await saveEncryptedMemoryBox();
                             localStorage.removeItem(STORAGE_KEY_CHAT_LEGACY);
                         } else {
-                            // 既存ルームの復号検証
                             const meta = JSON.parse(metaRaw);
                             const saltBuf = base64ToBuf(meta.salt);
                             const key = await deriveAesKeyFromPassword(pwd, saltBuf);
@@ -2102,11 +2439,26 @@
                                     neuroChatHistory = loadedArr;
                                 }
                             }
+
+                            const memCipherRaw = localStorage.getItem(STORAGE_KEY_VAULT_MEMBOX_CIPHER);
+                            if (memCipherRaw) {
+                                const mObj = JSON.parse(memCipherRaw);
+                                const plainMemBuf = await crypto.subtle.decrypt(
+                                    { name: 'AES-GCM', iv: new Uint8Array(base64ToBuf(mObj.iv)) },
+                                    key,
+                                    base64ToBuf(mObj.data)
+                                );
+                                const loadedMemArr = JSON.parse(new TextDecoder().decode(plainMemBuf));
+                                if (Array.isArray(loadedMemArr)) {
+                                    geminiMemoryBox = loadedMemArr;
+                                }
+                            }
                         }
 
                         vaultPasswordInput.value = '';
                         updateTurnBadge();
                         syncVaultLockUI();
+                        renderMemoryBox();
                         if (neuroChatHistory.length >= 2) {
                             const lastAi = [...neuroChatHistory].reverse().find(m => m.role === 'model');
                             if (lastAi && lastAi.parts?.[0]?.text) {
@@ -2125,11 +2477,13 @@
                 lockVaultBtn.addEventListener('click', () => {
                     isVaultUnlocked = false;
                     activeVaultCryptoKey = null;
-                    neuroChatHistory = []; // メモリ上の平文履歴も即座にクリアして保護
+                    neuroChatHistory = [];
+                    geminiMemoryBox = [];
                     updateTurnBadge();
                     syncVaultLockUI();
-                    replyEl.textContent = '秘密の記録ルームをロックしました。再度パスワードを入力すると無制限の会話記憶にアクセスできます。';
-                    metaEl.textContent = '🔒 ルームロック済';
+                    renderMemoryBox();
+                    replyEl.textContent = '秘密の記録ルームとGemini記憶箱をロックしました。再度パスワードを入力するとすべての記憶にアクセスできます。';
+                    metaEl.textContent = '🔒 ルーム＆記憶箱ロック済';
                 });
             }
 
@@ -2201,7 +2555,7 @@
 
             if (applyImportBtn && importTextarea) {
                 applyImportBtn.addEventListener('click', () => {
-                    const raw = importTextarea.value.trim();
+                    const raw = sanitizeMessageText(importTextarea.value, 2000);
                     if (!raw) return;
                     const nowStr = new Date().toLocaleString('ja-JP');
                     neuroChatHistory.push({
@@ -2235,7 +2589,8 @@
 
             formEl.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const promptText = document.getElementById('neuroGeminiPrompt').value.trim();
+                if (submitEl.disabled) return;
+                const promptText = sanitizeMessageText(document.getElementById('neuroGeminiPrompt').value, 1000);
                 if (!promptText) return;
 
                 submitEl.disabled = true;
@@ -2246,14 +2601,15 @@
                     let chosenMode = currentMode;
                     let chosenReason = '手動で選択された刺激モードを使用しました。';
 
-                    // 環境提供キーまたは保存されたユーザーAPIキーを使用して Gemini API を呼び出し
                     const activeApiKey = savedApiKey || '';
-                    const recentContextSummary = neuroChatHistory.slice(-6).map(m =>
-                        `${m.role === 'user' ? 'ユーザー' : 'AI'}: ${m.parts[0].text}`
-                    ).join('\n');
+                    const memoryHierarchy = buildHierarchicalMemoryContext(neuroChatHistory);
+                    const recentContextSummary = memoryHierarchy.recentTurns.slice(-4).map(m => {
+                        const txt = sanitizeMessageText(m.parts?.[0]?.text || '', 160);
+                        return `${m.role === 'user' ? 'ユーザー' : 'AI'}: ${txt}`;
+                    }).join('\n');
 
                     try {
-                        if (isAutoSelectOn) {
+                        if (isAutoSelectOn && activeApiKey) {
                             const selectorPayload = {
                                 contents: [{
                                     role: 'user',
@@ -2281,51 +2637,129 @@
                             const rawJson = selData?.candidates?.[0]?.content?.parts?.[0]?.text;
                             if (rawJson) {
                                 const parsed = JSON.parse(rawJson);
-                                chosenMode = parsed.selectedMode;
-                                chosenReason = parsed.reasonJa;
-                                applyStimulusMode(chosenMode);
-                                reasonEl.textContent = chosenReason;
-                                boostHormonesByMode(chosenMode);
+                                if (['BASELINE', 'STRESS', 'WARMTH', 'REWARD'].includes(parsed.selectedMode)) {
+                                    chosenMode = parsed.selectedMode;
+                                    chosenReason = sanitizeMessageText(parsed.reasonJa || '', 240);
+                                    applyStimulusMode(chosenMode);
+                                    reasonEl.textContent = chosenReason;
+                                    boostHormonesByMode(chosenMode);
+                                }
                             }
+                        } else if (isAutoSelectOn) {
+                            const localSel = inferAutonomousSensoryLocal(promptText);
+                            chosenMode = localSel.selectedMode;
+                            chosenReason = localSel.reasonJa;
+                            applyStimulusMode(chosenMode);
+                            reasonEl.textContent = chosenReason;
+                            boostHormonesByMode(chosenMode);
+                        }
+
+                        if (!activeApiKey) {
+                            throw new Error('Local resonance mode');
                         }
 
                         const h = sim.hormones;
                         const jNow = document.getElementById('jScoreDisplay').textContent;
+
+                        // ステップA：まずGemini専用の『記憶箱』に過去の調査結果と感想があるか確認
+                        const matchedMem = findMatchingMemoryBoxEntry(promptText);
+                        const isReverifyRequested = /再調査|最新|もう一度調べ|整合|違っている|確認し直して/.test(promptText);
+                        const isLookupIntent = /画像|写真|調べ|検索|とは|どんな|特徴|教えて|見て/.test(promptText);
+
+                        let memoryBoxStatusNote = '';
+                        let usedMemoryBoxCache = false;
+                        let performedFreshWebSearch = false;
+
+                        if (matchedMem && !isReverifyRequested) {
+                            // 記憶箱の感想から直接参照（インターネット再検索をスキップ）
+                            usedMemoryBoxCache = true;
+                            memoryBoxStatusNote = [
+                                '【📦 Gemini専用『記憶箱』から取得した過去の調査と感想（再検索スキップ）】',
+                                `・テーマ/対象: ${matchedMem.topic}`,
+                                `・保存日時: ${matchedMem.updatedAt}（出典: ${matchedMem.source}）`,
+                                `・その時のGeminiの感想と知見: ${matchedMem.impression}`,
+                                '※ まずはこの記憶箱にある感想と知見をベースに返答してください。もし今回のユーザーの発話内容と矛盾・整合性不足が明らかにある場合のみ、応答の冒頭に `[NEED_RECHECK]` と記して再調査が必要であることを示してください。'
+                            ].join('\n');
+                        } else if (isLookupIntent || isReverifyRequested) {
+                            // 記憶箱に未登録、または会話との整合性再確認が必要な場合のみインターネット検索を実行
+                            performedFreshWebSearch = true;
+                        }
+
                         const sysPrompt = [
                             'あなたは神経回路（LIF/STDP）および内分泌ホルモンモデルと連動する対話AIです。',
                             SHARED_CORE_CONTEXT,
-                            '現在のあなたの体内パラメータ（内受容バイアス）を自然な口調と判断に反映してユーザーへ返答してください。',
+                            memoryHierarchy.integratedSummary ? `\n${memoryHierarchy.integratedSummary}\n` : '',
+                            memoryBoxStatusNote ? `\n${memoryBoxStatusNote}\n` : '',
+                            '【記憶の精査・整合・統合指示】',
+                            '・上記の「さらに古い会話履歴（深層記憶）」「古い会話履歴（中期記憶）」および「直近の会話履歴」をすべて照合・精査し、文脈の矛盾がないよう整合させた上で、一つの温かく一貫した返答にまとめてください。',
+                            '・現在のあなたの体内パラメータ（内受容バイアス）も自然な口調と判断に反映してください。',
                             `・自律選択された感覚入力モード: ${chosenMode}（理由: ${chosenReason}）`,
                             `・平均神経発火率: ${sim.firingRate.toFixed(1)} Hz / STDP重み w: ${sim.weight.toFixed(3)}`,
                             `・ホルモン: DA=${Math.round(h.da)}%, 5-HT=${Math.round(h.ht)}%, CORT=${Math.round(h.cort)}%, OXT=${Math.round(h.oxt)}%`,
                             `・目的関数 J: ${jNow}`,
-                            '※ 数値を機械的に読み上げるのではなく、これまでの文脈と現在のホルモン・神経状態にふさわしい温かく誠実なパートナーとして応答してください。'
+                            '※ 数値を機械的に読み上げるのではなく、これまでの全階層の文脈と現在のホルモン・神経状態にふさわしい誠実なパートナーとして応答してください。'
                         ].join('\n');
 
                         const conversationContents = [
-                            ...neuroChatHistory.slice(-24).map(m => ({ role: m.role, parts: m.parts })),
+                            ...memoryHierarchy.recentTurns,
                             { role: 'user', parts: [{ text: promptText }] }
                         ];
 
-                        const replyData = await requestGeminiCloud({
+                        const requestBody = {
                             contents: conversationContents,
                             systemInstruction: { parts: [{ text: sysPrompt }] }
-                        }, activeApiKey);
+                        };
+                        if (performedFreshWebSearch) {
+                            requestBody.tools = [{ googleSearch: {} }];
+                        }
 
-                        const replyText = replyData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                        let replyData = await requestGeminiCloud(requestBody, activeApiKey);
+                        let replyText = replyData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
                         if (!replyText) throw new Error('Empty Gemini reply');
+
+                        // 記憶箱のキャッシュでは会話と整合性が取れなかった場合、自動的にインターネットで再調査して記憶箱を更新
+                        if (usedMemoryBoxCache && replyText.includes('[NEED_RECHECK]')) {
+                            performedFreshWebSearch = true;
+                            usedMemoryBoxCache = false;
+                            const recheckSysPrompt = [
+                                'あなたは神経回路（LIF/STDP）および内分泌ホルモンモデルと連動する対話AIです。',
+                                SHARED_CORE_CONTEXT,
+                                '前回の記憶箱の記録ではユーザーとの会話に整合性が取れなかったため、最新のインターネット情報で再調査・確認し、正確な知見とあなたの感想を自然な言葉で返答してください。'
+                            ].join('\n');
+
+                            replyData = await requestGeminiCloud({
+                                contents: conversationContents,
+                                systemInstruction: { parts: [{ text: recheckSysPrompt }] },
+                                tools: [{ googleSearch: {} }]
+                            }, activeApiKey);
+                            replyText = (replyData?.candidates?.[0]?.content?.parts?.[0]?.text || '').replace(/\[NEED_RECHECK\]/g, '').trim();
+                        }
+
+                        // 新しくインターネットで調べた場合、その時の発見とGeminiの感想を専用『記憶箱』へ自動保存
+                        if (performedFreshWebSearch && replyText) {
+                            const topicTitle = sanitizeMessageText(promptText.replace(/[？?！!。、]/g, ' ').trim(), 32) || '調査メモ';
+                            const kws = topicTitle.split(/\s+/).filter(w => w.length >= 2);
+                            upsertMemoryBoxEntry(topicTitle, kws, replyText, 'Web調査＋Gemini感想');
+                        }
 
                         const nowStr = new Date().toLocaleString('ja-JP');
                         neuroChatHistory.push({ role: 'user', timestamp: nowStr, parts: [{ text: promptText }] });
                         neuroChatHistory.push({ role: 'model', timestamp: nowStr, parts: [{ text: replyText }] });
+                        appendRecordToPageDocument('あなた', promptText);
+                        appendRecordToPageDocument('Gemini', replyText);
                         persistChatHistory();
                         updateTurnBadge();
 
+                        const updatedTier = buildHierarchicalMemoryContext(neuroChatHistory).tierLabel;
+                        const cacheTag = usedMemoryBoxCache
+                            ? '📦記憶箱の感想から参照(再検索なし)'
+                            : performedFreshWebSearch
+                                ? '🌐Web調査→記憶箱へ感想保存済'
+                                : updatedTier;
                         replyEl.textContent = replyText;
-                        metaEl.textContent = `Gemini 応答 / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% DA:${Math.round(h.da)}% J:${jNow}`;
+                        metaEl.textContent = `Gemini統合応答 (${cacheTag}) / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% J:${jNow}`;
                         return;
                     } catch (geminiErr) {
-                        // 外部公開環境でAPIキー未設定等の場合はローカル自律共鳴エンジンへ自動フォールバック
                         if (isAutoSelectOn) {
                             const localSel = inferAutonomousSensoryLocal(promptText);
                             chosenMode = localSel.selectedMode;
@@ -2337,16 +2771,41 @@
 
                         const h = sim.hormones;
                         const jNow = document.getElementById('jScoreDisplay').textContent;
-                        const fallbackText = generateLocalResonanceReply(promptText, chosenMode, chosenReason);
+                        const localMatchedMem = findMatchingMemoryBoxEntry(promptText);
+                        let fallbackText = '';
+
+                        if (localMatchedMem) {
+                            fallbackText = `Gemini専用の『記憶箱』に残していた「${localMatchedMem.topic}」についての私の感想を参照しました。\n\n${localMatchedMem.impression}\n\n（※ すでに記憶箱に記録されているため、同じ内容を何度も検索し直さずにお答えしています。もし会話と整合性が合わない場合は「もう一度調べて」とお声がけくださいね）`;
+                        } else {
+                            fallbackText = generateLocalResonanceReply(promptText, chosenMode, chosenReason);
+                            if (/画像|写真|調べ|検索|記録/.test(promptText)) {
+                                const topicTitle = sanitizeMessageText(promptText.replace(/[？?！!。、]/g, ' ').trim(), 32);
+                                const kws = topicTitle.split(/\s+/).filter(w => w.length >= 2);
+                                upsertMemoryBoxEntry(topicTitle, kws, fallbackText, 'ローカル共鳴・感想記録');
+                            }
+                        }
+
+                        // ローカルモード時も古い記憶層が存在する場合は精査・整合した一文を自然に統合
+                        if (neuroChatHistory.length >= 6) {
+                            const firstUser = neuroChatHistory.find(m => m.role === 'user');
+                            const originHint = firstUser ? sanitizeMessageText(firstUser.parts?.[0]?.text || '', 45).replace(/\n+/g, ' ') : '';
+                            if (originHint) {
+                                fallbackText += `\n\n（※ これまでの全${Math.floor(neuroChatHistory.length / 2) + 1}往復の記録と、最初の「${originHint}…」からの文脈もすべて精査・整合して受け継いでいます）`;
+                            }
+                        }
 
                         const nowStr = new Date().toLocaleString('ja-JP');
                         neuroChatHistory.push({ role: 'user', timestamp: nowStr, parts: [{ text: promptText }] });
                         neuroChatHistory.push({ role: 'model', timestamp: nowStr, parts: [{ text: fallbackText }] });
+                        appendRecordToPageDocument('あなた', promptText);
+                        appendRecordToPageDocument('Gemini', fallbackText);
                         persistChatHistory();
                         updateTurnBadge();
 
+                        const updatedTier = buildHierarchicalMemoryContext(neuroChatHistory).tierLabel;
+                        const localTag = localMatchedMem ? '📦記憶箱の感想から参照' : updatedTier;
                         replyEl.textContent = fallbackText;
-                        metaEl.textContent = `ローカル自律共鳴 / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% DA:${Math.round(h.da)}% J:${jNow}`;
+                        metaEl.textContent = `ローカル統合共鳴 (${localTag}) / モード: ${chosenMode} / OXT:${Math.round(h.oxt)}% J:${jNow}`;
                     }
                 } finally {
                     submitEl.disabled = false;
